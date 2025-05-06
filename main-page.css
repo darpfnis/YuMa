@@ -19,7 +19,10 @@ header {
   font-size: 1.8em;
   font-weight: bold;
 }
-
+header .logo a {
+  color: inherit; /* Успадковує колір від батьківського елемента (header -> white) */
+  text-decoration: none; /* Забирає підкреслення посилання */
+}
 nav a {
   color: white;
   text-decoration: none;
