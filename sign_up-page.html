@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up - YuMa</title>
+    <link rel="stylesheet" href="signup_login.css"> <!-- Переконайтеся, що цей CSS існує і містить потрібні стилі -->
+    <!-- <script defer src="script.js"></script> -- Закоментував, оскільки JS буде вбудований нижче -->
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html">YuMa</a></div>
+    </header>
+
+    <main>
+        <section class="auth-form-section">
+            <script>
+                document.addEventListener('DOMContentLoaded', function() { // Обгортаємо все в цей обробник
+                    console.log("DOM fully loaded and parsed. Script for signup page starting.");
+            
+                    const signupForm = document.getElementById('signupForm');
+                    const errorDivElement = document.getElementById('signupError'); // Змінив назву, щоб не конфліктувала
+                    const emailInput = document.getElementById('email');
+                    const passwordInput = document.getElementById('password');
+            
+                    // Перевірки існування елементів
+                    if (!signupForm) {
+                        console.error("CRITICAL: Signup form with id 'signupForm' not found!");
+                    } else {
+                        console.log("SUCCESS: Signup form found!");
+                    }
+                    if (!errorDivElement) {
+                        console.warn("Warning: Error div with id 'signupError' not found. Will attempt to create if needed.");
+                    } else {
+                        console.log("SUCCESS: Error div found!");
+                    }
+                    if (!emailInput) {
+                        console.error("CRITICAL: Email input with id 'email' not found!");
+                    } else {
+                        console.log("SUCCESS: Email input found!");
+                    }
+                    if (!passwordInput) {
+                        console.error("CRITICAL: Password input with id 'password' not found!");
+                    } else {
+                        console.log("SUCCESS: Password input found!");
+                    }
+            
+                    if (signupForm && emailInput && passwordInput) { // Прикріплюємо обробник тільки якщо всі ключові елементи знайдені
+                        signupForm.addEventListener('submit', async function(event) {
+                            event.preventDefault();
+                            console.log('Form submit event triggered for signup.');
+            
+                            let currentErrorDiv = document.getElementById('signupError'); // Отримуємо його знову, або той, що був створений
+                            if (!currentErrorDiv) {
+                                currentErrorDiv = document.createElement('div');
+                                currentErrorDiv.id = 'signupError';
+                                currentErrorDiv.style.color = 'red';
+                                currentErrorDiv.style.marginTop = '1rem';
+                                currentErrorDiv.style.textAlign = 'center';
+                                this.appendChild(currentErrorDiv); // 'this' тут - це сама форма
+                            }
+                            currentErrorDiv.textContent = '';
+            
+            
+                            const email = emailInput.value;
+                            const password = passwordInput.value;
+            
+                            console.log('Email:', email, 'Password:', password ? '******' : null);
+            
+                            if (!email || !password) {
+                                console.log('Client-side validation: Email or password missing.');
+                                currentErrorDiv.textContent = 'Email and password are required.';
+                                return;
+                            }
+                            if (password.length < 6) {
+                                console.log('Client-side validation: Password too short.');
+                                currentErrorDiv.textContent = 'Password must be at least 6 characters long.';
+                                return;
+                            }
+            
+                            console.log('Attempting to send fetch request to /auth/register');
+                            try {
+                                const response = await fetch('/auth/register', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ email, password })
+                                });
+                                console.log('Fetch response received:', response);
+            
+                                const data = await response.json();
+                                console.log('Data from server:', data);
+            
+                                if (response.ok && data.success) {
+                                    alert(data.message + ' Please log in.');
+                                    window.location.href = 'login-page.html';
+                                } else {
+                                    currentErrorDiv.textContent = data.message || 'Registration failed. Please try again.';
+                                }
+                            } catch (err) {
+                                console.error('Registration request error (in catch block):', err);
+                                currentErrorDiv.textContent = 'An error occurred during registration. Please try again later. Check browser console for details.';
+                                // Додамо більше деталей про помилку fetch, якщо можливо
+                                if (err instanceof TypeError && err.message === "Failed to fetch") {
+                                    console.error("This 'Failed to fetch' error often means the server is not running, not reachable at the specified URL, or there's a CORS issue (though less likely for same-origin).");
+                                }
+                            }
+                        });
+                        console.log("Event listener attached to signupForm.");
+                    } else {
+                        console.error("Could not attach event listener because one or more critical form elements were not found.");
+                    }
+                });
+            </script>
+             <h1>Sign up</h1>
+             <!-- ПОКАЖІТЬ МЕНІ ТОЧНО ЦЕЙ ТЕГ <form> ТА ЙОГО ВМІСТ -->
+             <form id="signupForm">
+                 <div>
+                     <label for="name">Name</label>
+                     <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                 </div>
+                 <div>
+                     <label for="surname">Surname</label>
+                     <input type="text" id="surname" name="surname" placeholder="Enter your surname" required>
+                 </div>
+                 <div>
+                     <label for="email">Email</label>
+                     <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                 </div>
+                 <div>
+                     <label for="password">Password</label>
+                     <input type="password" id="password" name="password" placeholder="Create a password" required>
+                 </div>
+                 <p class="disclaimer">By registering, you consent to the processing of personal data.</p>
+                 <button type="submit">Sign up</button>
+                 <div id="signupError" style="color:red; margin-top: 1rem; text-align: center;"></div>
+             </form>
+             <p class="separator">or</p>
+             <div class="alternative-action">
+                 <a href="login-page.html">Already have an account? Log in</a>
+             </div>
+        </section>
+    </main>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Зупиняємо стандартну відправку форми
+            const errorDiv = document.getElementById('signupError');
+            errorDiv.textContent = ''; // Очищаємо попередні помилки
+
+            // const name = document.getElementById('name').value; // Якщо будете використовувати ім'я/прізвище на бекенді
+            // const surname = document.getElementById('surname').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Проста валідація на клієнті
+            if (!email || !password) {
+                errorDiv.textContent = 'Email and password are required.';
+                return;
+            }
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters long.';
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/register', { // Запит на ваш бекенд-сервер
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    // Для MVP відправляємо тільки email та password, як очікує сервер
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert(data.message + ' Please log in.'); // Повідомлення про успіх
+                    window.location.href = 'login-page.html'; // Перенаправляємо на сторінку входу
+                } else {
+                    errorDiv.textContent = data.message || 'Registration failed. Please try again.';
+                }
+            } catch (err) {
+                console.error('Registration request error:', err);
+                errorDiv.textContent = 'An error occurred during registration. Please try again later.';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -563,7 +563,6 @@ html {
       grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr)); /* 300px */
       gap: 2rem; /* 20px */
   }
-  .account-section {}
   .account-section h3 {
     margin-top: 0;
     margin-bottom: 2rem; /* 20px */
