@@ -1,0 +1,111 @@
+/* futures-page.css */
+
+/* Стилі для body, header, card-base, ui-panel тепер в інших файлах */
+
+/* --- СПЕЦИФІЧНИЙ ЗАГОЛОВОК СТОРІНКИ "Futures" --- */
+.page-specific-title {
+  text-align: center;
+  padding: 1rem 0 0.75rem 0;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.page-specific-title h1 {
+  font-size: 1.5em;
+  margin: 0;
+  font-weight: 600;
+  color: #1e2329;
+}
+
+/* --- СІРА ПАНЕЛЬ ПІД ЗАГОЛОВКОМ --- */
+.secondary-header-panel {
+  /* ... стилі для сірої панелі ... */
+  background-color: #4a4a4a;
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e0e0e0;
+}
+/* ... (решта стилів для .secondary-header-panel) ... */
+.panel-left .pair-selector {
+  font-weight: 500;
+  font-size: 1em;
+}
+.panel-center {
+  display: flex;
+  gap: 0.75rem;
+}
+.panel-nav-button {
+  background-color: #5a5a5a;
+  color: #e0e0e0;
+  padding: 0.3rem 0.6rem;
+  text-decoration: none;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  border: none;
+  transition: background-color 0.2s;
+}
+.panel-nav-button:hover {
+  background-color: #6a6a6a;
+}
+.panel-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.panel-icons span {
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-color: #5a5a5a;
+  border-radius: 0.1875rem;
+}
+
+/* --- МАКЕТ ОСНОВНОГО КОНТЕНТУ --- */
+.futures-interface-layout {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 1.25rem auto;
+  max-width: 1800px;
+  min-height: calc(100vh - 4.375rem - 2.75rem - 2.7rem - 2.5rem);
+}
+
+.panel-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.main-chart-area {
+  flex: 1;
+}
+
+.right-sidebar {
+  flex: 0 0 28%;
+  min-width: 18rem;
+}
+
+/* СТИЛІ ДЛЯ .ui-panel та .ui-panel .panel-title ТЕПЕР В cards.css */
+
+/* Специфічні стилі для розмірів карток на цій сторінці */
+.main-chart-area .chart-card {
+  flex-basis: 60%;
+  min-height: 25rem;
+}
+
+.main-chart-area .positions-history-card {
+  flex-basis: 40%;
+  min-height: 15rem;
+}
+
+.right-sidebar .order-book-card {
+  flex-basis: 50%;
+  min-height: 18rem;
+}
+
+.right-sidebar .trading-panel-card {
+  flex-basis: 50%;
+  min-height: 18rem;
+}
