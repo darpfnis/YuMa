@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log in - YuMa</title>
-    <link rel="stylesheet" href="signup_login.css">
-    <script defer src="script.js"></script>
+    <link rel="stylesheet" href="signup_login.css"> <!-- Переконайтеся, що цей CSS існує -->
+    <!-- <script defer src="script.js"></script> -- Закоментував, оскільки JS буде вбудований нижче -->
 </head>
 <body>
     <header>
-        <div class="logo"><a href="index.html">YuMa</a></div> <!-- ЗМІНЕНО ТУТ -->
+        <div class="logo"><a href="index.html">YuMa</a></div>
     </header>
 
     <main>
         <section class="auth-form-section">
             <h1>Log in</h1>
-            <form action="/login-process" method="POST">
+            <form id="loginForm"> <!-- ВИДАЛЕНО action та method, ДОДАНО id -->
                 <div>
                     <label for="identifier">Email or Phone number</label>
                     <input type="text" id="identifier" name="identifier" placeholder="Enter your email or phone" required>
@@ -24,7 +24,8 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
-                <button type="submit">Log in</button> <!-- Змінено текст кнопки для логіну -->
+                <button type="submit">Log in</button>
+                <div id="loginError" style="color:red; margin-top: 1rem; text-align: center;"></div> <!-- Для повідомлень про помилки -->
             </form>
             <p class="separator">or</p>
             <div class="alternative-action">
@@ -32,5 +33,47 @@
             </div>
         </section>
     </main>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Зупиняємо стандартну відправку форми
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = ''; // Очищаємо попередні помилки
+
+            const identifier = document.getElementById('identifier').value; // Це поле має бути email для нашого MVP
+            const password = document.getElementById('password').value;
+
+            if (!identifier || !password) {
+                errorDiv.textContent = 'Email and password are required.';
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/login', { // Запит на ваш бекенд-сервер
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ identifier, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Для MVP просто перенаправляємо.
+                    // Зберігаємо email в localStorage для відображення на профілі (дуже спрощено)
+                    if (data.user && data.user.email) {
+                        localStorage.setItem('userEmailForMVP', data.user.email);
+                    }
+                    window.location.href = 'profile.html'; // Перенаправляємо на профіль
+                } else {
+                    errorDiv.textContent = data.message || 'Login failed. Please try again.';
+                }
+            } catch (err) {
+                console.error('Login request error:', err);
+                errorDiv.textContent = 'An error occurred during login. Please try again later.';
+            }
+        });
+    </script>
 </body>
 </html>

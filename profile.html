@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - YuMa</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html">YuMa</a></div>
+        <nav class="header-nav">
+            <a href="#" class="nav-button">Buy Crypto</a>
+            <a href="#" class="nav-button">Markets</a>
+            <a href="#" class="nav-button">Trade</a>
+        </nav>
+        <div class="header-actions">
+            <button class="btn-deposit nav-button">Deposit</button>
+            <div class="icon-placeholder dark-square"></div> <!-- Темний квадрат -->
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+        </div>
+    </header>
+
+    <div class="page-wrapper-profile">
+        <aside class="sidebar">
+            <nav>
+                <a href="#" class="sidebar-button active">dashboard</a>
+                <a href="assets.html" class="sidebar-button">assets</a>
+                <a href="order.html" class="sidebar-button">order</a>
+                <a href="account.html" class="sidebar-button">account</a>
+                <a href="settings.html" class="sidebar-button">settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content-profile">
+            <section class="user-info-header">
+                <div class="user-avatar-placeholder">picture</div>
+                <div class="user-details">
+                    <h2>User-1488</h2>
+                    <span class="uid-placeholder">uid</span>
+                </div>
+            </section>
+
+            <section class="dashboard-cards">
+                <div class="profile-card card-balance">
+                    <p>Estimated Balance</p>
+                    <!-- Тут може бути сума балансу -->
+                </div>
+                <div class="profile-card card-chart">
+                    <p>Chart</p>
+                    <!-- Тут може бути графік -->
+                </div>
+            </section>
+
+            <section class="markets-section">
+                <h3>Markets</h3>
+                <div class="market-filters">
+                    <button class="filter-button">holding</button>
+                    <button class="filter-button">hot</button>
+                    <button class="filter-button">new listing</button>
+                    <button class="filter-button active">favourite</button> <!-- Приклад активного фільтра -->
+                    <button class="filter-button">top gainers</button>
+                    <button class="filter-button">24h volume</button>
+                </div>
+                <div class="market-table-container">
+                    <div class="market-table-header">
+                        <span>Coin</span>
+                        <span>Amount</span>
+                        <span>Coin Price/Cost Price</span>
+                        <span>24h Change</span>
+                    </div>
+                    <div class="market-table-row">
+                        <span class="coin-name">BNB</span>
+                        <!-- Дані для Amount, Price, Change -->
+                    </div>
+                    <div class="market-table-row">
+                        <span class="coin-name">BTC</span>
+                    </div>
+                    <div class="market-table-row">
+                        <span class="coin-name">USDT</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,635 @@
+/* styles.css */
+
+html {
+    font-size: 62.5%; /* Тепер 1rem = 10px, для зручності розрахунків */
+    box-sizing: border-box; /* Краще визначати тут, щоб успадковувалося */
+  }
+  
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit; /* Успадкування box-sizing */
+  }
+  
+  /* === Загальні стилі для тіла сторінки === */
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    font-size: 1.6rem; /* Базовий розмір шрифту для тіла (16px) */
+    line-height: 1.6;  /* Базова висота рядка */
+  }
+  
+  /* === Хедер (використовується на всіх сторінках) === */
+  header {
+    background-color: #222;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 3rem; /* 15px 30px */
+    flex-wrap: wrap;
+  }
+  
+  .logo {
+    font-size: 2.8rem; /* Було 1.8em, роблю еквівалент 28px, але відносно кореневого */
+    font-weight: bold;
+  }
+  
+  header .logo a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  /* === Стилі для навігації в хедері === */
+  .header-nav {
+    display: flex;
+    gap: 1rem; /* 10px */
+    margin: 0 2rem; /* 0 20px */
+  }
+  
+  .nav-button {
+    background-color: transparent;
+    color: white;
+    border: 1px solid white; /* border залишаю в px */
+    padding: 0.8rem 1.5rem; /* 8px 15px */
+    border-radius: 0.8rem; /* 8px */
+    text-decoration: none;
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .nav-button:hover {
+    background-color: white;
+    color: #222;
+  }
+  
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* 10px */
+  }
+  
+  .icon-placeholder {
+    width: 3rem;   /* 30px */
+    height: 3rem;  /* 30px */
+    border: 1px solid white; /* border залишаю в px */
+    border-radius: 0.4rem; /* 4px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem; /* Було 0.7em, роблю 12px */
+    color: white;
+  }
+  .icon-placeholder.dark-square {
+      background-color: #3a3a3a;
+      border-color: #3a3a3a;
+  }
+  
+  /* === Основний контент для сторінок реєстрації/входу === */
+  main {
+    max-width: 100rem; /* 1000px */
+    margin: 5rem auto; /* 50px auto */
+    padding: 2rem;     /* 20px */
+    text-align: center;
+  }
+  
+  .auth-form-section {
+    background-color: white;
+    padding: 4rem 3rem; /* 40px 30px */
+    border-radius: 1.2rem; /* 12px */
+    box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.1); /* 0 4px 12px */
+    display: inline-block;
+    text-align: left;
+    width: 100%;
+    max-width: 40rem; /* 400px */
+  }
+  
+  .auth-form-section h1 {
+    text-align: center;
+    font-size: 3.2rem; /* Було 2.2em, роблю 32px */
+    margin-bottom: 3rem; /* 30px */
+    color: #333;
+  }
+  
+  .auth-form-section label {
+    display: block;
+    margin-bottom: 0.5rem; /* 5px */
+    font-weight: bold;
+    color: #555;
+    font-size: 1.4rem; /* Додав базовий розмір шрифту для лейблів */
+  }
+  
+  .auth-form-section input[type="text"],
+  .auth-form-section input[type="email"],
+  .auth-form-section input[type="password"] {
+    padding: 1.2rem; /* 12px */
+    width: 100%;
+    margin-bottom: 2rem; /* 20px */
+    border: 1px solid #ccc;
+    border-radius: 0.6rem; /* 6px */
+    font-size: 1.6rem; /* Було 1em, роблю 16px */
+  }
+  
+  .auth-form-section button[type="submit"] {
+    padding: 1.2rem 3rem; /* 12px 30px */
+    background-color: #222;
+    color: white;
+    border: none;
+    border-radius: 0.6rem; /* 6px */
+    font-size: 1.6rem; /* Було 1em, роблю 16px */
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  
+  .auth-form-section button[type="submit"]:hover {
+    background-color: #444;
+  }
+  
+  .disclaimer {
+    font-size: 1.3rem; /* Було 0.8em, роблю 13px */
+    color: #777;
+    margin-top: 1.5rem; /* 15px */
+    margin-bottom: 2rem; /* 20px */
+    text-align: center;
+  }
+  
+  .separator {
+    text-align: center;
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    color: #555;
+    margin: 2rem 0; /* 20px 0 */
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  
+  .alternative-action {
+    text-align: center;
+    margin-top: 2rem; /* 20px */
+  }
+  
+  .alternative-action a {
+    color: #222;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.4rem; /* Додав базовий розмір шрифту */
+  }
+  
+  .alternative-action a:hover {
+    text-decoration: underline;
+  }
+  
+  
+  /* === СТИЛІ ДЛЯ PROFILE.HTML ТА ЙОГО ПІДСТОРІНОК === */
+  
+  .page-wrapper-profile {
+    display: flex;
+    max-width: 160rem; /* 1600px */
+    margin: 2rem auto; /* 20px auto */
+    padding: 0 2rem;   /* 0 20px */
+    gap: 2rem;         /* 20px */
+  }
+  
+  .sidebar {
+    flex-basis: 20rem; /* 200px */
+    flex-shrink: 0;
+  }
+  
+  .sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* 10px */
+  }
+  
+  .sidebar-button {
+    display: block;
+    padding: 1.2rem 1.5rem; /* 12px 15px */
+    background-color: #fff;
+    color: #333;
+    text-decoration: none;
+    border-radius: 0.8rem; /* 8px */
+    font-size: 1.5rem; /* Було 0.95em, роблю 15px */
+    text-align: left;
+    border: 1px solid #e0e0e0;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+    cursor: pointer;
+  }
+  
+  .sidebar-button:hover {
+    background-color: #e0e0e0;
+    border-color: #b0b0b0;
+    color: #000;
+  }
+  
+  .sidebar-button.active {
+    background-color: #222;
+    color: white;
+    border-color: #222;
+    font-weight: bold;
+  }
+  
+  .main-content-profile {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem; /* 20px */
+  }
+  
+  .content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem; /* 20px */
+    padding-bottom: 1.5rem; /* 15px */
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .content-header h2 {
+    margin: 0;
+    font-size: 2.8rem; /* Було 1.8em, роблю 28px */
+    color: #333;
+  }
+  
+  .action-button {
+    padding: 0.8rem 1.8rem; /* 8px 18px */
+    border-radius: 0.6rem; /* 6px */
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    color: #333;
+    cursor: pointer;
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+  .action-button:hover {
+    background-color: #e0e0e0;
+    border-color: #bbb;
+  }
+  .action-button.primary-action {
+    background-color: #222;
+    color: white;
+    border-color: #222;
+  }
+  .action-button.primary-action:hover {
+    background-color: #444;
+    border-color: #444;
+  }
+  .action-button.danger-action {
+    background-color: #d9534f;
+    color: white;
+    border-color: #d43f3a;
+  }
+  .action-button.danger-action:hover {
+    background-color: #c9302c;
+    border-color: #ac2925;
+  }
+  
+  .user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem; /* 15px */
+    margin-bottom: 1rem; /* 10px */
+  }
+  
+  .user-avatar-placeholder {
+    width: 7rem;  /* 70px */
+    height: 7rem; /* 70px */
+    background-color: #e0e0e0;
+    border-radius: 0.8rem; /* 8px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    border: 1px solid #ccc;
+  }
+  
+  .user-details h2 {
+    margin: 0 0 0.5rem 0; /* 0 0 5px 0 */
+    font-size: 3.2rem; /* Було 2.2em, роблю 32px */
+    color: #333;
+  }
+  
+  .uid-placeholder {
+    display: inline-block;
+    background-color: #e0e0e0;
+    color: #777;
+    padding: 0.4rem 1rem; /* 4px 10px */
+    border-radius: 0.6rem; /* 6px */
+    font-size: 1.3rem; /* Було 0.85em, роблю 13px */
+    border: 1px solid #ccc;
+  }
+  
+  .dashboard-cards {
+    display: flex;
+    gap: 2rem; /* 20px */
+  }
+  
+  .profile-card {
+    flex: 1;
+    background-color: white;
+    padding: 2rem; /* 20px */
+    border-radius: 1.2rem; /* 12px */
+    box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.08); /* 0 4px 12px */
+    min-height: 20rem; /* 200px */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+  }
+  
+  .profile-card p {
+    color: #555;
+    font-size: 1.8rem; /* Було 1.1em, роблю 18px */
+    text-align: center;
+  }
+  
+  .markets-section {
+    background-color: white;
+    padding: 2.5rem; /* 25px */
+    border-radius: 1.2rem; /* 12px */
+    box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+  }
+  
+  .markets-section h3 {
+    margin-top: 0;
+    margin-bottom: 2rem; /* 20px */
+    font-size: 2.4rem; /* Було 1.5em, роблю 24px */
+    color: #333;
+    text-align: center;
+  }
+  
+  .market-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem; /* 10px */
+    margin-bottom: 2.5rem; /* 25px */
+    justify-content: center;
+  }
+  
+  .filter-button {
+    background-color: #f0f0f0;
+    color: #555;
+    border: 1px solid #d0d0d0;
+    padding: 0.6rem 1.2rem; /* 6px 12px */
+    border-radius: 1.5rem; /* 15px */
+    font-size: 1.3rem; /* Було 0.85em, роблю 13px */
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+  }
+  
+  .filter-button:hover {
+    background-color: #d8d8d8;
+    border-color: #a0a0a0;
+    color: #222;
+  }
+  
+  .filter-button.active {
+    background-color: #222;
+    color: white;
+    border-color: #222;
+    font-weight: bold;
+  }
+  
+  .market-table-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0; /* 10px 0 */
+    margin-bottom: 0.8rem; /* 8px */
+    border-bottom: 1px solid #e0e0e0;
+    font-weight: bold;
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    color: #555;
+  }
+  .market-table-header span { flex: 1; text-align: left; padding: 0 0.5rem; /* 0 5px */ }
+  .market-table-header span:first-child { flex-basis: 12rem; flex-grow: 0; } /* 120px */
+  .market-table-header span:last-child { text-align: right; }
+  
+  .market-table-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 0.5rem; /* 12px 5px */
+    border: 1px solid #e0e0e0;
+    border-radius: 0.8rem; /* 8px */
+    margin-bottom: 0.8rem; /* 8px */
+    background-color: #f9f9f9;
+  }
+  .market-table-row span { flex: 1; text-align: left; font-size: 1.4rem; color: #333; /* Було 0.9em, роблю 14px */ }
+  .market-table-row span.coin-name { flex-basis: 12rem; flex-grow: 0; font-weight: bold; } /* 120px */
+  
+  .asset-overview {
+    display: flex;
+    justify-content: space-around;
+    padding: 2rem; /* 20px */
+    text-align: center;
+    gap: 2rem; /* 20px */
+    margin-bottom: 2rem; /* 20px */
+    background-color: white;
+    border-radius: 1.2rem; /* 12px */
+    box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+  }
+  .asset-overview .overview-item { flex: 1; }
+  .asset-overview .label { display: block; font-size: 1.4rem; color: #777; margin-bottom: 0.5rem; } /* Було 0.9em, роблю 14px */
+  .asset-overview .value { font-size: 2.2rem; font-weight: bold; color: #333; } /* Було 1.4em, роблю 22px */
+  .asset-overview .total-value { color: #007bff; }
+  
+  .assets-list-section, .orders-list-section {
+    background-color: #fff;
+    padding: 2rem; /* 20px */
+    border-radius: 0.8rem; /* 8px */
+    box-shadow: 0 0.2rem 0.8rem rgba(0,0,0,0.05); /* 0 2px 8px */
+  }
+  .assets-list-section h3, .orders-list-section h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem; /* 15px */
+    font-size: 2rem; /* Було 1.3em, роблю 20px */
+    color: #333;
+  }
+  
+  .table-controls {
+    display: flex;
+    gap: 1.5rem; /* 15px */
+    align-items: center;
+    margin-bottom: 1.5rem; /* 15px */
+    flex-wrap: wrap;
+  }
+  .search-input {
+    padding: 0.8rem 1.2rem; /* 8px 12px */
+    border: 1px solid #ccc;
+    border-radius: 0.6rem; /* 6px */
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    flex-grow: 1;
+    min-width: 20rem; /* 200px */
+  }
+  .search-input.large-search { min-width: 30rem; } /* 300px */
+  .search-input.small-search { max-width: 15rem; flex-grow: 0; } /* 150px */
+  
+  .checkbox-label {
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+    color: #555;
+    display: flex;
+    align-items: center;
+  }
+  .checkbox-label input[type="checkbox"] {
+    margin-right: 0.5rem; /* 5px */
+  }
+  
+  .custom-table-wrapper {
+    overflow-x: auto;
+  }
+  .custom-table-header, .custom-table-row {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0.5rem; /* 10px 5px */
+    border-bottom: 1px solid #eee;
+  }
+  .custom-table-header {
+    font-weight: bold;
+    color: #555;
+    font-size: 1.3rem; /* Було 0.85em, роблю 13px */
+    background-color: #f9f9f9;
+  }
+  .custom-table-header span, .custom-table-row span {
+    flex: 1;
+    padding: 0 0.8rem; /* 0 8px */
+    text-align: left;
+    white-space: nowrap;
+  }
+  .custom-table-row:last-child { border-bottom: none; }
+  .custom-table-row:hover { background-color: #f5f5f5; }
+  
+  .asset-row .coin-details { flex: 2; display: flex; align-items: center; gap: 0.8rem; /* 8px */ }
+  .coin-icon-placeholder { width: 2.4rem; height: 2.4rem; background-color: #ddd; border-radius: 50%; display: inline-block; } /* 24px */
+  .coin-name-full { font-weight: 500; }
+  .coin-symbol { color: #777; font-size: 1.3rem; } /* Було 0.9em, роблю 13px */
+  .asset-actions { flex: 1.5; text-align: right; display: flex; gap: 0.8rem; justify-content: flex-end;} /* 8px */
+  .action-link { color: #007bff; text-decoration: none; font-size: 1.4rem; } /* Було 0.9em, роблю 14px */
+  .action-link:hover { text-decoration: underline; }
+  .action-link.danger-link { color: #d9534f; }
+  
+  .tabs-container {
+    margin-bottom: 2rem; /* 20px */
+    display: flex;
+    border-bottom: 1px solid #ccc;
+  }
+  .tab-button {
+    padding: 1rem 2rem; /* 10px 20px */
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    font-size: 1.6rem; /* Було 1em, роблю 16px */
+    color: #555;
+    border-bottom: 3px solid transparent; /* border залишаю в px */
+    margin-bottom: -1px; /* щоб лінія перекривала */
+  }
+  .tab-button.active {
+    color: #222;
+    font-weight: bold;
+    border-bottom-color: #222;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  .no-data-placeholder {
+      text-align: center;
+      padding: 3rem; /* 30px */
+      color: #777;
+      font-style: italic;
+      font-size: 1.4rem; /* Додав розмір шрифту */
+  }
+  .order-row .side-buy { color: #28a745; font-weight: bold; }
+  .order-row .side-sell { color: #dc3545; font-weight: bold; }
+  .order-row .status-filled { color: #28a745; }
+  .order-row .status-canceled { color: #6c757d; }
+  .order-row .status-pending, .order-row .status-partial { color: #ffc107; }
+  
+  .date-input, .filter-select {
+    padding: 0.8rem 1.2rem; /* 8px 12px */
+    border: 1px solid #ccc;
+    border-radius: 0.6rem; /* 6px */
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+  }
+  
+  .account-sections-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr)); /* 300px */
+      gap: 2rem; /* 20px */
+  }
+  .account-section h3 {
+    margin-top: 0;
+    margin-bottom: 2rem; /* 20px */
+    font-size: 2rem; /* Було 1.3em, роблю 20px */
+    padding-bottom: 1rem; /* 10px */
+    border-bottom: 1px solid #eee;
+  }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0; /* 10px 0 */
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 1.5rem; /* Було 0.95em, роблю 15px */
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .label { color: #555; }
+  .info-row .value { color: #333; font-weight: 500; }
+  .info-row .action-link { margin-left: auto; padding-left: 1.5rem; /* 15px */ }
+  .status-verified { color: #28a745; font-weight: bold; font-size: 1.3rem; } /* Було 0.9em, роблю 13px */
+  .status-unverified, .status-disabled { color: #dc3545; font-weight: bold; font-size: 1.3rem; } /* Було 0.9em, роблю 13px */
+  .primary-link { font-weight: bold; }
+  
+  .settings-section {
+      margin-bottom: 2rem; /* 20px */
+  }
+  .settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 2rem; /* 20px */
+    font-size: 2rem; /* Було 1.3em, роблю 20px */
+    padding-bottom: 1rem; /* 10px */
+    border-bottom: 1px solid #eee;
+  }
+  .settings-form .form-group {
+    margin-bottom: 2rem; /* 20px */
+    display: flex;
+    flex-direction: column;
+  }
+  .settings-form .form-group label:not(.checkbox-group label):not(.radio-group label) {
+    margin-bottom: 0.8rem; /* 8px */
+    font-weight: 500;
+    color: #555;
+    font-size: 1.4rem; /* Було 0.9em, роблю 14px */
+  }
+  .settings-form select,
+  .settings-form input[type="text"],
+  .settings-form input[type="email"],
+  .settings-form input[type="password"] {
+    padding: 1rem 1.2rem; /* 10px 12px */
+    border: 1px solid #ccc;
+    border-radius: 0.6rem; /* 6px */
+    font-size: 1.6rem; /* Було 1em, роблю 16px */
+    width: 100%;
+  }
+  .settings-form .radio-group, .settings-form .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem; /* 8px */
+  }
+  .settings-form .radio-group label, .settings-form .checkbox-group label {
+    font-weight: normal;
+    color: #333;
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem; /* Було 0.95em, роблю 15px */
+  }
+  .settings-form input[type="radio"], .settings-form input[type="checkbox"] {
+    margin-right: 0.8rem; /* 8px */
+  }
+  .settings-form .action-button { margin-top: 1rem; /* 10px */ }

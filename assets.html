@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Assets - YuMa</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html">YuMa</a></div>
+        <nav class="header-nav">
+            <a href="#" class="nav-button">Buy Crypto</a>
+            <a href="#" class="nav-button">Markets</a>
+            <a href="#" class="nav-button">Trade</a>
+        </nav>
+        <div class="header-actions">
+            <button class="btn-deposit nav-button">Deposit</button>
+            <div class="icon-placeholder dark-square"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+        </div>
+    </header>
+
+    <div class="page-wrapper-profile">
+        <aside class="sidebar">
+            <nav>
+                <a href="profile.html" class="sidebar-button">dashboard</a>
+                <a href="assets.html" class="sidebar-button active">assets</a>
+                <a href="order.html" class="sidebar-button">order</a>
+                <a href="account.html" class="sidebar-button">account</a>
+                <a href="settings.html" class="sidebar-button">settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content-profile">
+            <section class="content-header">
+                <h2>My Assets</h2>
+                <button class="action-button primary-action">View Transaction History</button>
+            </section>
+
+            <section class="profile-card asset-overview">
+                <div class="overview-item">
+                    <span class="label">Total Portfolio Value:</span>
+                    <span class="value total-value">$12,345.67 USD</span>
+                </div>
+                <div class="overview-item">
+                    <span class="label">Available for Withdrawal:</span>
+                    <span class="value">$10,000.00 USD</span>
+                </div>
+            </section>
+
+            <section class="assets-list-section">
+                <div class="table-controls">
+                    <input type="text" placeholder="Search Coin..." class="search-input">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="hideZeroBalances"> Hide Zero Balances
+                    </label>
+                </div>
+
+                <div class="custom-table-wrapper">
+                    <div class="custom-table-header">
+                        <span>Coin</span>
+                        <span>Total Balance</span>
+                        <span>Available</span>
+                        <span>In Order</span>
+                        <span>Value (USD)</span>
+                        <span>Actions</span>
+                    </div>
+                    <!-- Приклад рядка активу -->
+                    <div class="custom-table-row asset-row">
+                        <span class="coin-details">
+                            <span class="coin-icon-placeholder"></span> <!-- Плейсхолдер для іконки монети -->
+                            <span class="coin-name-full">Bitcoin <span class="coin-symbol">(BTC)</span></span>
+                        </span>
+                        <span>0.50000000</span>
+                        <span>0.45000000</span>
+                        <span>0.05000000</span>
+                        <span>$20,000.00</span>
+                        <span class="asset-actions">
+                            <a href="#" class="action-link">Deposit</a>
+                            <a href="#" class="action-link">Withdraw</a>
+                            <a href="#" class="action-link">Trade</a>
+                        </span>
+                    </div>
+                    <div class="custom-table-row asset-row">
+                         <span class="coin-details">
+                            <span class="coin-icon-placeholder"></span>
+                            <span class="coin-name-full">Ethereum <span class="coin-symbol">(ETH)</span></span>
+                        </span>
+                        <span>10.000000</span>
+                        <span>8.000000</span>
+                        <span>2.000000</span>
+                        <span>$15,000.00</span>
+                        <span class="asset-actions">
+                            <a href="#" class="action-link">Deposit</a>
+                            <a href="#" class="action-link">Withdraw</a>
+                            <a href="#" class="action-link">Trade</a>
+                        </span>
+                    </div>
+                    <div class="custom-table-row asset-row">
+                         <span class="coin-details">
+                            <span class="coin-icon-placeholder"></span>
+                            <span class="coin-name-full">YuMa Coin <span class="coin-symbol">(YMC)</span></span>
+                        </span>
+                        <span>10000.00</span>
+                        <span>10000.00</span>
+                        <span>0.00</span>
+                        <span>$1,000.00</span>
+                        <span class="asset-actions">
+                            <a href="#" class="action-link">Deposit</a>
+                            <a href="#" class="action-link">Withdraw</a>
+                            <a href="#" class="action-link">Trade</a>
+                        </span>
+                    </div>
+                    <!-- Інші активи -->
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
