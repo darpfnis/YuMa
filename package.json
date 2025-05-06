@@ -1,7 +1,19 @@
 {
+  "name": "yuma-app",
+  "version": "1.0.0",
+  "description": "YuMa Cryptocurrency Exchange MVP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "express": "^5.1.0",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
     "sqlite3": "^5.1.7"
-  }
+  },
+  "keywords": ["crypto", "exchange", "yuma"],
+  "author": "Your Name",
+  "license": "ISC"
 }

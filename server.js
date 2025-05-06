@@ -1,68 +1,63 @@
 // server.js
 const express = require('express');
-const { Pool } = require('pg'); // Замінюємо sqlite3 на pg
+const { Pool } = require('pg'); // Драйвер для PostgreSQL
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000; // Render може надати свій PORT через змінну середовища
+// Render надасть PORT через змінну середовища, або використовуємо 3000 локально
+const port = process.env.PORT || 3000;
 
 // --- Налаштування Бази Даних PostgreSQL ---
-// Render надасть DATABASE_URL. Якщо її немає (наприклад, для локальної розробки),
-// можна використовувати окремі змінні або локальні налаштування.
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL; // Цю змінну надасть Render
+
+if (!connectionString) {
+    console.error('FATAL ERROR: DATABASE_URL environment variable is not set.');
+    // Для локальної розробки, якщо DATABASE_URL не встановлено, можна тут задати
+    // локальний рядок підключення або вийти з помилкою, як зараз.
+    // Наприклад:
+    // console.log("Attempting to use local DB connection as DATABASE_URL is not set.");
+    // connectionString = "postgres://your_local_user:your_local_password@localhost:5432/your_local_database_name";
+    // if (!connectionString) process.exit(1); // Якщо і локального немає, то виходимо
+    process.exit(1); // Якщо на Render немає DATABASE_URL, це проблема
+}
 
 const pool = new Pool({
     connectionString: connectionString,
-    // Якщо DATABASE_URL не встановлено, і ви хочете мати локальні налаштування за замовчуванням:
-    // user: process.env.PGUSER || 'локальний_юзер',
-    // host: process.env.PGHOST || 'localhost',
-    // database: process.env.PGDATABASE || 'yuma_db_local',
-    // password: process.env.PGPASSWORD || 'локальний_пароль',
-    // port: process.env.PGPORT || 5432,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false, // Потрібно для Heroku/Render, якщо вони використовують SSL
+    // SSL потрібен для підключення до баз даних на Render (та багатьох інших хмарних провайдерах)
+    // process.env.NODE_ENV автоматично встановлюється в 'production' на Render
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.connect((err, client, release) => {
     if (err) {
         console.error('Error acquiring client for PostgreSQL:', err.stack);
-        process.exit(1); // Завершуємо процес, якщо БД недоступна
+        process.exit(1);
     }
-    console.log('Successfully connected to the PostgreSQL database.');
-    if (client) client.release(); // Важливо звільнити клієнта після перевірки підключення
+    console.log('Successfully connected to the PostgreSQL database via pool.');
+    if (client) client.release();
 });
-
 
 // --- Middleware ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '')));
+app.use(express.static(path.join(__dirname, ''))); // Обслуговування статичних файлів
 
 // --- API Ендпоінти ---
 
-// 1. Реєстрація нового користувача
+// 1. Реєстрація
 app.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: 'Email and password are required.' });
-    }
-    if (password.length < 6) {
-        return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
-    }
+    if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password are required.' });
+    if (password.length < 6) return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        // SQL для PostgreSQL - значення автоінкременту id повертається через RETURNING id
         const sql = `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id`;
-        const values = [email, hashedPassword];
-
-        const result = await pool.query(sql, values);
+        const result = await pool.query(sql, [email, hashedPassword]);
         res.status(201).json({ success: true, message: 'User registered successfully!', userId: result.rows[0].id });
-
     } catch (error) {
-        // Код помилки PostgreSQL для UNIQUE constraint (потрібно перевірити точний код або повідомлення)
-        if (error.code === '23505') { // 23505 - це типовий код для unique_violation в PostgreSQL
+        if (error.code === '23505') { // Unique violation в PostgreSQL
             return res.status(409).json({ success: false, message: 'Email already exists.' });
         }
         console.error("Error during user registration (PostgreSQL):", error);
@@ -70,32 +65,24 @@ app.post('/auth/register', async (req, res) => {
     }
 });
 
-// 2. Вхід існуючого користувача
+// 2. Вхід
 app.post('/auth/login', async (req, res) => {
     const { identifier, password } = req.body;
-
-    if (!identifier || !password) {
-        return res.status(400).json({ success: false, message: 'Identifier (email) and password are required.' });
-    }
+    if (!identifier || !password) return res.status(400).json({ success: false, message: 'Identifier (email) and password are required.' });
 
     const sql = `SELECT * FROM users WHERE email = $1`;
     try {
         const result = await pool.query(sql, [identifier]);
         const user = result.rows[0];
 
-        if (!user) {
-            return res.status(401).json({ success: false, message: 'Invalid credentials. User not found.' });
-        }
+        if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials. User not found.' });
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (isMatch) {
             res.status(200).json({
                 success: true,
                 message: 'Login successful!',
-                user: {
-                    id: user.id,
-                    email: user.email
-                }
+                user: { id: user.id, email: user.email }
             });
         } else {
             res.status(401).json({ success: false, message: 'Invalid credentials. Password incorrect.' });
@@ -107,16 +94,14 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // --- Обслуговування HTML сторінок ---
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/login-page.html', (req, res) => res.sendFile(path.join(__dirname, 'login-page.html')));
-app.get('/sign_up-page.html', (req, res) => res.sendFile(path.join(__dirname, 'sign_up-page.html')));
-app.get('/profile.html', (req, res) => res.sendFile(path.join(__dirname, 'profile.html')));
-app.get('/assets.html', (req, res) => res.sendFile(path.join(__dirname, 'assets.html')));
-app.get('/order.html', (req, res) => res.sendFile(path.join(__dirname, 'order.html')));
-app.get('/account.html', (req, res) => res.sendFile(path.join(__dirname, 'account.html')));
-app.get('/settings.html', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
-app.get('/markets.html', (req, res) => res.sendFile(path.join(__dirname, 'markets.html')));
-app.get('/trading-page.html', (req, res) => res.sendFile(path.join(__dirname, 'trading-page.html')));
+// Повний список ваших сторінок, які обслуговуються статично
+['index.html', 'login-page.html', 'sign_up-page.html', 'profile.html', 'assets.html', 'order.html', 'account.html', 'settings.html', 'markets.html', 'trading-page.html']
+    .forEach(page => {
+        app.get(`/${page}`, (req, res) => res.sendFile(path.join(__dirname, page)));
+        if (page === 'index.html') { // Для кореневого шляху
+            app.get('/', (req, res) => res.sendFile(path.join(__dirname, page)));
+        }
+    });
 
 // --- Запуск сервера ---
 app.listen(port, () => {
@@ -124,8 +109,6 @@ app.listen(port, () => {
 });
 
 // --- Обробка закриття сервера ---
-// Для PostgreSQL пул з'єднань зазвичай керує закриттям сам,
-// але можна додати явне закриття пулу при завершенні роботи сервера.
 async function gracefulShutdown() {
     console.log('Received kill signal, shutting down gracefully.');
     try {
@@ -137,6 +120,5 @@ async function gracefulShutdown() {
         process.exit(1);
     }
 }
-
-process.on('SIGINT', gracefulShutdown); // Обробка Ctrl+C
-process.on('SIGTERM', gracefulShutdown); // Обробка сигналу завершення
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);і
