@@ -1,0 +1,54 @@
+/* cards.css */
+
+.card-base {
+  /* Наш новий базовий клас для всіх карток (як на main-page, trading-page) */
+  background-color: white;
+  padding: 1.25rem; /* 20px */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Центрування контенту */
+  justify-content: center; /* Центрування контенту */
+  font-size: 1.5em; /* Більший шрифт для карток типу "News", "Cryptocurrencies" */
+  border-radius: 1.5625rem; /* 25px */
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1); /* 0 4px 12px */
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out,
+    opacity 0.3s ease-out;
+  width: 100%;
+}
+
+.card-base:hover {
+  transform: translateY(-0.3125rem) scale(1.02);
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.15);
+}
+
+/* НОВИЙ БАЗОВИЙ КЛАС ДЛЯ ПАНЕЛЕЙ ІНТЕРФЕЙСУ (Spot, Futures) */
+.ui-panel {
+  background-color: white;
+  border-radius: 0.5rem; /* 8px */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); /* Легка тінь */
+  padding: 1rem; /* 16px */
+  display: flex;
+  flex-direction: column; /* Вміст розташовується вертикально */
+  justify-content: flex-start; /* Вміст починається зверху */
+  align-items: stretch; /* Дочірні елементи розтягуються по ширині */
+  color: #333;
+  width: 100%;
+  flex-grow: 1; /* Займає доступний простір у flex-контейнері */
+  border: 1px solid #e0e0e0; /* Рамка для чіткого відокремлення */
+  font-size: 1em; /* Базовий розмір шрифту для контенту панелі */
+  text-align: left; /* Текст всередині панелі вирівнюється зліва */
+}
+
+/* Стилі для заголовків всередині .ui-panel */
+.ui-panel .panel-title {
+  /* Перейменуємо .card-title на .panel-title для ясності */
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #474d57;
+  margin: 0 0 0.75rem 0;
+  padding: 0.25rem 0;
+  /* text-align: left; - вже успадковано від .ui-panel */
+}
