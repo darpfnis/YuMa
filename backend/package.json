@@ -1,7 +1,17 @@
 {
+  "name": "yuma-backend",
+  "version": "1.0.0",
+  "description": "Backend for YuMa Exchange",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "express": "^5.1.0",
-    "sqlite3": "^5.1.7"
-  }
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2", 
+    "pg": "^8.11.5"     
+  },
+  "author": "Your Name",
+  "license": "ISC"
 }
