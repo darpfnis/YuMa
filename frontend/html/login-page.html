@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log in - YuMa</title>
-    <link rel="stylesheet" href="/frontend/css/signup_login.css">
-    <link rel="stylesheet" href="/frontend/css/global.css">
-    <script defer src="script.js"></script>
+    <!-- ВИПРАВЛЕНО ШЛЯХИ ДО CSS -->
+    <link rel="stylesheet" href="../css/signup_login.css"> <!-- Якщо такий файл є і використовується -->
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/header.css"> <!-- Додав, ймовірно, потрібен для хедера -->
+    <!-- <script defer src="../js/script.js"></script> -->
 </head>
 <body>
     <header>
-        <div class="logo"><a href="index.html">YuMa</a></div> <!-- ЗМІНЕНО ТУТ -->
+        <!-- ВИПРАВЛЕНО ШЛЯХ ДО index.html -->
+        <div class="logo"><a href="../../index.html">YuMa</a></div>
     </header>
 
     <main>
         <section class="auth-form-section">
             <h1>Log in</h1>
-            <form action="/login-process" method="POST">
+            <form id="loginForm"> <!-- ВИДАЛЕНО action та method, ДОДАНО id -->
                 <div>
                     <label for="identifier">Email or Phone number</label>
                     <input type="text" id="identifier" name="identifier" placeholder="Enter your email or phone" required>
@@ -25,13 +28,62 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
-                <button type="submit">Log in</button> <!-- Змінено текст кнопки для логіну -->
+                <button type="submit">Log in</button>
+                <div id="loginError" style="color:red; margin-top: 1rem; text-align: center;"></div>
             </form>
             <p class="separator">or</p>
             <div class="alternative-action">
+                <!-- ВИПРАВЛЕНО ШЛЯХ до sign_up-page.html (знаходиться в тій самій папці) -->
                 <a href="sign_up-page.html">Don't have an account? Sign up</a>
             </div>
         </section>
     </main>
+    <script>
+        // Ваш JavaScript для відправки форми входу, який ми обговорювали,
+        // має бути тут. Переконайтеся, що URL в fetch запиті
+        // для сервера буде /auth/login.
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    const errorDiv = document.getElementById('loginError') || this.appendChild(document.createElement('div'));
+                    errorDiv.id = 'loginError';
+                    errorDiv.style.color = 'red'; errorDiv.style.marginTop = '1rem'; errorDiv.style.textAlign = 'center';
+                    errorDiv.textContent = '';
+
+                    const identifier = document.getElementById('identifier').value;
+                    const password = document.getElementById('password').value;
+
+                    if (!identifier || !password) {
+                        errorDiv.textContent = 'Email/identifier and password are required.'; return;
+                    }
+
+                    try {
+                        // ПРИ ЛОКАЛЬНОМУ ВІДКРИТТІ ЦЕЙ FETCH НЕ ПРАЦЮВАТИМЕ БЕЗ СЕРВЕРА
+                        // При роботі через сервер шлях має бути /auth/login
+                        const response = await fetch('/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ identifier, password })
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            if (data.user && data.user.email) {
+                                localStorage.setItem('userEmailForMVP', data.user.email);
+                            }
+                            window.location.href = 'profile.html'; // Перенаправлення на іншу сторінку в тій самій папці
+                        } else {
+                            errorDiv.textContent = data.message || 'Login failed.';
+                        }
+                    } catch (err) {
+                        console.error('Login error:', err);
+                        errorDiv.textContent = 'An error occurred. Is the server running?';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -4,19 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign up - YuMa</title>
-    <link rel="stylesheet" href="/frontend/css/signup_login.css">
-    <link rel="stylesheet" href="/frontend/css/global.css">
-    <script defer src="script.js"></script>
+    <!-- ВИПРАВЛЕНО ШЛЯХИ ДО CSS -->
+    <link rel="stylesheet" href="../css/signup_login.css"> <!-- Якщо такий файл є і використовується -->
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/header.css"> <!-- Додав, ймовірно, потрібен для хедера -->
+    <!-- Якщо script.js в frontend/js/ -->
+    <!-- <script defer src="../js/script.js"></script> -->
 </head>
 <body>
     <header>
-        <div class="logo"><a href="index.html">YuMa</a></div> <!-- ЗМІНЕНО ТУТ -->
+        <!-- ВИПРАВЛЕНО ШЛЯХ ДО index.html -->
+        <div class="logo"><a href="../../index.html">YuMa</a></div>
     </header>
 
     <main>
         <section class="auth-form-section">
             <h1>Sign up</h1>
-            <form action="/register" method="POST">
+            <form id="signupForm"> <!-- ВИДАЛЕНО action та method, ДОДАНО id -->
                 <div>
                     <label for="name">Name</label>
                     <input type="text" id="name" name="name" placeholder="Enter your name" required>
@@ -35,12 +39,64 @@
                 </div>
                 <p class="disclaimer">By registering, you consent to the processing of personal data.</p>
                 <button type="submit">Sign up</button>
+                <div id="signupError" style="color:red; margin-top: 1rem; text-align: center;"></div>
             </form>
             <p class="separator">or</p>
             <div class="alternative-action">
+                <!-- ВИПРАВЛЕНО ШЛЯХ до login-page.html (знаходиться в тій самій папці) -->
                 <a href="login-page.html">Already have an account? Log in</a>
             </div>
         </section>
     </main>
+    <script>
+        // Ваш JavaScript для відправки форми реєстрації, який ми обговорювали,
+        // має бути тут. Переконайтеся, що URL в fetch запиті
+        // для сервера буде /auth/register (якщо сервер обслуговує з кореня проекту).
+        // Якщо сервер обслуговує API з префіксом /api, то /api/auth/register.
+        // Для локального тестування без сервера цей JS не буде відправляти дані.
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const signupForm = document.getElementById('signupForm');
+            if (signupForm) {
+                signupForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    const errorDiv = document.getElementById('signupError') || this.appendChild(document.createElement('div'));
+                    errorDiv.id = 'signupError';
+                    errorDiv.style.color = 'red'; errorDiv.style.marginTop = '1rem'; errorDiv.style.textAlign = 'center';
+                    errorDiv.textContent = '';
+
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+
+                    if (!email || !password) {
+                        errorDiv.textContent = 'Email and password are required.'; return;
+                    }
+                    if (password.length < 6) {
+                        errorDiv.textContent = 'Password must be at least 6 characters long.'; return;
+                    }
+
+                    try {
+                        // ПРИ ЛОКАЛЬНОМУ ВІДКРИТТІ ЦЕЙ FETCH НЕ ПРАЦЮВАТИМЕ БЕЗ СЕРВЕРА
+                        // При роботі через сервер шлях має бути /auth/register
+                        const response = await fetch('/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            alert(data.message + ' Please log in.');
+                            window.location.href = 'login-page.html'; // Перенаправлення на іншу сторінку в тій самій папці
+                        } else {
+                            errorDiv.textContent = data.message || 'Registration failed.';
+                        }
+                    } catch (err) {
+                        console.error('Registration error:', err);
+                        errorDiv.textContent = 'An error occurred. Is the server running?';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

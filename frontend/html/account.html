@@ -4,20 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - YuMa</title>
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="script.js"></script>
+    <!-- ВИПРАВЛЕНО ШЛЯХИ ДО CSS -->
+    <link rel="stylesheet" href="../css/styles.css"> <!-- Головний файл стилів -->
+    <link rel="stylesheet" href="../css/header.css"> <!-- Якщо хедер має окремі стилі -->
+    <link rel="stylesheet" href="../css/global.css"> <!-- Якщо є глобальні стилі -->
+    <!-- Якщо є специфічний CSS для цієї сторінки, наприклад, account.css -->
+    <!-- <link rel="stylesheet" href="../css/account.css"> -->
+    <!-- Якщо script.js в frontend/js/ -->
+    <!-- <script defer src="../js/script.js"></script> -->
 </head>
 <body>
     <header>
-        <!-- ... такий самий хедер ... -->
-        <div class="logo"><a href="index.html">YuMa</a></div>
+        <!-- ВИПРАВЛЕНО ШЛЯХ ДО index.html -->
+        <div class="logo"><a href="../../index.html">YuMa</a></div>
         <nav class="header-nav">
-            <a href="#" class="nav-button">Buy Crypto</a>
-            <a href="#" class="nav-button">Markets</a>
-            <a href="#" class="nav-button">Trade</a>
+            <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК -->
+            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
+            <a href="markets.html" class="nav-button">Markets</a>
+            <a href="trading-page.html" class="nav-button">Trade</a> <!-- Припускаю, що trade веде сюди -->
         </nav>
         <div class="header-actions">
-            <button class="btn-deposit nav-button">Deposit</button>
+            <!-- Посилання на сторінку депозиту, якщо вона є, наприклад deposit.html -->
+            <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
             <div class="icon-placeholder dark-square"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
@@ -29,6 +37,7 @@
     <div class="page-wrapper-profile">
         <aside class="sidebar">
             <nav>
+                <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК -->
                 <a href="profile.html" class="sidebar-button">dashboard</a>
                 <a href="assets.html" class="sidebar-button">assets</a>
                 <a href="order.html" class="sidebar-button">order</a>
