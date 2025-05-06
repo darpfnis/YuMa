@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in - YuMa</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body class="has-top-bar"> <!-- Додано клас для відступу -->
+    <div class="top-bar">
+        <div class="brand-name">YuMa</div> <!-- Назва бренду тепер всередині top-bar -->
+    </div>
+
+    <div class="page-container"> <!-- Цей контейнер для вмісту ПІД верхньою смугою -->
+        <div class="auth-container"> <!-- Контейнер для форми -->
+            <h1>Log in</h1>
+            <form action="/login-process" method="POST">
+                <div>
+                    <!-- <label for="identifier">Email/Phone number:</label> -->
+                    <input type="text" id="identifier" name="identifier" placeholder="email/phone number" required>
+                </div>
+                <div>
+                    <!-- <label for="password">Password:</label> -->
+                    <input type="password" id="password" name="password" placeholder="password" required>
+                </div>
+                <button type="submit" class="btn">Next</button>
+            </form>
+            <p class="separator">OR</p>
+            <div class="create-account-link">
+                <a href="sign_up.html">Create YuMa account</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

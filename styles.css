@@ -1,0 +1,144 @@
+/* styles.css */
+
+/* === Загальні стилі для тіла сторінки === */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #fff; /* Білий фон */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* === Стилі для верхньої сірої смуги === */
+.top-bar {
+    width: 100%;
+    height: 50px; /* Висота смуги */
+    background-color: #6c6c6c; /* Темно-сірий колір */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    display: flex; /* Для вирівнювання назви бренду всередині */
+    align-items: center; /* Вертикальне вирівнювання */
+    padding: 0 30px; /* Горизонтальні відступи всередині смуги */
+    box-sizing: border-box;
+}
+
+/* Стилі для назви бренду всередині верхньої смуги */
+.top-bar .brand-name {
+    font-size: 24px; /* Розмір шрифту для назви бренду */
+    font-style: italic; /* Курсив */
+    color: #fff; /* Білий колір тексту */
+    font-weight: bold; /* Жирний шрифт */
+    margin: 0; /* Скидання зовнішніх відступів */
+}
+
+/* Відступ для тіла, якщо є top-bar */
+body.has-top-bar {
+    padding-top: 70px; /* 50px (висота бару) + 20px (додатковий відступ для контенту) */
+}
+
+/* === Контейнер для основного контенту сторінки (під верхньою смугою) === */
+.page-container {
+    width: 100%;
+    max-width: 960px; /* Максимальна ширина контенту */
+    margin: 0 auto;   /* Центрування */
+    padding: 20px;    /* Відступи, щоб контент не прилягав до країв */
+    box-sizing: border-box;
+    display: flex; /* Додано для центрування auth-container */
+    justify-content: center; /* Центрування auth-container по горизонталі */
+    align-items: flex-start; /* Вирівнювання auth-container зверху */
+}
+
+/* === Контейнер для аутентифікації (форма реєстрації/входу) === */
+.auth-container {
+    width: 100%;
+    max-width: 350px; /* Ширина форми */
+    /* margin: 20px auto; -- видалено, оскільки page-container тепер центрує */
+    text-align: center;
+    background-color: #fff;
+}
+
+.auth-container h1 {
+    font-size: 40px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #000;
+}
+
+/* === Стилі для полів вводу === */
+.auth-container input[type="text"],
+.auth-container input[type="email"],
+.auth-container input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border: 1px solid #888;
+    border-radius: 10px;
+    box-sizing: border-box;
+    font-size: 16px;
+    text-align: center;
+}
+
+.auth-container input::placeholder {
+    color: #888;
+    font-style: italic;
+}
+
+/* === Стилі для кнопок === */
+.auth-container .btn {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    box-sizing: border-box;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    background-color: #fff;
+    color: #000;
+    border: 1.5px solid #000;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.auth-container .btn:hover {
+    background-color: #f0f0f0;
+}
+
+/* === Стилі для тексту-пояснення та розділювача === */
+.disclaimer {
+    font-size: 11px;
+    color: #555;
+    margin-top: 5px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.separator {
+    font-size: 14px;
+    color: #333;
+    margin: 15px 0;
+    font-weight: bold;
+}
+
+/* === Стилі для посилання "Create YuMa account" на сторінці входу === */
+.create-account-link {
+    margin-top: 10px;
+}
+
+.create-account-link a {
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.create-account-link a:hover {
+    text-decoration: underline;
+}
