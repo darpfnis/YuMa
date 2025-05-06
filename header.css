@@ -1,0 +1,207 @@
+/* header.css */
+
+header {
+  /* Залишаємо цей загальний селектор, якщо HTML структура хедера однакова */
+  background-color: #222;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9375rem 1.875rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+header .logo {
+  /* Уточнюємо, що це лого всередині хедера */
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-right: 1.25rem;
+}
+
+header .logo a {
+  /* Уточнюємо */
+  color: white;
+  text-decoration: none;
+}
+
+header .main-nav {
+  /* Уточнюємо */
+  display: flex;
+  align-items: center;
+}
+
+header .main-nav > a, /* Уточнюємо */
+  header .dropdown-container {
+  /* Уточнюємо */
+  margin-left: 1.25rem;
+}
+header .main-nav > a:first-child, /* Уточнюємо */
+  header .main-nav > .dropdown-container:first-child {
+  /* Уточнюємо */
+  margin-left: 0;
+}
+
+header .main-nav > a, /* Уточнюємо */
+  header .dropdown-toggle {
+  /* Уточнюємо */
+  color: white;
+  text-decoration: none;
+  font-size: 1em;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  padding-top: 0.4375rem;
+  padding-bottom: 0.4375rem;
+}
+
+header .dropdown-toggle {
+  /* Уточнюємо */
+  padding-right: 1em;
+}
+
+header .main-nav a:hover, /* Уточнюємо */
+  header .dropdown-toggle:hover {
+  /* Уточнюємо */
+  text-decoration: underline;
+}
+
+header .dropdown-container {
+  /* Уточнюємо */
+  position: relative;
+  display: inline-block;
+}
+
+header .dropdown-toggle::after {
+  /* Уточнюємо */
+  content: "";
+  display: inline-block;
+  width: 0.35em;
+  height: 0.35em;
+  border-right: 0.12em solid white;
+  border-bottom: 0.12em solid white;
+  transform: rotate(45deg);
+  position: absolute;
+  right: 0.2em;
+  top: 50%;
+  margin-top: -0.25em;
+  transition: transform 0.2s ease-in-out;
+}
+
+header .dropdown-container:hover .dropdown-toggle::after {
+  /* Уточнюємо */
+  transform: rotate(225deg);
+  margin-top: -0.1em;
+}
+
+header .dropdown-content {
+  /* Уточнюємо */
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #333333; /* Змінений колір фону */
+  min-width: 15.625rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
+  border-radius: 0 0 0.375rem 0.375rem;
+  z-index: 1000;
+  padding: 0.75rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(5px);
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s,
+    transform 0.25s ease;
+  flex-direction: column;
+}
+
+header .trade-dropdown {
+  /* Уточнюємо */
+  /* Стилі для trade-dropdown, якщо вони відрізняються від загального .dropdown-content */
+}
+
+header .dropdown-column {
+  /* Уточнюємо */
+  /* Стилі для колонок, якщо використовуються */
+}
+
+header .dropdown-column h4 {
+  /* Уточнюємо */
+  font-size: 0.85em;
+  color: #bdc3c7;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  text-transform: uppercase;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #4a4a4a;
+}
+
+header .dropdown-container:hover .dropdown-content {
+  /* Уточнюємо */
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.25s ease, visibility 0s linear 0s, transform 0.25s ease;
+}
+
+header .dropdown-content a {
+  /* Уточнюємо */
+  color: #dfe6e9;
+  padding: 0.625rem 0.75rem;
+  text-decoration: none;
+  display: block;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  margin-left: 0;
+  padding-right: 0;
+  position: static;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+header .dropdown-content a:hover {
+  /* Уточнюємо */
+  background-color: #636e72;
+  color: white;
+  text-decoration: none;
+}
+
+header .new-badge {
+  /* Уточнюємо */
+  background-color: #f1c40f;
+  color: #2c3e50;
+  font-size: 0.7em;
+  padding: 0.1em 0.4em;
+  border-radius: 0.2em;
+  margin-left: 0.5em;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+header .user-nav {
+  /* Уточнюємо */
+  display: flex;
+  align-items: center;
+}
+
+header .user-nav a {
+  /* Уточнюємо */
+  color: white;
+  text-decoration: none;
+  margin-left: 1.25rem;
+  font-size: 1em;
+  padding-top: 0.4375rem;
+  padding-bottom: 0.4375rem;
+}
+
+header .user-nav a:first-child {
+  /* Уточнюємо */
+  margin-left: 0;
+}
+
+header .user-nav a:hover {
+  /* Уточнюємо */
+  text-decoration: underline;
+}

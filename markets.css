@@ -24,9 +24,20 @@ body {
 .spot-header .logo {
   font-size: 1.8em;
   font-weight: bold;
-  color: white;
+  /* color: white;  - колір тепер буде визначатися через .logo a */
   margin-right: auto;
 }
+
+/* --- ДОДАНО СТИЛІ ДЛЯ ПОСИЛАННЯ В ЛОГОТИПІ --- */
+.spot-header .logo a {
+  color: white; /* Встановлюємо бажаний колір (білий) */
+  text-decoration: none; /* Прибираємо підкреслення */
+}
+
+/* Опціонально: стиль для наведення на логотип, якщо потрібно */
+/* .spot-header .logo a:hover {
+    text-decoration: underline; /* Або інший ефект
+  } */
 
 .spot-main-nav {
   display: flex;
@@ -94,9 +105,6 @@ body {
 
 .spot-header-bottom-icons .spot-icon-link {
   margin-left: 0;
-  /* Якщо потрібен gap, можна додати .spot-header-bottom-icons { gap: 0.5rem; }
-       і змінити justify-content на flex-start, якщо не потрібно розтягування.
-       Для space-between, браузер сам розподілить простір. */
 }
 
 /* --- ОСНОВНИЙ КОНТЕНТ СТОРІНКИ --- */

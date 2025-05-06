@@ -4,15 +4,54 @@
         <meta charset="UTF-8">
         <title>YuMa - Головна</title>
         <link rel="stylesheet" href="main-page.css">
+        <link rel="stylesheet" href="header.css"> <!-- Підключаємо стилі для контенту головної сторінки -->
     </head>
-    
+
 <body>
     <header>
-        <div class="logo">YuMa</div>
-        <nav>
-            <a href="#">FAQ</a>
-            <a href="signup.html">Sign up</a>
-            <a href="login.html">Log in</a>
+        <div class="header-left">
+            <div class="logo"><a href="index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="trading-page.html">Buy Crypto</a>
+                <a href="markets.html">Markets</a>
+
+                <!-- Спадне меню для Trade -->
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <!--h4>Basic</h4>-->
+                            <a href="#">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                        <!--<div class="dropdown-column">
+                            <h4>Advanced</h4>
+                            <a href="#">Trading Bots</a>
+                            <a href="#">Copy Trading</a>
+                            <a href="#">APIs</a>
+                            <a href="#">Alpha <span class="new-badge">new</span></a>
+                        </div>-->
+                    </div>
+                </div>
+
+                <!-- Спадне меню для Futures -->
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="#">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
+        </div>
+        <nav class="user-nav">
+            <a href="sign_up-page.html">Sign up</a>
+            <a href="login-page.html">Log in</a>
         </nav>
     </header>
     <main>

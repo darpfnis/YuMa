@@ -4,25 +4,44 @@
   <meta charset="UTF-8">
   <title>YuMa - Торгівля</title>
   <link rel="stylesheet" href="trading-page.css">
+  <link rel="stylesheet" href="header.css">
 </head>
 <body>
 
-<header>
-    <div class="logo">YuMa</div>
-    <nav>
-        <a href="#">Buy Crypto</a>
-        <a href="#">Markets</a>
-        <a href="#">Trade</a>
-        <a href="#">Deposit</a>
-        <div class="nav-icons">
-            <span>🔔</span>
-            <span>⚙️</span>
-            <span class="icon-placeholder"></span>
-            <span class="icon-placeholder"></span>
-            <span class="icon-placeholder"></span>
+    <header> <!-- HTML-структура хедера така сама, як на головній сторінці -->
+        <div class="header-left">
+            <div class="logo"><a href="index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="trading-page.html">Buy Crypto</a>
+                <a href="markets.html">Markets</a>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <a href="#">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="#">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
         </div>
-    </nav>
-</header>
+        <nav class="user-nav">
+            <a href="sign_up-page.html">Sign up</a>
+            <a href="login-page.html">Log in</a>
+        </nav>
+    </header>
 
 <main class="trading-main-layout">
     <div class="left-column">

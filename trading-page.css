@@ -21,6 +21,11 @@ header {
   font-weight: bold;
 }
 
+.logo a {
+  color: white; /* Встановлюємо бажаний колір (білий) */
+  text-decoration: none; /* Прибираємо підкреслення */
+}
+
 header nav {
   display: flex;
   align-items: center;

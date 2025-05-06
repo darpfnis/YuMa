@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in - YuMa</title>
+    <link rel="stylesheet" href="signup_login.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html">YuMa</a></div> <!-- ЗМІНЕНО ТУТ -->
+    </header>
+
+    <main>
+        <section class="auth-form-section">
+            <h1>Log in</h1>
+            <form action="/login-process" method="POST">
+                <div>
+                    <label for="identifier">Email or Phone number</label>
+                    <input type="text" id="identifier" name="identifier" placeholder="Enter your email or phone" required>
+                </div>
+                <div>
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit">Log in</button> <!-- Змінено текст кнопки для логіну -->
+            </form>
+            <p class="separator">or</p>
+            <div class="alternative-action">
+                <a href="sign_up-page.html">Don't have an account? Sign up</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
