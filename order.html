@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History - YuMa</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <!-- ... такий самий хедер, як на assets.html ... -->
+        <div class="logo"><a href="index.html">YuMa</a></div>
+        <nav class="header-nav">
+            <a href="#" class="nav-button">Buy Crypto</a>
+            <a href="#" class="nav-button">Markets</a>
+            <a href="#" class="nav-button">Trade</a>
+        </nav>
+        <div class="header-actions">
+            <button class="btn-deposit nav-button">Deposit</button>
+            <div class="icon-placeholder dark-square"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+        </div>
+    </header>
+
+    <div class="page-wrapper-profile">
+        <aside class="sidebar">
+            <nav>
+                <a href="profile.html" class="sidebar-button">dashboard</a>
+                <a href="assets.html" class="sidebar-button">assets</a>
+                <a href="order.html" class="sidebar-button active">order</a>
+                <a href="account.html" class="sidebar-button">account</a>
+                <a href="settings.html" class="sidebar-button">settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content-profile">
+            <section class="content-header">
+                <h2>Order Management</h2>
+            </section>
+
+            <div class="tabs-container">
+                <button class="tab-button active" data-tab="open-orders">Open Orders</button>
+                <button class="tab-button" data-tab="order-history">Order History</button>
+                <button class="tab-button" data-tab="trade-history">Trade History</button>
+            </div>
+
+            <div id="open-orders" class="tab-content active">
+                <section class="orders-list-section">
+                    <h3>Open Orders</h3>
+                     <div class="table-controls">
+                        <input type="text" placeholder="Search Pair (e.g. BTC/USDT)..." class="search-input large-search">
+                        <button class="action-button danger-action">Cancel All Orders</button>
+                    </div>
+                    <div class="custom-table-wrapper">
+                        <div class="custom-table-header">
+                            <span>Date</span>
+                            <span>Pair</span>
+                            <span>Type</span>
+                            <span>Side</span>
+                            <span>Price</span>
+                            <span>Amount</span>
+                            <span>Filled</span>
+                            <span>Total</span>
+                            <span>Action</span>
+                        </div>
+                        <!-- Приклад відкритого ордера -->
+                        <div class="custom-table-row order-row">
+                            <span>2024-05-07 10:30:15</span>
+                            <span>BTC/USDT</span>
+                            <span>Limit</span>
+                            <span class="side-buy">Buy</span>
+                            <span>$40,000.00</span>
+                            <span>0.1 BTC</span>
+                            <span>0%</span>
+                            <span>$4,000.00</span>
+                            <span><a href="#" class="action-link danger-link">Cancel</a></span>
+                        </div>
+                        <!-- ... інші відкриті ордери ... -->
+                         <div class="no-data-placeholder">No open orders.</div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="order-history" class="tab-content">
+                <section class="orders-list-section">
+                    <h3>Order History</h3>
+                     <div class="table-controls">
+                        <input type="date" class="date-input">
+                        <span>to</span>
+                        <input type="date" class="date-input">
+                        <input type="text" placeholder="Pair..." class="search-input small-search">
+                        <select class="filter-select"><option>All Types</option><option>Limit</option><option>Market</option></select>
+                        <select class="filter-select"><option>All Sides</option><option>Buy</option><option>Sell</option></select>
+                        <button class="action-button">Search</button>
+                    </div>
+                    <div class="custom-table-wrapper">
+                        <div class="custom-table-header">
+                            <span>Date</span>
+                            <span>Pair</span>
+                            <span>Type</span>
+                            <span>Side</span>
+                            <span>Avg. Price</span>
+                            <span>Executed</span>
+                            <span>Amount</span>
+                            <span>Total</span>
+                            <span>Status</span>
+                        </div>
+                        <!-- Приклад ордера з історії -->
+                        <div class="custom-table-row order-row">
+                            <span>2024-05-06 15:00:00</span>
+                            <span>ETH/USDT</span>
+                            <span>Market</span>
+                            <span class="side-sell">Sell</span>
+                            <span>$1,505.50</span>
+                            <span>2.0 ETH</span>
+                            <span>2.0 ETH</span>
+                            <span>$3,011.00</span>
+                            <span class="status-filled">Filled</span>
+                        </div>
+                         <div class="custom-table-row order-row">
+                            <span>2024-05-05 12:00:00</span>
+                            <span>ADA/BTC</span>
+                            <span>Limit</span>
+                            <span class="side-buy">Buy</span>
+                            <span>0.00001500 BTC</span>
+                            <span>1000 ADA</span>
+                            <span>0 ADA</span>
+                            <span>0.015 BTC</span>
+                            <span class="status-canceled">Canceled</span>
+                        </div>
+                        <!-- ... інші ордери з історії ... -->
+                    </div>
+                </section>
+            </div>
+            
+            <div id="trade-history" class="tab-content">
+                <section class="orders-list-section">
+                    <h3>Trade History</h3>
+                     <div class="table-controls">
+                        <!-- Фільтри схожі на Order History -->
+                     </div>
+                    <div class="custom-table-wrapper">
+                        <div class="custom-table-header">
+                            <span>Date</span>
+                            <span>Pair</span>
+                            <span>Side</span>
+                            <span>Price</span>
+                            <span>Executed</span>
+                            <span>Fee</span>
+                            <span>Role</span>
+                            <span>Total</span>
+                        </div>
+                        <!-- ... дані про угоди ... -->
+                        <div class="no-data-placeholder">No trade history for the selected period.</div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Простий JS для перемикання табів
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(button.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

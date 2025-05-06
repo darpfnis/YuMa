@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - YuMa</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <!-- ... такий самий хедер ... -->
+        <div class="logo"><a href="index.html">YuMa</a></div>
+        <nav class="header-nav">
+            <a href="#" class="nav-button">Buy Crypto</a>
+            <a href="#" class="nav-button">Markets</a>
+            <a href="#" class="nav-button">Trade</a>
+        </nav>
+        <div class="header-actions">
+            <button class="btn-deposit nav-button">Deposit</button>
+            <div class="icon-placeholder dark-square"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+        </div>
+    </header>
+
+    <div class="page-wrapper-profile">
+        <aside class="sidebar">
+            <nav>
+                <a href="profile.html" class="sidebar-button">dashboard</a>
+                <a href="assets.html" class="sidebar-button">assets</a>
+                <a href="order.html" class="sidebar-button">order</a>
+                <a href="account.html" class="sidebar-button active">account</a>
+                <a href="settings.html" class="sidebar-button">settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content-profile">
+            <section class="content-header">
+                <h2>Account Information & Security</h2>
+            </section>
+
+            <div class="account-sections-grid">
+                <section class="profile-card account-section">
+                    <h3>Personal Information</h3>
+                    <div class="info-row">
+                        <span class="label">Username:</span>
+                        <span class="value">User-1488</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">UID:</span>
+                        <span class="value">ABC123XYZ789</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Email:</span>
+                        <span class="value">user-1488@example.com <span class="status-verified">(Verified)</span></span>
+                        <a href="#" class="action-link">Change</a>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Phone Number:</span>
+                        <span class="value">Not Set</span>
+                        <a href="#" class="action-link">Set Up</a>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">KYC Verification:</span>
+                        <span class="value status-unverified">Unverified</span>
+                        <a href="#" class="action-link primary-link">Verify Now</a>
+                    </div>
+                </section>
+
+                <section class="profile-card account-section">
+                    <h3>Security Settings</h3>
+                    <div class="info-row security-item">
+                        <span class="label">Password</span>
+                        <a href="#" class="action-link">Change Password</a>
+                    </div>
+                    <div class="info-row security-item">
+                        <span class="label">Two-Factor Authentication (2FA)</span>
+                        <span class="value status-disabled">Disabled</span>
+                        <a href="#" class="action-link">Enable 2FA</a>
+                    </div>
+                    <div class="info-row security-item">
+                        <span class="label">Anti-Phishing Code</span>
+                        <span class="value">Not Set</span>
+                        <a href="#" class="action-link">Set Up</a>
+                    </div>
+                     <div class="info-row security-item">
+                        <span class="label">Device Management</span>
+                        <a href="#" class="action-link">Manage Devices</a>
+                    </div>
+                     <div class="info-row security-item">
+                        <span class="label">API Keys</span>
+                        <a href="#" class="action-link">Manage API Keys</a>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

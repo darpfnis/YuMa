@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Settings - YuMa</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <!-- ... такий самий хедер ... -->
+        <div class="logo"><a href="index.html">YuMa</a></div>
+        <nav class="header-nav">
+            <a href="#" class="nav-button">Buy Crypto</a>
+            <a href="#" class="nav-button">Markets</a>
+            <a href="#" class="nav-button">Trade</a>
+        </nav>
+        <div class="header-actions">
+            <button class="btn-deposit nav-button">Deposit</button>
+            <div class="icon-placeholder dark-square"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder"></div>
+        </div>
+    </header>
+
+    <div class="page-wrapper-profile">
+        <aside class="sidebar">
+            <nav>
+                <a href="profile.html" class="sidebar-button">dashboard</a>
+                <a href="assets.html" class="sidebar-button">assets</a>
+                <a href="order.html" class="sidebar-button">order</a>
+                <a href="account.html" class="sidebar-button">account</a>
+                <a href="settings.html" class="sidebar-button active">settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content-profile">
+            <section class="content-header">
+                <h2>General Settings</h2>
+            </section>
+
+            <section class="profile-card settings-section">
+                <h3>Preferences</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label for="language">Language:</label>
+                        <select id="language" name="language">
+                            <option value="en">English</option>
+                            <option value="ua">Українська</option>
+                            <option value="es">Español</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="currency">Default Currency Display:</label>
+                        <select id="currency" name="currency">
+                            <option value="usd">USD</option>
+                            <option value="eur">EUR</option>
+                            <option value="uah">UAH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timezone">Timezone:</label>
+                        <select id="timezone" name="timezone">
+                            <option value="utc">UTC</option>
+                            <option value="gmt3">(GMT+03:00) Kyiv</option>
+                            <!-- ... інші часові пояси ... -->
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label>Theme:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="theme" value="light" checked> Light</label>
+                            <label><input type="radio" name="theme" value="dark"> Dark</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="action-button primary-action">Save Preferences</button>
+                </form>
+            </section>
+
+            <section class="profile-card settings-section">
+                <h3>Notification Settings</h3>
+                <form class="settings-form">
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="email_trades" checked> Email on Trade Execution</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="email_deposits" checked> Email on Deposit/Withdrawal</label>
+                    </div>
+                     <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="email_news"> Email for News & Announcements</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="push_alerts" disabled> Push Notifications for Price Alerts (App Only)</label>
+                    </div>
+                    <button type="submit" class="action-button primary-action">Save Notifications</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
