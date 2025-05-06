@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>YuMa - Futures Торгівля</title>
+    <link rel="stylesheet" href="/frontend/css/header.css">
+    <link rel="stylesheet" href="/frontend/css/global.css">
+    <link rel="stylesheet" href="/frontend/css/cards.css"><!-- Тут тепер є .card-base ТА .ui-panel -->
+    <link rel="stylesheet" href="/frontend/css/futures-page.css">
+</head>
+<body>
+
+    <header>
+        <!-- ... (вміст хедера без змін) ... -->
+        <div class="header-left">
+            <div class="logo"><a href="index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="trading-page.html">Buy Crypto</a>
+                <a href="markets.html">Markets</a>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <a href="spot-page.html">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
+        </div>
+        <nav class="user-nav">
+            <a href="sign_up-page.html">Sign up</a>
+            <a href="login-page.html">Log in</a>
+        </nav>
+    </header>
+
+    <div class="page-specific-title">
+        <h1>Futures</h1>
+    </div>
+
+    <!-- Припустимо, що сіра панель поки не використовується, як у попередньому CSS -->
+    <!-- <div class="secondary-header-panel"> ... </div> -->
+
+    <main class="futures-interface-layout">
+        <section class="main-chart-area panel-column">
+            <!-- ЗАМІНЕНО card-base на ui-panel -->
+            <div class="panel-card chart-card ui-panel">
+                <div class="panel-title">Charts</div>
+            </div>
+            <div class="panel-card positions-history-card ui-panel">
+                <div class="panel-title">Positions, opened orders, orders history</div>
+            </div>
+        </section>
+
+        <aside class="right-sidebar panel-column">
+            <div class="panel-card order-book-card ui-panel">
+                <div class="panel-title">Order book</div>
+            </div>
+            <div class="panel-card trading-panel-card ui-panel">
+                <div class="panel-title">Trading panel</div>
+            </div>
+        </aside>
+    </main>
+
+</body>
+</html>

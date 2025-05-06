@@ -1,0 +1,29 @@
+/* global.css (або додати на початок header.css) */
+html {
+  box-sizing: border-box;
+}
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  color: #333; /* Загальний колір тексту */
+  line-height: 1.5; /* Рекомендована базова висота рядка для читабельності */
+}
+
+/* Можна додати базові стилі для посилань, якщо вони мають бути однаковими скрізь */
+/*
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  */

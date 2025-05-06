@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk">
+    <head>
+        <meta charset="UTF-8">
+        <title>YuMa - Головна</title>
+        <link rel="stylesheet" href="/frontend/css/main-page.css">
+        <link rel="stylesheet" href="/frontend/css/header.css">
+        <link rel="stylesheet" href="/frontend/css/global.css">
+        <link rel="stylesheet" href="/frontend/css/cards.css">
+    </head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <div class="logo"><a href="index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="buy_crypto-page.html">Buy Crypto</a>
+                <a href="markets.html">Markets</a>
+
+                <!-- Спадне меню для Trade -->
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <!--h4>Basic</h4>-->
+                            <a href="spot-page.html">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                        <!--<div class="dropdown-column">
+                            <h4>Advanced</h4>
+                            <a href="#">Trading Bots</a>
+                            <a href="#">Copy Trading</a>
+                            <a href="#">APIs</a>
+                            <a href="#">Alpha <span class="new-badge">new</span></a>
+                        </div>-->
+                    </div>
+                </div>
+
+                <!-- Спадне меню для Futures -->
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
+        </div>
+        <nav class="user-nav">
+            <a href="sign_up-page.html">Sign up</a>
+            <a href="login-page.html">Log in</a>
+        </nav>
+    </header>
+    <main>
+        <section class="cards">
+            <div class="card card-base">News</div>
+            <div class="card card-base">Cryptocurrencies</div>
+        </section>
+        <section class="signup-section">
+            <input type="email" placeholder="Email/phone number">
+            <button>Sign up</button>
+        </section>
+    </main>
+</body>
+</html>

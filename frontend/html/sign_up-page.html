@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up - YuMa</title>
+    <link rel="stylesheet" href="/frontend/css/signup_login.css">
+    <link rel="stylesheet" href="/frontend/css/global.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo"><a href="index.html">YuMa</a></div> <!-- ЗМІНЕНО ТУТ -->
+    </header>
+
+    <main>
+        <section class="auth-form-section">
+            <h1>Sign up</h1>
+            <form action="/register" method="POST">
+                <div>
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                </div>
+                <div>
+                    <label for="surname">Surname</label>
+                    <input type="text" id="surname" name="surname" placeholder="Enter your surname" required>
+                </div>
+                <div>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div>
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Create a password" required>
+                </div>
+                <p class="disclaimer">By registering, you consent to the processing of personal data.</p>
+                <button type="submit">Sign up</button>
+            </form>
+            <p class="separator">or</p>
+            <div class="alternative-action">
+                <a href="login-page.html">Already have an account? Log in</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
