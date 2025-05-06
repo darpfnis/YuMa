@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>YuMa - Торгівля</title>
+  <link rel="stylesheet" href="trading-page.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">YuMa</div>
+    <nav>
+        <a href="#">Buy Crypto</a>
+        <a href="#">Markets</a>
+        <a href="#">Trade</a>
+        <a href="#">Deposit</a>
+        <div class="nav-icons">
+            <span>🔔</span>
+            <span>⚙️</span>
+            <span class="icon-placeholder"></span>
+            <span class="icon-placeholder"></span>
+            <span class="icon-placeholder"></span>
+        </div>
+    </nav>
+</header>
+
+<main class="trading-main-layout">
+    <div class="left-column">
+        <div class="card main-action-card">
+            Buy<br>Crypto
+        </div>
+    </div>
+    <div class="right-column">
+        <div class="buy-sell-overlap-group">
+            <div class="card buy-card-overlapper"> <!-- Новий клас для керування z-index -->
+                Buy
+                <div class="card-actions">
+                  <button class="small-action-button">Spend</button>
+                  <button class="small-action-button">Receive</button>
+                </div>
+            </div>
+            <div class="card sell-card-overlapped"> <!-- Новий клас для позиціонування -->
+                Sell
+            </div>
+        </div>
+        <div class="payment-buttons-container"> <!-- Контейнер для кнопок без фону -->
+            <button class="main-page-button">Payment Method</button>
+            <button class="main-page-button primary">BUY</button>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>
