@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
     <style>
-        /* ... (ваші стилі з попередньої відповіді залишаються тут) ... */
         .favourite-btn, .remove-favourite-btn {
             cursor: pointer; font-size: 1.8rem; color: #ccc;
             border: none; background: none; padding: 0.2rem 0.5rem;
@@ -18,30 +17,6 @@
         .negative-change { color: red; }
         .coin-symbol-small { color: #777; font-size: 0.85em; margin-left: 0.3em; }
         .no-data-placeholder a { color: #007bff; text-decoration: underline; }
-
-        /* Стиль для аватара на дашборді */
-        .user-avatar-placeholder {
-            width: 80px; /* Трохи більше для дашборду */
-            height: 80px;
-            border-radius: 50%; /* Круглий */
-            background-color: #e9ecef;
-            margin-right: 20px; /* Відступ справа */
-            background-size: cover;
-            background-position: center;
-            border: 3px solid #fff; /* Біла рамка */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6c757d;
-            font-size: 1.3rem;
-            overflow: hidden; /* Щоб зображення не вилазило за межі */
-        }
-        .user-avatar-placeholder img { /* Якщо будете використовувати <img> замість background-image */
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
     </style>
 </head>
 <body>
@@ -76,8 +51,7 @@
 
         <main class="main-content-profile">
             <section class="user-info-header">
-                <!-- Змінено userAvatarPlaceholder на div з id userDashboardAvatar -->
-                <div class="user-avatar-placeholder" id="userDashboardAvatar">No Pic</div>
+                <div class="user-avatar-placeholder" id="userAvatar">picture</div>
                 <div class="user-details">
                     <h2 id="userName">Loading...</h2>
                     <span class="uid-placeholder" id="userUID">UID: Loading...</span>
@@ -159,9 +133,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function fetchProtectedData(url, options = {}) {
-        // ... (ваша функція fetchProtectedData з попередніх відповідей залишається без змін) ...
-    }
+        const currentToken = localStorage.getItem('authToken');
+        // console.log(`[fetchProtectedData] Attempting to fetch ${url}. Token being used:`, currentToken ? currentToken.substring(0,20)+'...' : 'NO TOKEN AT FETCH TIME');
 
+        if (!currentToken) {
+            console.error(`[fetchProtectedData] CRITICAL: No token available for protected request to ${url}. Redirecting to login.`);
+            window.location.href = 'login-page.html';
+            return Promise.reject(new Error('No token, redirecting.'));
+        }
+
+        const defaultHeaders = {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+        };
+        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
+        // console.log(`[fetchProtectedData] Fetching ${url} with options:`, fetchOptions);
+
+        try {
+            const response = await fetch(url, fetchOptions);
+            // console.log(`[fetchProtectedData] Response status for ${url}: ${response.status}`);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.error(`[fetchProtectedData] Unauthorized (401) or Forbidden (403) for ${url}. Removing token and redirecting.`);
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login-page.html';
+                    return Promise.reject(new Error(`Unauthorized or Forbidden for ${url}, token removed.`));
+                }
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status} for ${url}. Response not JSON.` }));
+                console.error(`[fetchProtectedData] Error data for ${url}:`, errorData);
+                return Promise.reject(errorData);
+            }
+            const responseData = await response.json();
+            // console.log(`[fetchProtectedData] Successfully fetched and parsed JSON for ${url}:`, responseData);
+            return responseData;
+        } catch (error) {
+             console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
+             if (error.message === "Failed to fetch") {
+                alert(`Network error: Could not connect to the server to fetch ${url}. Please check your connection or contact support.`);
+             }
+             return Promise.reject(error);
+        }
+    }
     async function loadProfileData() {
         console.log('[ProfilePage] Attempting to load profile data...');
         try {
