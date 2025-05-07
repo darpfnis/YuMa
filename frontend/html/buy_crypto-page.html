@@ -14,7 +14,7 @@
         <div class="header-left">
             <div class="logo"><a href="../../index.html">YuMa</a></div>
             <nav class="main-nav">
-                <a href="trading-page.html">Buy Crypto</a>
+                <a href="buy_crypto-page.html">Buy Crypto</a>
                 <a href="markets.html">Markets</a>
                 <div class="dropdown-container">
                     <a href="#" class="nav-link dropdown-toggle">Trade</a>
@@ -48,7 +48,54 @@
 <main class="trading-main-layout">
     <div class="left-column">
         <div class="card main-action-card card-base">
-            Buy<br>Crypto
+            <!-- TradingView Widget BEGIN -->
+<div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <div class="tradingview-widget-copyright">
+      <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+      </a>
+    </div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+    {
+      "width": "100%",
+      "height": "100%",
+      "symbolsGroups": [
+        {
+          "name": "Crypto",
+          "symbols": [
+            { "name": "BINANCE:BTCUSDT", "displayName": "Bitcoin" },
+            { "name": "BINANCE:ETHUSDT", "displayName": "Ethereum" },
+            { "name": "BINANCE:XRPUSDT", "displayName": "XRP" },
+            { "name": "BINANCE:SOLUSDT", "displayName": "Solana" },
+            { "name": "BINANCE:BNBUSDT", "displayName": "BNB" },
+            { "name": "BINANCE:ADAUSDT", "displayName": "Cardano" },
+            { "name": "BINANCE:DOGEUSDT", "displayName": "Dogecoin" },
+            { "name": "BINANCE:SUIUSDT", "displayName": "SUI" },
+            { "name": "BINANCE:SEIUSDT", "displayName": "SEI" },
+            { "name": "BINANCE:AVAXUSDT", "displayName": "Avalanche" },
+            { "name": "BINANCE:DOTUSDT", "displayName": "Polkadot" },
+            { "name": "BINANCE:SHIBUSDT", "displayName": "Shiba Inu" },
+            { "name": "BINANCE:TRXUSDT", "displayName": "TRON" },
+            { "name": "BINANCE:LINKUSDT", "displayName": "Chainlink" },
+            { "name": "BINANCE:ATOMUSDT", "displayName": "Cosmos" },
+            { "name": "BINANCE:NEARUSDT", "displayName": "NEAR Protocol" },
+            { "name": "BINANCE:APTUSDT", "displayName": "Aptos" },
+            { "name": "BINANCE:OPUSDT", "displayName": "Optimism" },
+            { "name": "BINANCE:ARBUSDT", "displayName": "Arbitrum" },
+            { "name": "BINANCE:ICPUSDT", "displayName": "Internet Computer" },
+            { "name": "BINANCE:FILUSDT", "displayName": "Filecoin" }
+          ]
+        }
+      ],
+      "showSymbolLogo": true,
+      "isTransparent": true,
+      "colorTheme": "light",
+      "locale": "en"
+    }
+    </script>
+  </div>
+  <!-- TradingView Widget END -->
+  
         </div>
     </div>
     <div class="right-column">
@@ -70,7 +117,7 @@
         </div>
         <div class="payment-buttons-container">
             <button class="main-page-button">Payment Method</button>
-            <button class="main-page-button primary">BUY</button>
+            <button class="main-page-button">BUY</button>
         </div>
     </div>
 </main>
