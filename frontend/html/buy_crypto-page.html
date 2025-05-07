@@ -102,17 +102,57 @@
         <div class="buy-sell-overlap-group">
             <div class="card buy-card-overlapper card-base">
                 Buy
-                <div class="card-actions">
-                  <button class="small-action-button">Spend</button>
-                  <button class="small-action-button">Receive</button>
+                <!-- ЗАМІНЕНО .card-actions НА НОВУ СТРУКТУРУ -->
+                <div class="input-field-group">
+                    <label for="spend-amount-buy">Spend</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="spend-amount-buy" placeholder="0.00" step="any">
+                        <div class="currency-selector">
+                            <!--<img src="../img/usd-icon.svg" alt="USD" class="currency-icon">--> 
+                            <span>USD</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                    </div>
                 </div>
+                <div class="input-field-group">
+                    <label for="receive-amount-buy">Receive</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="receive-amount-buy" placeholder="0.000000" step="any">
+                        <div class="currency-selector">
+                            <!--<img src="../img/btc-icon.svg" alt="BTC" class="currency-icon">-->
+                            <span>BTC</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- КІНЕЦЬ ЗАМІНИ -->
             </div>
-            <div class="card sell-card-overlapped card-base"> <!-- Новий клас для позиціонування -->
+            <div class="card sell-card-overlapped card-base">
                 Sell
-                <div class="card-actions">
-                  <button class="small-action-button">Spend</button>
-                  <button class="small-action-button">Receive</button>
+                <!-- ЗАМІНЕНО .card-actions НА НОВУ СТРУКТУРУ -->
+                <div class="input-field-group">
+                    <label for="spend-amount-sell">Spend</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="spend-amount-sell" placeholder="0.000000" step="any">
+                        <div class="currency-selector">
+                            <!--<img src="../img/btc-icon.svg" alt="BTC" class="currency-icon">-->
+                            <span>BTC</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                    </div>
                 </div>
+                <div class="input-field-group">
+                    <label for="receive-amount-sell">Receive</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="receive-amount-sell" placeholder="0.00" step="any">
+                        <div class="currency-selector">
+                            <!--<img src="../img/usd-icon.svg" alt="USD" class="currency-icon">--> 
+                            <span>USD</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- КІНЕЦЬ ЗАМІНИ -->
             </div>
         </div>
         <div class="payment-buttons-container">
