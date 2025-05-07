@@ -188,14 +188,21 @@ app.post('/auth/logout', (req, res) => { // Можна додати authenticate
 
 // ПРОФІЛЬ, АКТИВИ, РИНКИ, ОРДЕРИ
 app.get('/api/profile', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
+    const userId = req.user.userId; // Отримуємо з payload токена
+    console.log(`[API GET /api/profile] Request for user ID: ${userId}`);
     try {
         const sql = `SELECT id, email, username, uid, created_at FROM users WHERE id = $1`;
         const result = await pool.query(sql, [userId]);
-        if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'User profile not found.' });
-        res.json({ success: true, profile: result.rows[0] });
+
+        if (result.rows.length === 0) {
+            console.warn(`[API GET /api/profile] User profile not found for ID: ${userId}`);
+            return res.status(404).json({ success: false, message: 'User profile not found.' });
+        }
+        const userProfile = result.rows[0];
+        console.log(`[API GET /api/profile] Profile data for user ID ${userId}:`, userProfile);
+        res.json({ success: true, profile: userProfile });
     } catch (error) {
-        console.error("[API /profile] Error:", error);
+        console.error("[API GET /api/profile] Error fetching user profile:", error.message, error.stack);
         res.status(500).json({ success: false, message: 'Server error fetching profile.' });
     }
 });
