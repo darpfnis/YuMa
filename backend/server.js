@@ -155,24 +155,70 @@ app.get('/api/balance', authenticateToken, async (req, res) => {
 });
 
 // АКТИВИ
+// backend/server.js
+// ... (ваш існуючий код для express, pg, bcrypt, jwt, authenticateToken, pool, INITIAL_ASSETS) ...
+
+// ... (API для auth, profile, markets, favourites, orders) ...
+
+// АКТИВИ
 app.get('/api/assets', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
+    console.log(`[API /assets] Request for user ID: ${userId}`);
     try {
-        const sql = `SELECT id, coin_symbol, total_balance, available_balance, in_order_balance FROM assets WHERE user_id = $1 ORDER BY coin_symbol`;
+        const sql = `
+            SELECT
+                a.id,
+                a.coin_symbol,
+                COALESCE(mp.name, a.coin_symbol) as coin_name, -- Беремо назву з market_pairs, якщо є
+                a.total_balance,
+                a.available_balance,
+                a.in_order_balance
+            FROM assets a
+            LEFT JOIN market_pairs mp ON a.coin_symbol = mp.base_asset -- Або mp.symbol, залежно як ви зберігаєте
+            WHERE a.user_id = $1
+            ORDER BY a.coin_symbol;
+        `;
         const result = await pool.query(sql, [userId]);
-        const assetsWithUSDValue = result.rows.map(asset => ({
-            ...asset,
-            total_balance: parseFloat(asset.total_balance).toFixed(8),
-            available_balance: parseFloat(asset.available_balance).toFixed(8),
-            in_order_balance: parseFloat(asset.in_order_balance).toFixed(8),
-            value_usd: (asset.coin_symbol === 'USDT' ? parseFloat(asset.total_balance) : 0).toFixed(2) // Дуже спрощено, тільки для USDT
-        }));
-        res.json({ success: true, assets: assetsWithUSDValue });
+
+        const assetsWithDetails = result.rows.map(asset => {
+            // Спрощений розрахунок вартості для MVP
+            // У майбутньому тут буде інтеграція з currentMarketData (яке оновлюється з Binance WebSocket)
+            let valueInUSD = 0;
+            const assetSymbol = asset.coin_symbol.toUpperCase();
+
+            if (assetSymbol === 'USDT' || assetSymbol === 'USDC' || assetSymbol === 'BUSD') {
+                valueInUSD = parseFloat(asset.total_balance);
+            } else {
+                // Тут можна додати дуже грубу імітацію цін для інших монет, якщо currentMarketData порожній
+                // Наприклад:
+                // if (assetSymbol === 'BTC') valueInUSD = parseFloat(asset.total_balance) * 40000; // Фейкова ціна BTC
+                // else if (assetSymbol === 'ETH') valueInUSD = parseFloat(asset.total_balance) * 2500; // Фейкова ціна ETH
+                // else valueInUSD = 0; // Для інших поки 0
+                // Або краще покладатися на currentMarketData, навіть якщо воно поки не реалізовано
+                const pairSymbolUSDT = `${assetSymbol}USDT`;
+                const livePrice = currentMarketData[pairSymbolUSDT]?.price; // currentMarketData має бути глобальним і оновлюваним
+                if (livePrice) {
+                    valueInUSD = parseFloat(asset.total_balance) * livePrice;
+                }
+            }
+
+            return {
+                id: asset.id,
+                coin_symbol: asset.coin_symbol,
+                coin_name: asset.coin_name, // Назва монети
+                total_balance: parseFloat(asset.total_balance).toFixed(8),
+                available_balance: parseFloat(asset.available_balance).toFixed(8),
+                in_order_balance: parseFloat(asset.in_order_balance).toFixed(8),
+                value_usd: valueInUSD.toFixed(2)
+            };
+        });
+        res.json({ success: true, assets: assetsWithDetails });
     } catch (error) {
-        console.error("[API /assets] Error:", error);
+        console.error("[API /assets] Error fetching user assets:", error);
         res.status(500).json({ success: false, message: 'Server error fetching assets.' });
     }
 });
+
 
 // РИНКИ
 app.get('/api/markets', authenticateToken, async (req, res) => {

@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
-    <!-- <link rel="stylesheet" href="../css/profile.css"> -- Якщо є специфічні стилі -->
     <style>
         .favourite-btn, .remove-favourite-btn {
             cursor: pointer; font-size: 1.8rem; color: #ccc;
@@ -88,145 +87,222 @@
         </main>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('[ProfilePage] DOMContentLoaded. Script loaded.');
-        
-            const token = localStorage.getItem('authToken');
-            console.log('[ProfilePage] Token from localStorage on page load:', token ? token.substring(0,30) + '...' : 'NO TOKEN');
-        
-            const userNameElement = document.getElementById('userName');
-            const userUIDElement = document.getElementById('userUID');
-            const estimatedBalanceElement = document.getElementById('estimatedBalance');
-            const favouriteMarketsTable = document.getElementById('favouriteMarketsTable');
-            const logoutButton = document.getElementById('logoutButton');
-        
-            if (!token) {
-                console.warn('[ProfilePage] No token found in localStorage. Redirecting to login page.');
-                window.location.href = 'login-page.html';
-                return;
-            }
-        
-            console.log('[ProfilePage] Token found. Proceeding to setup page and fetch data.');
-        
-            if (logoutButton) {
-                logoutButton.style.display = 'inline-block';
-                logoutButton.addEventListener('click', async () => {
-                    console.log('[ProfilePage] Logout button clicked.');
-                    const currentTokenForLogout = localStorage.getItem('authToken');
-                    localStorage.removeItem('authToken');
-                    console.log('[ProfilePage] authToken removed from localStorage.');
-                    try {
-                        const logoutResponse = await fetch('/auth/logout', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
-                        });
-                        const logoutData = await logoutResponse.json();
-                        console.log('[ProfilePage] Logout API response:', logoutData);
-                    } catch (error) {
-                        console.error('[ProfilePage] Error during logout API call:', error);
-                    }
-                    window.location.href = 'login-page.html';
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[ProfilePage] DOMContentLoaded. Script loaded.');
+
+    const token = localStorage.getItem('authToken');
+    console.log('[ProfilePage] Token from localStorage on page load:', token ? token.substring(0,30) + '...' : 'NO TOKEN');
+
+    const userNameElement = document.getElementById('userName');
+    const userUIDElement = document.getElementById('userUID');
+    const estimatedBalanceElement = document.getElementById('estimatedBalance');
+    const favouriteMarketsTable = document.getElementById('favouriteMarketsTable');
+    const logoutButton = document.getElementById('logoutButton');
+
+    if (!token) {
+        console.warn('[ProfilePage] No token found in localStorage. Redirecting to login page.');
+        window.location.href = 'login-page.html';
+        return;
+    }
+
+    console.log('[ProfilePage] Token found. Proceeding to setup page and fetch data.');
+
+    if (logoutButton) {
+        logoutButton.style.display = 'inline-block';
+        logoutButton.addEventListener('click', async () => {
+            console.log('[ProfilePage] Logout button clicked.');
+            const currentTokenForLogout = localStorage.getItem('authToken');
+            localStorage.removeItem('authToken');
+            console.log('[ProfilePage] authToken removed from localStorage.');
+            try {
+                const logoutResponse = await fetch('/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
                 });
-            } else {
-                console.warn('[ProfilePage] Logout button element not found.');
+                const logoutData = await logoutResponse.json();
+                console.log('[ProfilePage] Logout API response:', logoutData);
+            } catch (error) {
+                console.error('[ProfilePage] Error during logout API call:', error);
             }
-        
-            async function fetchProtectedData(url, options = {}) {
-                const currentToken = localStorage.getItem('authToken');
-                console.log(`[fetchProtectedData] Attempting to fetch ${url}. Token being used:`, currentToken ? currentToken.substring(0,20)+'...' : 'NO TOKEN AT FETCH TIME');
-        
-                if (!currentToken) {
-                    console.error(`[fetchProtectedData] CRITICAL: No token available for protected request to ${url}. Redirecting to login.`);
-                    window.location.href = 'login-page.html';
-                    return Promise.reject(new Error('No token, redirecting.'));
-                }
-        
-                const defaultHeaders = {
-                    'Authorization': `Bearer ${currentToken}`,
-                    'Content-Type': 'application/json'
-                };
-                const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
-                console.log(`[fetchProtectedData] Fetching ${url} with options:`, fetchOptions);
-        
-                try {
-                    const response = await fetch(url, fetchOptions);
-                    console.log(`[fetchProtectedData] Response status for ${url}: ${response.status}`);
-                    if (!response.ok) {
-                        if (response.status === 401 || response.status === 403) {
-                            console.error(`[fetchProtectedData] Unauthorized (401) or Forbidden (403) for ${url}. Removing token and redirecting.`);
-                            localStorage.removeItem('authToken');
-                            window.location.href = 'login-page.html';
-                            return Promise.reject(new Error(`Unauthorized or Forbidden for ${url}, token removed.`));
-                        }
-                        const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status} for ${url}. Response not JSON.` }));
-                        console.error(`[fetchProtectedData] Error data for ${url}:`, errorData);
-                        return Promise.reject(errorData);
-                    }
-                    const responseData = await response.json();
-                    console.log(`[fetchProtectedData] Successfully fetched and parsed JSON for ${url}:`, responseData);
-                    return responseData;
-                } catch (error) {
-                     console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
-                     // Якщо це помилка типу "Failed to fetch", це може бути мережева проблема або CORS,
-                     // або сервер взагалі не відповів, або відповідь не є валідним HTTP.
-                     if (error.message === "Failed to fetch") {
-                        alert(`Network error: Could not connect to the server to fetch ${url}. Please check your connection or contact support.`);
-                     }
-                     return Promise.reject(error);
-                }
-            }
-        
-            async function loadProfileData() {
-                console.log('[ProfilePage] Attempting to load profile data...');
-                try {
-                    const data = await fetchProtectedData('/api/profile');
-                    if (data.success && data.profile) {
-                        if (userNameElement) userNameElement.textContent = data.profile.username || data.profile.email.split('@')[0];
-                        if (userUIDElement) userUIDElement.textContent = `UID: ${data.profile.uid || 'N/A'}`;
-                        console.log('[ProfilePage] Profile data rendered.');
-                    } else {
-                        console.error('[ProfilePage] Failed to load profile data from server:', data.message || 'No success field in response');
-                        if (userNameElement) userNameElement.textContent = 'Error loading profile';
-                    }
-                } catch (error) {
-                    console.error('[ProfilePage] Error in loadProfileData catcher:', error.message || error);
-                    if (userNameElement) userNameElement.textContent = 'Error (profile)';
-                }
-            }
-        
-            async function loadBalance() {
-                // ... (схожа логіка з console.log для /api/balance) ...
-                 console.log('[ProfilePage] Attempting to load balance data...');
-                try {
-                    const data = await fetchProtectedData('/api/balance');
-                    if (data.success) {
-                        if (estimatedBalanceElement) estimatedBalanceElement.textContent = `$${parseFloat(data.balance).toFixed(2)} USD`;
-                        console.log('[ProfilePage] Balance data rendered.');
-                    } else {
-                        console.error('[ProfilePage] Failed to load balance from server:', data.message);
-                        if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ N/A';
-                    }
-                } catch (error) {
-                    console.error('[ProfilePage] Error in loadBalance catcher:', error.message || error);
-                    if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ Error';
-                }
-            }
-        
-            async function loadAndRenderFavouriteMarkets() {
-                // ... (схожа логіка з console.log для /api/markets/favourites та для кнопок видалення) ...
-                if (!favouriteMarketsTable) { console.warn('[ProfilePage] Favourite markets table element not found.'); return; }
-                console.log('[ProfilePage] Attempting to load favourite markets data...');
-                // ... (решта вашої функції loadAndRenderFavouriteMarkets з доданими console.log у важливих місцях) ...
-                // Наприклад, перед fetch, після отримання data, при рендерингу, при помилці.
-            }
-        
-            console.log('[ProfilePage] Starting initial data load sequence.');
-            await loadProfileData();
-            await loadBalance();
-            await loadAndRenderFavouriteMarkets();
-            console.log('[ProfilePage] Initial data load sequence finished.');
+            window.location.href = 'login-page.html';
         });
-        </script>
+    } else {
+        console.warn('[ProfilePage] Logout button element not found.');
+    }
+
+    async function fetchProtectedData(url, options = {}) {
+        const currentToken = localStorage.getItem('authToken');
+        // console.log(`[fetchProtectedData] Attempting to fetch ${url}. Token being used:`, currentToken ? currentToken.substring(0,20)+'...' : 'NO TOKEN AT FETCH TIME');
+
+        if (!currentToken) {
+            console.error(`[fetchProtectedData] CRITICAL: No token available for protected request to ${url}. Redirecting to login.`);
+            window.location.href = 'login-page.html';
+            return Promise.reject(new Error('No token, redirecting.'));
+        }
+
+        const defaultHeaders = {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+        };
+        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
+        // console.log(`[fetchProtectedData] Fetching ${url} with options:`, fetchOptions);
+
+        try {
+            const response = await fetch(url, fetchOptions);
+            // console.log(`[fetchProtectedData] Response status for ${url}: ${response.status}`);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.error(`[fetchProtectedData] Unauthorized (401) or Forbidden (403) for ${url}. Removing token and redirecting.`);
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login-page.html';
+                    return Promise.reject(new Error(`Unauthorized or Forbidden for ${url}, token removed.`));
+                }
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status} for ${url}. Response not JSON.` }));
+                console.error(`[fetchProtectedData] Error data for ${url}:`, errorData);
+                return Promise.reject(errorData);
+            }
+            const responseData = await response.json();
+            // console.log(`[fetchProtectedData] Successfully fetched and parsed JSON for ${url}:`, responseData);
+            return responseData;
+        } catch (error) {
+             console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
+             if (error.message === "Failed to fetch") {
+                alert(`Network error: Could not connect to the server to fetch ${url}. Please check your connection or contact support.`);
+             }
+             return Promise.reject(error);
+        }
+    }
+
+    async function loadProfileData() {
+        console.log('[ProfilePage] Attempting to load profile data...');
+        try {
+            const data = await fetchProtectedData('/api/profile');
+            if (data.success && data.profile) {
+                if (userNameElement) userNameElement.textContent = data.profile.username || data.profile.email.split('@')[0];
+                if (userUIDElement) userUIDElement.textContent = `UID: ${data.profile.uid || 'N/A'}`;
+                console.log('[ProfilePage] Profile data rendered.');
+            } else {
+                console.error('[ProfilePage] Failed to load profile data from server:', data.message || 'No success field in response');
+                if (userNameElement) userNameElement.textContent = 'Error loading profile';
+            }
+        } catch (error) {
+            console.error('[ProfilePage] Error in loadProfileData catcher:', error.message || error);
+            if (userNameElement) userNameElement.textContent = 'Error (profile)';
+        }
+    }
+
+    async function loadBalance() {
+         console.log('[ProfilePage] Attempting to load balance data...');
+        try {
+            const data = await fetchProtectedData('/api/balance');
+            if (data.success) {
+                if (estimatedBalanceElement) estimatedBalanceElement.textContent = `$${parseFloat(data.balance).toFixed(2)} USD`;
+                console.log('[ProfilePage] Balance data rendered.');
+            } else {
+                console.error('[ProfilePage] Failed to load balance from server:', data.message);
+                if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ N/A';
+            }
+        } catch (error) {
+            console.error('[ProfilePage] Error in loadBalance catcher:', error.message || error);
+            if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ Error';
+        }
+    }
+
+    // --- ФУНКЦІЯ ДЛЯ ЗАВАНТАЖЕННЯ ТА ВІДОБРАЖЕННЯ УЛЮБЛЕНИХ РИНКІВ ---
+    async function loadAndRenderFavouriteMarkets() {
+        if (!favouriteMarketsTable) {
+            console.warn('[ProfilePage] Favourite markets table element not found.');
+            return;
+        }
+        console.log('[ProfilePage] Attempting to load favourite markets data...');
+
+        const header = favouriteMarketsTable.querySelector('.custom-table-header');
+        // Очищаємо тільки рядки даних, залишаючи заголовок і плейсхолдер "Loading..."
+        const currentRows = favouriteMarketsTable.querySelectorAll('.custom-table-row');
+        currentRows.forEach(row => row.remove());
+        let placeholder = favouriteMarketsTable.querySelector('.no-data-placeholder');
+        if (placeholder) {
+            placeholder.textContent = 'Loading favourite markets...';
+        } else {
+            favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Loading favourite markets...</div>');
+            placeholder = favouriteMarketsTable.querySelector('.no-data-placeholder');
+        }
+
+
+        try {
+            const data = await fetchProtectedData('/api/markets/favourites');
+            console.log('[ProfilePage] Favourite markets data received from server:', data);
+
+            if (placeholder) placeholder.remove(); // Видаляємо плейсхолдер "Loading..."
+
+            if (data.success && data.markets) {
+                if (data.markets.length === 0) {
+                    favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">You have no favourite markets yet. <a href="markets.html">Add some from the Markets page!</a></div>');
+                    return;
+                }
+                data.markets.forEach(market => {
+                    const row = document.createElement('div');
+                    row.classList.add('custom-table-row');
+                    // На цьому етапі currentPrice та change24hPercent можуть бути null, якщо WebSocket ще не працює
+                    // або якщо для цих пар немає даних у currentMarketData на сервері.
+                    const price = market.currentPrice ? `$${parseFloat(market.currentPrice).toFixed(2)}` : 'N/A';
+                    const change = market.change24hPercent ? parseFloat(market.change24hPercent).toFixed(2) + '%' : 'N/A';
+                    const changeClass = market.change24hPercent ? (parseFloat(market.change24hPercent) >= 0 ? 'positive-change' : 'negative-change') : '';
+
+                    row.innerHTML = `
+                        <span class="coin-name">${market.symbol.split('/')[0]} <span class="coin-symbol-small">(${market.symbol.replace('/', '')})</span></span>
+                        <span>${price}</span>
+                        <span class="${changeClass}">${change}</span>
+                        <span>
+                            <a href="trading-page.html?pair=${market.symbol.replace('/', '_')}" class="action-link">Trade</a>
+                            <button class="remove-favourite-btn is-favourite" data-market-id="${market.id}" title="Remove from Favourites">★</button>
+                        </span>
+                    `;
+                    favouriteMarketsTable.appendChild(row);
+                });
+
+                // Додаємо обробники для кнопок видалення з улюблених
+                document.querySelectorAll('.remove-favourite-btn').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const marketId = event.currentTarget.dataset.marketId;
+                        if (!confirm('Are you sure you want to remove this market from favourites?')) return;
+                        
+                        console.log(`[ProfilePage] Attempting to remove favourite market ID: ${marketId}`);
+                        try {
+                            const deleteData = await fetchProtectedData(`/api/favourites/${marketId}`, { method: 'DELETE' });
+                            
+                            if (deleteData.success) {
+                                console.log(`[ProfilePage] Favourite market ID: ${marketId} successfully removed. Reloading favourites.`);
+                                loadAndRenderFavouriteMarkets(); // Оновлюємо список, щоб показати зміни
+                            } else {
+                                alert(deleteData.message || 'Failed to remove favourite.');
+                                console.error('[ProfilePage] Server failed to remove favourite:', deleteData.message);
+                            }
+                        } catch (err) {
+                            console.error('[ProfilePage] Error sending remove favourite request:', err);
+                            alert(err.message || 'Error removing favourite.');
+                        }
+                    });
+                });
+                console.log('[ProfilePage] Favourite markets rendered.');
+            } else {
+                favouriteMarketsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Could not load favourite markets.'}</div>`);
+            }
+        } catch (error) {
+            console.error('[ProfilePage] Error in loadAndRenderFavouriteMarkets catcher:', error.message || error);
+            const currentPlaceholderOnError = favouriteMarketsTable.querySelector('.no-data-placeholder');
+            if (currentPlaceholderOnError) currentPlaceholderOnError.textContent = 'Error loading favourite markets. Please try again.';
+        }
+    }
+
+    // Послідовне завантаження даних
+    console.log('[ProfilePage] Starting initial data load sequence.');
+    await loadProfileData();
+    await loadBalance();
+    await loadAndRenderFavouriteMarkets();
+    console.log('[ProfilePage] Initial data load sequence finished.');
+});
+</script>
 </body>
 </html>

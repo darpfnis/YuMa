@@ -4,38 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Assets - YuMa</title>
-    <!-- ВИПРАВЛЕНО ШЛЯХИ ДО CSS -->
-    <link rel="stylesheet" href="../css/styles.css"> <!-- Головний файл стилів -->
-    <link rel="stylesheet" href="../css/header.css"> <!-- Якщо хедер має окремі стилі -->
-    <link rel="stylesheet" href="../css/global.css"> <!-- Якщо є глобальні стилі -->
-    <!-- Якщо є специфічний CSS для цієї сторінки, наприклад, assets.css -->
-    <!-- <link rel="stylesheet" href="../css/assets.css"> -->
-    <!-- <script defer src="../js/script.js"></script> -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <!-- <link rel="stylesheet" href="../css/assets.css"> -- Якщо є специфічні стилі -->
+    <style>
+        /* Додаткові стилі (можна винести в CSS) */
+        .total-value-dynamic { color: #007bff; font-weight: bold; }
+        .available-value-dynamic { color: #28a745; }
+         .coin-icon-placeholder { /* Стилі для іконки, якщо вони ще не визначені */
+            width: 24px; height: 24px; background-color: #ddd;
+            border-radius: 50%; display: inline-block;
+            margin-right: 8px; vertical-align: middle;
+        }
+        .coin-name-full { font-weight: 500; vertical-align: middle;}
+        .coin-symbol { color: #777; font-size: 0.9em; vertical-align: middle;}
+    </style>
 </head>
 <body>
     <header>
-        <!-- ВИПРАВЛЕНО ШЛЯХ ДО index.html -->
         <div class="logo"><a href="../../index.html">YuMa</a></div>
         <nav class="header-nav">
-            <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК -->
             <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
             <a href="markets.html" class="nav-button">Markets</a>
             <a href="trading-page.html" class="nav-button">Trade</a>
         </nav>
         <div class="header-actions">
+            <!-- Припускаємо, що deposit.html існує в frontend/html/ -->
             <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
             <div class="icon-placeholder dark-square"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
-            <div class="icon-placeholder"></div>
+            <!-- Додамо кнопку виходу, якщо її немає в хедері по всьому сайту -->
+            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
+            <button id="logoutButtonAssets" class="nav-button" style="display: none;">Log out</button>
         </div>
     </header>
 
     <div class="page-wrapper-profile">
         <aside class="sidebar">
             <nav>
-                <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК -->
                 <a href="profile.html" class="sidebar-button">dashboard</a>
                 <a href="assets.html" class="sidebar-button active">assets</a>
                 <a href="order.html" class="sidebar-button">order</a>
@@ -52,24 +61,26 @@
 
             <section class="profile-card asset-overview">
                 <div class="overview-item">
-                    <span class="label">Total Portfolio Value:</span>
-                    <span class="value total-value">$12,345.67 USD</span>
+                    <span class="label">Total Portfolio Value (USD):</span>
+                    <!-- ID для динамічного оновлення -->
+                    <span class="value total-value-dynamic" id="totalPortfolioValue">$0.00</span>
                 </div>
                 <div class="overview-item">
-                    <span class="label">Available for Withdrawal:</span>
-                    <span class="value">$10,000.00 USD</span>
+                    <span class="label">Total Available for Withdrawal (USD):</span>
+                     <!-- ID для динамічного оновлення -->
+                    <span class="value available-value-dynamic" id="totalAvailableValue">$0.00</span>
                 </div>
             </section>
 
             <section class="assets-list-section">
                 <div class="table-controls">
-                    <input type="text" placeholder="Search Coin..." class="search-input">
+                    <input type="text" id="searchAssetInput" placeholder="Search Coin..." class="search-input">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="hideZeroBalances"> Hide Zero Balances
+                        <input type="checkbox" id="hideZeroBalancesCheckbox"> Hide Zero Balances
                     </label>
                 </div>
 
-                <div class="custom-table-wrapper">
+                <div class="custom-table-wrapper" id="assetsTableContainer"> <!-- ID для контейнера таблиці -->
                     <div class="custom-table-header">
                         <span>Coin</span>
                         <span>Total Balance</span>
@@ -78,56 +89,158 @@
                         <span>Value (USD)</span>
                         <span>Actions</span>
                     </div>
-                    <!-- Приклад рядка активу -->
-                    <div class="custom-table-row asset-row">
-                        <span class="coin-details">
-                            <span class="coin-icon-placeholder"></span>
-                            <span class="coin-name-full">Bitcoin <span class="coin-symbol">(BTC)</span></span>
-                        </span>
-                        <span>0.50000000</span>
-                        <span>0.45000000</span>
-                        <span>0.05000000</span>
-                        <span>$20,000.00</span>
-                        <span class="asset-actions">
-                            <a href="#" class="action-link">Deposit</a>
-                            <a href="#" class="action-link">Withdraw</a>
-                            <a href="#" class="action-link">Trade</a>
-                        </span>
-                    </div>
-                    <div class="custom-table-row asset-row">
-                         <span class="coin-details">
-                            <span class="coin-icon-placeholder"></span>
-                            <span class="coin-name-full">Ethereum <span class="coin-symbol">(ETH)</span></span>
-                        </span>
-                        <span>10.000000</span>
-                        <span>8.000000</span>
-                        <span>2.000000</span>
-                        <span>$15,000.00</span>
-                        <span class="asset-actions">
-                            <a href="#" class="action-link">Deposit</a>
-                            <a href="#" class="action-link">Withdraw</a>
-                            <a href="#" class="action-link">Trade</a>
-                        </span>
-                    </div>
-                    <div class="custom-table-row asset-row">
-                         <span class="coin-details">
-                            <span class="coin-icon-placeholder"></span>
-                            <span class="coin-name-full">YuMa Coin <span class="coin-symbol">(YMC)</span></span>
-                        </span>
-                        <span>10000.00</span>
-                        <span>10000.00</span>
-                        <span>0.00</span>
-                        <span>$1,000.00</span>
-                        <span class="asset-actions">
-                            <a href="#" class="action-link">Deposit</a>
-                            <a href="#" class="action-link">Withdraw</a>
-                            <a href="#" class="action-link">Trade</a>
-                        </span>
-                    </div>
-                    <!-- Інші активи -->
+                    <div class="no-data-placeholder">Loading assets...</div> <!-- Плейсхолдер завантаження -->
+                    <!-- Рядки активів будуть додані динамічно -->
                 </div>
             </section>
         </main>
     </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[AssetsPage] DOMContentLoaded. Script loaded.');
+    const token = localStorage.getItem('authToken');
+
+    const totalPortfolioValueElement = document.getElementById('totalPortfolioValue');
+    const totalAvailableValueElement = document.getElementById('totalAvailableValue');
+    const assetsTableContainer = document.getElementById('assetsTableContainer');
+    const searchAssetInput = document.getElementById('searchAssetInput');
+    const hideZeroBalancesCheckbox = document.getElementById('hideZeroBalancesCheckbox');
+    const logoutButton = document.getElementById('logoutButtonAssets');
+
+    let allFetchedAssets = []; // Для зберігання всіх завантажених активів для фільтрації
+
+    if (!token) {
+        console.warn('[AssetsPage] No token. Redirecting to login.');
+        window.location.href = 'login-page.html';
+        return;
+    }
+
+    if (logoutButton) {
+        logoutButton.style.display = 'inline-block';
+        logoutButton.addEventListener('click', async () => {
+            console.log('[AssetsPage] Logout button clicked.');
+            const currentToken = localStorage.getItem('authToken');
+            localStorage.removeItem('authToken');
+            try {
+                await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
+            } catch (e) { console.error('Logout API call failed', e); }
+            window.location.href = 'login-page.html';
+        });
+    }
+
+    async function fetchProtectedData(url, options = {}) {
+        const currentToken = localStorage.getItem('authToken');
+        if (!currentToken) {
+            window.location.href = 'login-page.html';
+            return Promise.reject(new Error('No token, redirecting.'));
+        }
+        const defaultHeaders = {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+        };
+        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
+        const response = await fetch(url, fetchOptions);
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('authToken');
+                window.location.href = 'login-page.html';
+                return Promise.reject(new Error('Unauthorized or Forbidden.'));
+            }
+            const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+            return Promise.reject(errorData);
+        }
+        return response.json();
+    }
+
+    function renderAssets(assetsToRender) {
+        const header = assetsTableContainer.querySelector('.custom-table-header');
+        assetsTableContainer.innerHTML = ''; // Очищаємо все, включаючи плейсхолдер
+        if (header) assetsTableContainer.appendChild(header); // Повертаємо заголовок
+
+        if (!assetsToRender || assetsToRender.length === 0) {
+            assetsTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">No assets to display.</div>');
+            return;
+        }
+
+        let calculatedTotalPortfolioValue = 0;
+        let calculatedTotalAvailableValue = 0; // Поки не розраховуємо окремо
+
+        assetsToRender.forEach(asset => {
+            const row = document.createElement('div');
+            row.classList.add('custom-table-row', 'asset-row');
+            const valueUSD = parseFloat(asset.value_usd) || 0;
+            calculatedTotalPortfolioValue += valueUSD;
+
+            row.innerHTML = `
+                <span class="coin-details">
+                    <span class="coin-icon-placeholder"></span> <!-- TODO: Add real icons -->
+                    <span class="coin-name-full">${asset.coin_symbol} <span class="coin-symbol">(${asset.coin_symbol})</span></span>
+                </span>
+                <span>${parseFloat(asset.total_balance).toFixed(8)}</span>
+                <span>${parseFloat(asset.available_balance).toFixed(8)}</span>
+                <span>${parseFloat(asset.in_order_balance).toFixed(8)}</span>
+                <span>$${valueUSD.toFixed(2)}</span>
+                <span class="asset-actions">
+                    <a href="#" class="action-link">Deposit</a>
+                    <a href="#" class="action-link">Withdraw</a>
+                    <a href="trading-page.html?pair=${asset.coin_symbol}USDT" class="action-link">Trade</a> <!-- Приклад пари для торгівлі -->
+                </span>
+            `;
+            assetsTableContainer.appendChild(row);
+        });
+
+        if (totalPortfolioValueElement) {
+            totalPortfolioValueElement.textContent = `$${calculatedTotalPortfolioValue.toFixed(2)}`;
+        }
+        // Розрахунок totalAvailableValue потребує даних про ціни для available_balance
+        if (totalAvailableValueElement) {
+             // Припустимо, що доступна вартість - це частина від загальної, або потрібна окрема логіка
+            totalAvailableValueElement.textContent = `$${(calculatedTotalPortfolioValue * 0.8).toFixed(2)}`; // Тимчасово
+        }
+    }
+
+    function filterAndRenderAssets() {
+        const searchTerm = searchAssetInput.value.toLowerCase();
+        const hideZero = hideZeroBalancesCheckbox.checked;
+
+        const filteredAssets = allFetchedAssets.filter(asset => {
+            const matchesSearch = asset.coin_symbol.toLowerCase().includes(searchTerm) ||
+                                (asset.name && asset.name.toLowerCase().includes(searchTerm));
+            const nonZeroBalance = parseFloat(asset.total_balance) > 0;
+            return matchesSearch && (!hideZero || nonZeroBalance);
+        });
+        renderAssets(filteredAssets);
+    }
+
+    async function loadAssets() {
+        console.log('[AssetsPage] Attempting to load assets data...');
+        try {
+            const data = await fetchProtectedData('/api/assets');
+            console.log('[AssetsPage] Assets data received from server:', data);
+            if (data.success && data.assets) {
+                allFetchedAssets = data.assets; // Зберігаємо всі завантажені активи
+                filterAndRenderAssets(); // Відображаємо їх (з урахуванням фільтрів)
+                console.log('[AssetsPage] Assets data rendered.');
+            } else {
+                console.error('[AssetsPage] Failed to load assets from server:', data.message);
+                assetsTableContainer.innerHTML = `<div class="no-data-placeholder">${data.message || 'Could not load assets.'}</div>`;
+            }
+        } catch (error) {
+            console.error('[AssetsPage] Error in loadAssets catcher:', error.message || error);
+            const placeholder = assetsTableContainer.querySelector('.no-data-placeholder');
+            if(placeholder) placeholder.remove();
+            assetsTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading assets. Please try again.</div>');
+        }
+    }
+
+    // Обробники подій для фільтрів
+    if(searchAssetInput) searchAssetInput.addEventListener('input', filterAndRenderAssets);
+    if(hideZeroBalancesCheckbox) hideZeroBalancesCheckbox.addEventListener('change', filterAndRenderAssets);
+
+    // Завантажуємо дані при завантаженні сторінки
+    loadAssets();
+});
+</script>
 </body>
 </html>
