@@ -261,18 +261,18 @@ app.put('/api/profile/avatar', authenticateToken, async (req, res) => {
     if (avatarUrl !== '' && !avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://')) {
         return res.status(400).json({ success: false, message: 'Invalid avatar URL format.' });
     }
-
+    
     try {
-        const sql = `UPDATE users SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING avatar_url`;
-        const result = await pool.query(sql, [avatarUrl, userId]);
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({ success: false, message: 'User not found to update avatar.' });
+        // Переконайтеся, що avatar_url є у SELECT
+        const sql = `SELECT id, email, username, uid, created_at, avatar_url FROM users WHERE id = $1`;
+        const result = await pool.query(sql, [userId]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User profile not found.' });
         }
-        res.json({ success: true, message: 'Avatar updated successfully.', avatarUrl: result.rows[0].avatar_url });
+        res.json({ success: true, profile: result.rows[0] });
     } catch (error) {
-        console.error("[API PUT /api/profile/avatar] Error:", error);
-        res.status(500).json({ success: false, message: 'Server error updating avatar.' });
+        console.error("[API GET /api/profile] Error:", error.message, error.stack);
+        res.status(500).json({ success: false, message: 'Server error fetching profile.' });
     }
 });
 
