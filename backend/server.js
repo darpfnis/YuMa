@@ -451,7 +451,14 @@ app.get('/api/orders/open', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching open orders.' });
     }
 });
-
+// --- Обслуговування HTML сторінок ---
+app.get('/', (req, res) => res.sendFile(path.join(projectRootPath, 'index.html')));
+app.get('/index.html', (req, res) => res.sendFile(path.join(projectRootPath, 'index.html')));
+const htmlPages = [
+    'login-page.html', 'sign_up-page.html', 'profile.html', 'assets.html', 'order.html',
+    'account.html', 'settings.html', 'markets.html', 'trading-page.html',
+    'buy_crypto-page.html', 'futures-page.html', 'spot-page.html'
+];
 app.get('/api/orders/history', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     // TODO: Додати обробку параметрів запиту для фільтрації (dateFrom, dateTo, pair, type, side)
@@ -507,7 +514,6 @@ app.get('/api/orders/history', authenticateToken, async (req, res) => {
     }
 });
 
-
 htmlPages.forEach(page => {
     app.get(`/${page}`, (req, res) => res.sendFile(path.join(frontendPath, 'html', page)));
 });
@@ -535,14 +541,7 @@ process.on('SIGINT', gracefulShutdown);
 process.on('SIGTERM', gracefulShutdown);
 
 
-// --- Обслуговування HTML сторінок ---
-app.get('/', (req, res) => res.sendFile(path.join(projectRootPath, 'index.html')));
-app.get('/index.html', (req, res) => res.sendFile(path.join(projectRootPath, 'index.html')));
-const htmlPages = [
-    'login-page.html', 'sign_up-page.html', 'profile.html', 'assets.html', 'order.html',
-    'account.html', 'settings.html', 'markets.html', 'trading-page.html',
-    'buy_crypto-page.html', 'futures-page.html', 'spot-page.html'
-];
+
 htmlPages.forEach(page => {
     app.get(`/${page}`, (req, res) => res.sendFile(path.join(frontendPath, 'html', page)));
 });
