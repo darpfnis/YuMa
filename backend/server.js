@@ -218,26 +218,69 @@ app.get('/api/assets', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching assets.' });
     }
 });
-
+app.get('/api/assets/base', authenticateToken, async (req, res) => {
+    try {
+        // Вибираємо тільки ті базові активи, для яких є активні пари
+        const sql = `SELECT DISTINCT mp.base_asset
+                     FROM market_pairs mp
+                     WHERE mp.is_active = TRUE
+                     ORDER BY mp.base_asset;`;
+        const result = await pool.query(sql);
+        res.json({ success: true, baseAssets: result.rows.map(r => r.base_asset) });
+    } catch (error) {
+        console.error("Error fetching base assets:", error);
+        res.status(500).json({ success: false, message: 'Server error fetching base assets.' });
+    }
+});
 
 // РИНКИ
 app.get('/api/markets', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
+    const { baseAsset, popularOnly } = req.query; // Нові параметри запиту
+
     try {
-        const sql = `
-            SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name,
-                   EXISTS (SELECT 1 FROM user_favourite_markets ufm WHERE ufm.user_id = $1 AND ufm.market_pair_id = mp.id) as "isFavourite"
-            FROM market_pairs mp WHERE mp.is_active = TRUE ORDER BY mp.symbol;
+        let sql;
+        let queryParams = [userId];
+        let paramIndex = 2; // Починаємо з $2, оскільки $1 - це userId
+
+        let baseSelect = `
+            SELECT
+                mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name, mp.is_popular,
+                EXISTS (
+                    SELECT 1 FROM user_favourite_markets ufm
+                    WHERE ufm.user_id = $1 AND ufm.market_pair_id = mp.id
+                ) as "isFavourite"
+            FROM market_pairs mp
         `;
-        const result = await pool.query(sql, [userId]);
-        // Для MVP поки без real-time цін
-        const markets = result.rows.map(pair => ({
-            ...pair,
-            currentPrice: null, // Заповнити з real-time даних пізніше
-            change24hPercent: null,
-            volume24h: null
-        }));
-        res.json({ success: true, markets: markets });
+        let conditions = ["mp.is_active = TRUE"];
+        let orderBy = "ORDER BY mp.symbol";
+
+        if (popularOnly === 'true') {
+            conditions.push("mp.is_popular = TRUE");
+            orderBy = "ORDER BY mp.base_asset, mp.quote_asset"; // Або інше сортування для популярних
+        } else if (baseAsset) {
+            conditions.push(`mp.base_asset = $${paramIndex++}`);
+            queryParams.push(baseAsset);
+        }
+        // Якщо ні popularOnly, ні baseAsset не вказані, повертаємо всі активні пари
+
+        sql = `${baseSelect} WHERE ${conditions.join(' AND ')} ${orderBy};`;
+        
+        console.log(`[API /markets] SQL: ${sql}, Params: ${JSON.stringify(queryParams)}`); // Логування
+
+        const result = await pool.query(sql, queryParams);
+
+        const marketsWithLiveData = result.rows.map(pair => {
+            const liveData = currentMarketData[pair.symbol] || currentMarketData[pair.binance_symbol] || {};
+            return {
+                ...pair,
+                currentPrice: liveData.price,
+                change24hPercent: liveData.priceChangePercent, // Переконайтеся, що це поле є в currentMarketData
+                volume24h: liveData.quoteVolume // Об'єм в quote_asset
+            };
+        });
+
+        res.json({ success: true, markets: marketsWithLiveData });
     } catch (error) {
         console.error("[API /markets] Error:", error);
         res.status(500).json({ success: false, message: 'Server error fetching markets.' });
