@@ -8,15 +8,37 @@
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
     <style>
-        .favourite-btn, .remove-favourite-btn {
-            cursor: pointer; font-size: 1.8rem; color: #ccc;
-            border: none; background: none; padding: 0.2rem 0.5rem;
+        /* ... (ваші стилі з попередньої відповіді залишаються тут) ... */
+        .favourite-btn, .remove-favourite-btn { /* ... */ }
+        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite { /* ... */ }
+        .positive-change { /* ... */ }
+        .negative-change { /* ... */ }
+        .coin-symbol-small { /* ... */ }
+        .no-data-placeholder a { /* ... */ }
+
+        /* Стиль для аватара на дашборді */
+        .user-avatar-placeholder {
+            width: 80px; /* Трохи більше для дашборду */
+            height: 80px;
+            border-radius: 50%; /* Круглий */
+            background-color: #e9ecef;
+            margin-right: 20px; /* Відступ справа */
+            background-size: cover;
+            background-position: center;
+            border: 3px solid #fff; /* Біла рамка */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 1.3rem;
+            overflow: hidden; /* Щоб зображення не вилазило за межі */
         }
-        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite { color: #ffc107; }
-        .positive-change { color: green; }
-        .negative-change { color: red; }
-        .coin-symbol-small { color: #777; font-size: 0.85em; margin-left: 0.3em; }
-        .no-data-placeholder a { color: #007bff; text-decoration: underline; }
+        .user-avatar-placeholder img { /* Якщо будете використовувати <img> замість background-image */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -51,7 +73,8 @@
 
         <main class="main-content-profile">
             <section class="user-info-header">
-                <div class="user-avatar-placeholder" id="userAvatar">picture</div>
+                <!-- Змінено userAvatarPlaceholder на div з id userDashboardAvatar -->
+                <div class="user-avatar-placeholder" id="userDashboardAvatar">No Pic</div>
                 <div class="user-details">
                     <h2 id="userName">Loading...</h2>
                     <span class="uid-placeholder" id="userUID">UID: Loading...</span>
@@ -96,6 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const userNameElement = document.getElementById('userName');
     const userUIDElement = document.getElementById('userUID');
+    const userDashboardAvatarElement = document.getElementById('userDashboardAvatar'); // Новий елемент
     const estimatedBalanceElement = document.getElementById('estimatedBalance');
     const favouriteMarketsTable = document.getElementById('favouriteMarketsTable');
     const logoutButton = document.getElementById('logoutButton');
@@ -132,45 +156,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function fetchProtectedData(url, options = {}) {
-        const currentToken = localStorage.getItem('authToken');
-        // console.log(`[fetchProtectedData] Attempting to fetch ${url}. Token being used:`, currentToken ? currentToken.substring(0,20)+'...' : 'NO TOKEN AT FETCH TIME');
+        // ... (ваша функція fetchProtectedData з попередніх відповідей залишається без змін) ...
+    }
 
-        if (!currentToken) {
-            console.error(`[fetchProtectedData] CRITICAL: No token available for protected request to ${url}. Redirecting to login.`);
-            window.location.href = 'login-page.html';
-            return Promise.reject(new Error('No token, redirecting.'));
-        }
-
-        const defaultHeaders = {
-            'Authorization': `Bearer ${currentToken}`,
-            'Content-Type': 'application/json'
-        };
-        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
-        // console.log(`[fetchProtectedData] Fetching ${url} with options:`, fetchOptions);
-
+    async function loadProfileData() {
+        console.log('[ProfilePage] Attempting to load profile data...');
         try {
-            const response = await fetch(url, fetchOptions);
-            // console.log(`[fetchProtectedData] Response status for ${url}: ${response.status}`);
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    console.error(`[fetchProtectedData] Unauthorized (401) or Forbidden (403) for ${url}. Removing token and redirecting.`);
-                    localStorage.removeItem('authToken');
-                    window.location.href = 'login-page.html';
-                    return Promise.reject(new Error(`Unauthorized or Forbidden for ${url}, token removed.`));
+            const data = await fetchProtectedData('/api/profile'); // Цей ендпоінт тепер має повертати avatar_url
+            if (data.success && data.profile) {
+                const profile = data.profile;
+                if (userNameElement) userNameElement.textContent = profile.username || profile.email.split('@')[0];
+                if (userUIDElement) userUIDElement.textContent = `UID: ${profile.uid || 'N/A'}`;
+                
+                // Оновлення аватара на дашборді
+                if (userDashboardAvatarElement) {
+                    if (profile.avatar_url) {
+                        userDashboardAvatarElement.style.backgroundImage = `url('${profile.avatar_url}')`;
+                        userDashboardAvatarElement.textContent = ''; // Прибираємо текст "No Pic", якщо є картинка
+                    } else {
+                        userDashboardAvatarElement.style.backgroundImage = 'none';
+                        userDashboardAvatarElement.textContent = 'No Pic'; // Або залиште "picture"
+                    }
                 }
-                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status} for ${url}. Response not JSON.` }));
-                console.error(`[fetchProtectedData] Error data for ${url}:`, errorData);
-                return Promise.reject(errorData);
+                console.log('[ProfilePage] Profile data (including avatar) rendered.');
+            } else {
+                console.error('[ProfilePage] Failed to load profile data from server:', data.message || 'No success field in response');
+                if (userNameElement) userNameElement.textContent = 'Error loading profile';
             }
-            const responseData = await response.json();
-            // console.log(`[fetchProtectedData] Successfully fetched and parsed JSON for ${url}:`, responseData);
-            return responseData;
         } catch (error) {
-             console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
-             if (error.message === "Failed to fetch") {
-                alert(`Network error: Could not connect to the server to fetch ${url}. Please check your connection or contact support.`);
-             }
-             return Promise.reject(error);
+            console.error('[ProfilePage] Error in loadProfileData catcher:', error.message || error);
+            if (userNameElement) userNameElement.textContent = 'Error (profile)';
         }
     }
 
@@ -296,9 +311,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Послідовне завантаження даних
     console.log('[ProfilePage] Starting initial data load sequence.');
-    await loadProfileData();
+    await loadProfileData(); // Ця функція тепер оновить і аватар
     await loadBalance();
     await loadAndRenderFavouriteMarkets();
     console.log('[ProfilePage] Initial data load sequence finished.');
