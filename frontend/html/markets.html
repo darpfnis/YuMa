@@ -8,23 +8,18 @@
     <link rel="stylesheet" href="../css/global.css"> <!-- Спільний для всіх сторінок -->
     <link rel="stylesheet" href="../css/markets.css"> <!-- Специфічний для цієї сторінки -->
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f6f8; color: #333; font-size: 1.6rem; line-height:1.5; }
-        /* header стилі мають бути в header.css */
-        /* .logo a { color: white; text-decoration: none; font-size: 2.4rem; font-weight: bold; } */
-        /* .header-nav a.nav-button, .header-actions button.nav-button ... (стилі хедера) */
-
-        .market-page-layout { padding: 2rem; max-width: 1400px; margin: 2rem auto; } /* Додав відступ зверху */
-        
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f6f8; color: #333; font-size: 1rem; line-height:1.5; }
+        .market-page-layout { padding: 2rem; max-width: 1400px; margin: 2rem auto; }
         .asset-selector-bar {
             display: flex;
-            flex-wrap: wrap; /* Дозволяємо перенос кнопок */
+            flex-wrap: wrap;
             gap: 1rem;
-            margin-bottom: 2.5rem; /* Збільшив відступ */
+            margin-bottom: 2.5rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid #e0e0e0;
         }
         .asset-button {
-            padding: 0.8rem 1.5rem; border: 1px solid #d1d5db; border-radius: 2rem; /* Більш заокруглені */
+            padding: 0.8rem 1.5rem; border: 1px solid #d1d5db; border-radius: 2rem;
             background-color: #fff; cursor: pointer; font-size: 1.4rem;
             white-space: nowrap; transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
             color: #374151; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -35,7 +30,7 @@
         .popular-pairs-section, .filtered-pairs-section { margin-bottom: 3rem; }
         .section-title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #e0e0e0; padding-bottom: 1rem;}
         .section-title { font-size: 2.2rem; color: #1a1a2e; margin: 0; }
-        .search-input-container { /* Залишаємо для майбутнього, якщо знадобиться */ }
+        .search-input-container { }
         .search-input {
             padding: 1rem 1.2rem; border: 1px solid #d1d5db; border-radius: 0.6rem;
             font-size: 1.4rem; width: 100%; max-width: 300px;
@@ -43,9 +38,8 @@
         }
         .search-input:focus { border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.2); outline: none;}
 
-
         .custom-table-wrapper { margin-top: 1rem; background-color: #fff; border-radius: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow-x: auto;}
-        .custom-table-header, .custom-table-row { display: flex; align-items: center; padding: 1.2rem 1rem; min-width: 700px; /* Для горизонтального скролу */}
+        .custom-table-header, .custom-table-row { display: flex; align-items: center; padding: 1.2rem 1rem; min-width: 700px;}
         .custom-table-row { border-top: 1px solid #f3f4f6; transition: background-color 0.15s; }
         .custom-table-header { font-weight: 600; color: #4b5563; font-size: 1.3rem; background-color: #f9fafb; text-transform: uppercase; letter-spacing: 0.05em;}
         .custom-table-header span, .custom-table-row span { flex: 1; padding: 0 0.8rem; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
@@ -70,20 +64,45 @@
 </head>
 <body>
     <header>
-        <div class="logo"><a href="../../index.html">YuMa</a></div>
-        <nav class="header-nav">
-            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
-            <a href="markets.html" class="nav-button active">Markets</a>
-            <a href="trading-page.html" class="nav-button">Trade</a>
-        </nav>
-        <div class="header-actions">
-            <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
-            <div class="icon-placeholder dark-square"></div>
-            <div class="icon-placeholder"></div>
-            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
-            <div class="icon-placeholder"></div>
-            <button id="logoutButtonMarkets" class="nav-button" style="display: none;">Log out</button>
+        <div class="header-left">
+            <div class="logo"><a href="../../index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="buy_crypto-page.html">Buy Crypto</a>
+                <!-- Додаємо клас active до посилання Markets -->
+                <a href="markets.html" class="active">Markets</a> 
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <a href="spot-page.html">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
         </div>
+        <nav class="user-nav">
+            <!-- Тут мають бути кнопки Sign up/Log in або інформація про користувача/Log out -->
+            <!-- Приклад для незалогіненого користувача -->
+            <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
+            <a href="login-page.html" id="loginLinkMarkets">Log in</a>
+            <!-- Елементи для залогіненого користувача (будуть показані через JS) -->
+            <span id="userGreetingMarkets" style="display: none; margin-right: 15px; color: #e0e0e0;"></span>
+            <button id="logoutButtonMarkets" class="nav-button" style="display: none; background-color: #444; border: 1px solid #555; padding: 0.5rem 1rem;">Log out</button>
+            <!-- Можна додати іконки профілю та інше сюди, якщо вони є в user-nav на інших сторінках -->
+        </nav>
     </header>
 
     <main class="market-page-layout">
@@ -137,47 +156,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     const popularPairsTable = document.getElementById('popularPairsTable');
     const filteredPairsTable = document.getElementById('filteredPairsTable');
     const filteredPairsTitle = document.getElementById('filteredPairsTitle');
+    
+    // Оновлення для нових ID елементів хедера
     const logoutButton = document.getElementById('logoutButtonMarkets');
+    const signUpLink = document.getElementById('signUpLinkMarkets');
+    const loginLink = document.getElementById('loginLinkMarkets');
+    const userGreeting = document.getElementById('userGreetingMarkets');
+
     const searchInput = document.getElementById('searchMarketInput');
 
     let allMarketsDataCache = []; // Кеш для всіх ринків
 
-    if (token && logoutButton) {
-        logoutButton.style.display = 'inline-block';
-        logoutButton.addEventListener('click', async () => {
-            console.log('[MarketsPage] Logout clicked.');
-            const currentToken = localStorage.getItem('authToken');
-            localStorage.removeItem('authToken');
-            try {
-                await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
-            } catch(e) { console.error('Logout API error', e); }
-            window.location.href = 'login-page.html';
-        });
-    } else if(logoutButton) {
-        logoutButton.style.display = 'none';
+    // Оновлена логіка відображення кнопок в хедері
+    if (token) {
+        if(logoutButton) logoutButton.style.display = 'inline-block';
+        if(signUpLink) signUpLink.style.display = 'none';
+        if(loginLink) loginLink.style.display = 'none';
+        if(userGreeting) {
+            // Можна додати логіку для отримання імені користувача, якщо є
+            // userGreeting.textContent = `Hello, User!`; 
+            // userGreeting.style.display = 'inline-block';
+        }
+        if(logoutButton) {
+            logoutButton.addEventListener('click', async () => {
+                console.log('[MarketsPage] Logout clicked.');
+                const currentToken = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                // Очищаємо кеш, щоб при наступному логіні завантажились актуальні "isFavourite"
+                allMarketsDataCache = [];
+                try {
+                    await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
+                } catch(e) { console.error('Logout API error', e); }
+                window.location.href = 'login-page.html'; // Або на головну, або на markets знову
+            });
+        }
+    } else {
+        if(logoutButton) logoutButton.style.display = 'none';
+        if(signUpLink) signUpLink.style.display = 'inline-block';
+        if(loginLink) loginLink.style.display = 'inline-block';
+        if(userGreeting) userGreeting.style.display = 'none';
     }
 
     async function fetchApiData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
-        const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
+        // Змінюємо логіку requiresAuth, щоб вона залежала від наявності токена для деяких запитів
+        const requiresAuth = options.requiresAuth === undefined ? (url.includes('/api/favourites') || url.includes('/api/markets?popularOnly=true') || url === '/api/markets') : options.requiresAuth;
+
 
         const headers = { 'Content-Type': 'application/json' };
         if (requiresAuth && currentToken) {
             headers['Authorization'] = `Bearer ${currentToken}`;
-        } else if (requiresAuth && !currentToken && url !== '/api/assets/base' && url !== '/api/markets') { // Дозволяємо деякі запити без токена
+        } else if (requiresAuth && !currentToken && url.includes('/api/favourites')) { 
              console.warn(`[fetchApiData] Auth required for ${url} but no token. Redirecting to login.`);
              window.location.href = 'login-page.html';
              return Promise.reject({ success: false, message: 'Authentication required.', shouldRedirect: true });
         }
+        // Для /api/markets та /api/markets?popularOnly=true дозволяємо запит без токена,
+        // але isFavourite не буде встановлено або буде false.
+        // Для /api/assets/base токен не потрібен.
 
         const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
-        // console.log(`[fetchApiData] Fetching ${url}`);
 
         try {
             const response = await fetch(url, fetchOptions);
-            // console.log(`[fetchApiData] Response status for ${url}: ${response.status}`);
             if (!response.ok) {
-                if ((response.status === 401 || response.status === 403) && requiresAuth) {
+                if ((response.status === 401 || response.status === 403) && requiresAuth && url.includes('/api/favourites')) {
                     localStorage.removeItem('authToken');
                     window.location.href = 'login-page.html';
                     return Promise.reject({ success: false, message: `Unauthorized or Forbidden for ${url}. Redirecting.`, shouldRedirect: true });
@@ -201,9 +244,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function attachFavouriteButtonListeners(containerElement) {
-        if (!token) return;
+        if (!token) return; // Не прикріплюємо, якщо немає токена
         containerElement.querySelectorAll('.favourite-btn').forEach(button => {
-            button.removeEventListener('click', toggleFavourite);
+            button.removeEventListener('click', toggleFavourite); // Запобігаємо дублюванню
             button.addEventListener('click', toggleFavourite);
         });
     }
@@ -231,7 +274,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             row.classList.add('custom-table-row');
             row.dataset.marketId = market.id;
 
-            const isFav = token ? market.isFavourite : false; // market.isFavourite має приходити з сервера
+            // market.isFavourite буде true/false якщо користувач залогінений і сервер це повернув,
+            // інакше буде undefined або false, і кнопка буде неактивною або не буде кнопки.
+            const isFav = market.isFavourite === true; 
             const price = market.currentPrice ? `$${parseFloat(market.currentPrice).toFixed(2)}` : 'N/A';
             const change = market.change24hPercent ? parseFloat(market.change24hPercent).toFixed(2) + '%' : 'N/A';
             const changeClass = market.change24hPercent ? (parseFloat(market.change24hPercent) >= 0 ? 'positive-change' : 'negative-change') : '';
@@ -244,12 +289,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span class="col-name">${market.name || `${market.base_asset}/${market.quote_asset}`}</span>
                 <span class="col-price">${price}</span>
                 <span class="col-change ${changeClass}">${change}</span>
-                <span class="col-action"><a href="trading-page.html?pair=${market.symbol.replace('/', '_')}" class="action-link">Trade</a></span>
+                <span class="col-action"><a href="buy_crypto-page.html?pair=${market.symbol.replace('/', '_')}" class="action-link">Trade</a></span>
             `;
             containerElement.appendChild(row);
         });
         
-        attachFavouriteButtonListeners(containerElement);
+        if(token) { // Прикріплюємо слухачі тільки якщо є токен
+            attachFavouriteButtonListeners(containerElement);
+        }
     }
 
     async function toggleFavourite(event) {
@@ -261,7 +308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const url = isCurrentlyFavourite ? `/api/favourites/${marketId}` : '/api/favourites';
 
         try {
-            const fetchOptions = { method: method, requiresAuth: true };
+            const fetchOptions = { method: method, requiresAuth: true }; // requiresAuth тут завжди true
             if (method === 'POST') {
                 fetchOptions.body = JSON.stringify({ marketPairId: parseInt(marketId) });
             }
@@ -275,7 +322,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const marketInCache = allMarketsDataCache.find(m => m.id.toString() === marketId);
                 if(marketInCache) marketInCache.isFavourite = !isCurrentlyFavourite;
 
-                // Оновлення кнопки в іншій таблиці
                 const otherTable = button.closest('#popularPairsTable') ? filteredPairsTable : popularPairsTable;
                 const correspondingButton = otherTable.querySelector(`.favourite-btn[data-market-id="${marketId}"]`);
                 if (correspondingButton) {
@@ -286,7 +332,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert(data.message || 'Failed to update favourites.');
             }
         } catch (error) {
-            alert(error.message || 'An error occurred while updating favourites.');
+            // Якщо помилка через перенаправлення, не показуємо alert
+            if (!error.shouldRedirect) {
+                alert(error.message || 'An error occurred while updating favourites.');
+            }
         }
     }
     
@@ -313,7 +362,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[MarketsPage] Loading base assets...');
         let placeholder = assetSelectorBar.querySelector('.no-data-placeholder');
         try {
-            const data = await fetchApiData('/api/assets/base', { requiresAuth: false }); // Публічний
+            // Цей запит не вимагає авторизації
+            const data = await fetchApiData('/api/assets/base', { requiresAuth: false }); 
             if (placeholder) placeholder.remove();
             if (data.success && data.baseAssets) {
                 assetSelectorBar.innerHTML = '';
@@ -355,6 +405,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[MarketsPage] Loading popular pairs...');
         let placeholder = popularPairsTable.querySelector('.no-data-placeholder');
         try {
+            // Якщо токен є, запит піде з ним, якщо немає - без (requiresAuth: !!token)
             const data = await fetchApiData('/api/markets?popularOnly=true', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
             if (data.success && data.markets) {
@@ -364,6 +415,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('[MarketsPage] Error loading popular pairs:', error);
+             if (error.shouldRedirect) return; // Не показуємо помилку, якщо було перенаправлення
             if(placeholder) placeholder.textContent = error.message || 'Error loading popular pairs.';
             else popularPairsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Error loading popular pairs.'}</div>`);
         }
@@ -373,7 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[MarketsPage] Loading initial set of all markets for cache...');
         let placeholder = filteredPairsTable.querySelector('.no-data-placeholder');
         if (placeholder) placeholder.textContent = 'Loading all markets...';
-        else { // Якщо плейсхолдера немає (був видалений), додаємо його знову
+        else {
             const header = filteredPairsTable.querySelector('.custom-table-header');
             filteredPairsTable.innerHTML = '';
             if(header) filteredPairsTable.appendChild(header);
@@ -382,6 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
+            // Якщо токен є, запит піде з ним, якщо немає - без (requiresAuth: !!token)
             const data = await fetchApiData('/api/markets', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
             if (data.success && data.markets) {
@@ -392,6 +445,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('[MarketsPage] Error loading initial all markets:', error);
+            if (error.shouldRedirect) return; // Не показуємо помилку, якщо було перенаправлення
             if(placeholder) placeholder.textContent = error.message || 'Error loading all markets.';
             else filteredPairsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Error loading all markets.'}</div>`);
         }
@@ -399,7 +453,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if(searchInput) searchInput.addEventListener('input', filterAndRenderSpotMarkets);
 
-    await loadBaseAssets();
+    // Послідовне завантаження
+    await loadBaseAssets(); 
+    // Ці запити можуть залежати від статусу логіну, тому виконуємо їх після перевірки токена
     await loadPopularPairs();
     await loadInitialAllMarkets(); 
     console.log('[MarketsPage] Initial data loading complete.');
