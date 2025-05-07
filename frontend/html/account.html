@@ -4,40 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - YuMa</title>
-    <!-- ВИПРАВЛЕНО ШЛЯХИ ДО CSS -->
-    <link rel="stylesheet" href="../css/styles.css"> <!-- Головний файл стилів -->
-    <link rel="stylesheet" href="../css/header.css"> <!-- Якщо хедер має окремі стилі -->
-    <link rel="stylesheet" href="../css/global.css"> <!-- Якщо є глобальні стилі -->
-    <!-- Якщо є специфічний CSS для цієї сторінки, наприклад, account.css -->
-    <!-- <link rel="stylesheet" href="../css/account.css"> -->
-    <!-- Якщо script.js в frontend/js/ -->
-    <!-- <script defer src="../js/script.js"></script> -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <!-- <link rel="stylesheet" href="../css/account.css"> -- Якщо є специфічні стилі -->
+    <style>
+        /* Стилі для статусів (можна винести в global.css або account.css) */
+        .status-verified { color: green; font-weight: bold; font-size: 0.9em; }
+        .status-unverified, .status-disabled { color: #cc0000; font-weight: bold; font-size: 0.9em; }
+        .status-notset { color: #777; font-style: italic; }
+        .action-link.primary-link { font-weight: bold; color: #007bff; }
+        .info-row .value { font-weight: 500; }
+    </style>
 </head>
 <body>
     <header>
-        <!-- ВИПРАВЛЕНО ШЛЯХ ДО index.html -->
         <div class="logo"><a href="../../index.html">YuMa</a></div>
         <nav class="header-nav">
-            <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК -->
             <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
             <a href="markets.html" class="nav-button">Markets</a>
-            <a href="trading-page.html" class="nav-button">Trade</a> <!-- Припускаю, що trade веде сюди -->
+            <a href="trading-page.html" class="nav-button">Trade</a>
         </nav>
         <div class="header-actions">
-            <!-- Посилання на сторінку депозиту, якщо вона є, наприклад deposit.html -->
             <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
             <div class="icon-placeholder dark-square"></div>
             <div class="icon-placeholder"></div>
+            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
             <div class="icon-placeholder"></div>
-            <div class="icon-placeholder"></div>
-            <div class="icon-placeholder"></div>
+            <button id="logoutButtonAccount" class="nav-button" style="display: none;">Log out</button>
         </div>
     </header>
 
     <div class="page-wrapper-profile">
         <aside class="sidebar">
             <nav>
-                <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК -->
                 <a href="profile.html" class="sidebar-button">dashboard</a>
                 <a href="assets.html" class="sidebar-button">assets</a>
                 <a href="order.html" class="sidebar-button">order</a>
@@ -56,26 +56,30 @@
                     <h3>Personal Information</h3>
                     <div class="info-row">
                         <span class="label">Username:</span>
-                        <span class="value">User-1488</span>
+                        <span class="value" id="accUsername">Loading...</span>
                     </div>
                     <div class="info-row">
                         <span class="label">UID:</span>
-                        <span class="value">ABC123XYZ789</span>
+                        <span class="value" id="accUID">Loading...</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Email:</span>
-                        <span class="value">user-1488@example.com <span class="status-verified">(Verified)</span></span>
-                        <a href="#" class="action-link">Change</a>
+                        <span class="value" id="accEmail">Loading...</span>
+                        <!-- <a href="#" class="action-link">Change</a> -- Функціонал зміни поки не реалізовано -->
                     </div>
                     <div class="info-row">
                         <span class="label">Phone Number:</span>
-                        <span class="value">Not Set</span>
+                        <span class="value status-notset" id="accPhone">Not Set</span> <!-- Додамо ID -->
                         <a href="#" class="action-link">Set Up</a>
                     </div>
                     <div class="info-row">
                         <span class="label">KYC Verification:</span>
-                        <span class="value status-unverified">Unverified</span>
+                        <span class="value status-unverified" id="accKYCStatus">Unverified</span> <!-- Додамо ID -->
                         <a href="#" class="action-link primary-link">Verify Now</a>
+                    </div>
+                     <div class="info-row">
+                        <span class="label">Account Created:</span>
+                        <span class="value" id="accCreatedAt">Loading...</span>
                     </div>
                 </section>
 
@@ -87,12 +91,13 @@
                     </div>
                     <div class="info-row security-item">
                         <span class="label">Two-Factor Authentication (2FA)</span>
-                        <span class="value status-disabled">Disabled</span>
+                        <!-- ID для статусу 2FA -->
+                        <span class="value status-disabled" id="acc2FAStatus">Disabled</span>
                         <a href="#" class="action-link">Enable 2FA</a>
                     </div>
                     <div class="info-row security-item">
                         <span class="label">Anti-Phishing Code</span>
-                        <span class="value">Not Set</span>
+                        <span class="value status-notset" id="accAntiPhishing">Not Set</span>
                         <a href="#" class="action-link">Set Up</a>
                     </div>
                      <div class="info-row security-item">
@@ -107,5 +112,119 @@
             </div>
         </main>
     </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[AccountPage] DOMContentLoaded. Script loaded.');
+    const token = localStorage.getItem('authToken');
+
+    // Елементи для оновлення
+    const accUsernameElement = document.getElementById('accUsername');
+    const accUIDElement = document.getElementById('accUID');
+    const accEmailElement = document.getElementById('accEmail');
+    const accPhoneElement = document.getElementById('accPhone'); // Поки не використовуємо
+    const accKYCStatusElement = document.getElementById('accKYCStatus'); // Поки не використовуємо
+    const accCreatedAtElement = document.getElementById('accCreatedAt');
+    const acc2FAStatusElement = document.getElementById('acc2FAStatus'); // Поки не використовуємо
+
+    const logoutButton = document.getElementById('logoutButtonAccount');
+
+    if (!token) {
+        console.warn('[AccountPage] No token. Redirecting to login.');
+        window.location.href = 'login-page.html';
+        return;
+    }
+
+    if (logoutButton) {
+        logoutButton.style.display = 'inline-block';
+        logoutButton.addEventListener('click', async () => {
+            console.log('[AccountPage] Logout clicked.');
+            const currentToken = localStorage.getItem('authToken');
+            localStorage.removeItem('authToken');
+            try {
+                await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
+            } catch(e) { console.error('Logout API error', e); }
+            window.location.href = 'login-page.html';
+        });
+    }
+
+    async function fetchApiData(url, options = {}) {
+        // ... (ваша функція fetchApiData з попередніх відповідей, яка обробляє токен та помилки) ...
+        // Переконайтеся, що вона тут присутня і працює
+        const currentToken = localStorage.getItem('authToken');
+        const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
+
+        if (requiresAuth && !currentToken) {
+             console.warn(`[fetchApiData] Auth required for ${url} but no token. Redirecting.`);
+             window.location.href = 'login-page.html';
+             return Promise.reject({ success: false, message: 'Authentication required.', shouldRedirect: true });
+        }
+        const headers = { 'Content-Type': 'application/json' };
+        if (requiresAuth && currentToken) {
+            headers['Authorization'] = `Bearer ${currentToken}`;
+        }
+        const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
+        try {
+            const response = await fetch(url, fetchOptions);
+            if (!response.ok) {
+                if ((response.status === 401 || response.status === 403) && requiresAuth) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login-page.html';
+                    return Promise.reject({ success: false, message: `Unauthorized or Forbidden for ${url}. Redirecting.`, shouldRedirect: true });
+                }
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+                return Promise.reject({ success: false, ...errorData });
+            }
+            return response.json();
+        } catch (error) {
+             console.error(`[fetchApiData] Network or other critical error for ${url}:`, error);
+             if (error.message && error.message.toLowerCase().includes("failed to fetch")) {
+                alert(`Network error: Could not connect to the server to fetch data for ${url}.`);
+             }
+             return Promise.reject({ success: false, message: error.message || `Network error fetching ${url}.` });
+        }
+    }
+
+    async function loadAccountData() {
+        console.log('[AccountPage] Attempting to load account data from /api/profile...');
+        try {
+            const data = await fetchApiData('/api/profile', {requiresAuth: true});
+            console.log('[AccountPage] Profile data received:', data);
+
+            if (data.success && data.profile) {
+                const profile = data.profile;
+                if (accUsernameElement) accUsernameElement.textContent = profile.username || 'N/A';
+                if (accUIDElement) accUIDElement.textContent = profile.uid || 'N/A';
+                if (accEmailElement) {
+                    accEmailElement.innerHTML = `${profile.email || 'N/A'} <span class="status-verified">(Verified)</span>`; // Припускаємо, що email завжди верифікований після реєстрації
+                }
+                if (accCreatedAtElement) {
+                    accCreatedAtElement.textContent = profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A';
+                }
+                
+                // Плейсхолдери для даних, яких ще немає в API / базі даних
+                if (accPhoneElement) accPhoneElement.innerHTML = 'Not Set <span class="status-notset">(Unverified)</span>';
+                if (accKYCStatusElement) accKYCStatusElement.innerHTML = 'Unverified <span class="status-unverified"></span>';
+                if (acc2FAStatusElement) acc2FAStatusElement.innerHTML = 'Disabled <span class="status-disabled"></span>';
+
+
+                console.log('[AccountPage] Account data rendered.');
+            } else {
+                console.error('[AccountPage] Failed to load account data:', data.message);
+                // Показати помилку користувачу
+                const mainContent = document.querySelector('.main-content-profile');
+                if (mainContent) mainContent.innerHTML = `<p class="no-data-placeholder">${data.message || 'Could not load account information.'}</p>`;
+            }
+        } catch (error) {
+            console.error('[AccountPage] Error in loadAccountData catcher:', error);
+             const mainContent = document.querySelector('.main-content-profile');
+            if (mainContent) mainContent.innerHTML = `<p class="no-data-placeholder">${error.message || 'Error loading account information. Please try again.'}</p>`;
+        }
+    }
+
+    // Завантажуємо дані при завантаженні сторінки
+    loadAccountData();
+});
+</script>
 </body>
 </html>
