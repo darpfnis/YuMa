@@ -5,32 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile - YuMa</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/header.css"> <!-- Якщо у вас є окремий файл для хедера -->
-    <link rel="stylesheet" href="../css/global.css"> <!-- Загальні стилі -->
-    <!-- <link rel="stylesheet" href="../css/profile.css"> -- Якщо є специфічні стилі для цієї сторінки -->
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <!-- <link rel="stylesheet" href="../css/profile.css"> -- Якщо є специфічні стилі -->
     <style>
-        /* Додаткові стилі для іконки улюбленого та змін ціни (можна винести в CSS) */
         .favourite-btn, .remove-favourite-btn {
-            cursor: pointer;
-            font-size: 1.8rem;
-            color: #ccc; /* Неактивна */
-            border: none;
-            background: none;
-            padding: 0.2rem 0.5rem;
+            cursor: pointer; font-size: 1.8rem; color: #ccc;
+            border: none; background: none; padding: 0.2rem 0.5rem;
         }
-        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite {
-            color: #ffc107; /* Активна (жовта) */
-        }
-        .positive-change {
-            color: green;
-        }
-        .negative-change {
-            color: red;
-        }
-        .coin-symbol-small {
-            color: #777;
-            font-size: 0.85em;
-        }
+        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite { color: #ffc107; }
+        .positive-change { color: green; }
+        .negative-change { color: red; }
+        .coin-symbol-small { color: #777; font-size: 0.85em; margin-left: 0.3em; }
+        .no-data-placeholder a { color: #007bff; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -86,9 +73,7 @@
             <section class="markets-section">
                 <h3>My Favourite Markets</h3>
                 <div class="market-filters">
-                    <!-- Фільтри можна залишити, якщо вони будуть застосовуватися до улюблених, або прибрати -->
                     <button class="filter-button active" data-filter="favourite">Favourite</button>
-                    <!-- <button class="filter-button" data-filter="holding">Holding</button> -->
                 </div>
                 <div class="custom-table-wrapper" id="favouriteMarketsTable">
                     <div class="custom-table-header">
@@ -98,7 +83,6 @@
                         <span>Action</span>
                     </div>
                     <div class="no-data-placeholder">Loading favourite markets...</div>
-                    <!-- Рядки будуть додані динамічно -->
                 </div>
             </section>
         </main>
@@ -106,7 +90,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[ProfilePage] DOMContentLoaded event fired.');
+
     const token = localStorage.getItem('authToken');
+    console.log('[ProfilePage] Token from localStorage on page load:', token);
+
     const userNameElement = document.getElementById('userName');
     const userUIDElement = document.getElementById('userUID');
     const estimatedBalanceElement = document.getElementById('estimatedBalance');
@@ -114,86 +102,141 @@ document.addEventListener('DOMContentLoaded', async () => {
     const logoutButton = document.getElementById('logoutButton');
 
     if (!token) {
+        console.log('[ProfilePage] No token found in localStorage. Redirecting to login page.');
         window.location.href = 'login-page.html'; // Шлях до сторінки входу
-        return;
+        return; // Зупиняємо виконання скрипта, якщо немає токена
     }
+
+    console.log('[ProfilePage] Token found. Proceeding to setup page.');
 
     if (logoutButton) {
         logoutButton.style.display = 'inline-block';
         logoutButton.addEventListener('click', async () => {
+            console.log('[ProfilePage] Logout button clicked.');
+            const currentToken = localStorage.getItem('authToken'); // Отримуємо токен для запиту на вихід
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmailForMVP'); // Якщо використовували
+            console.log('[ProfilePage] Token removed from localStorage.');
+
             // Опціонально: повідомити сервер про вихід
             try {
-                await fetch('/auth/logout', {
+                const logoutResponse = await fetch('/auth/logout', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${currentToken}` } // Надсилаємо токен, який видаляємо
                 });
+                const logoutData = await logoutResponse.json();
+                console.log('[ProfilePage] Logout API response:', logoutData);
             } catch (error) {
-                console.error('Error during logout API call:', error);
+                console.error('[ProfilePage] Error during logout API call:', error);
             }
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userEmailForMVP'); // Якщо ви ще використовували це
-            window.location.href = 'login-page.html'; // Шлях до сторінки входу
+            window.location.href = 'login-page.html';
         });
+    } else {
+        console.warn('[ProfilePage] Logout button not found.');
     }
 
     // Функція для запитів з обробкою помилок авторизації
-    async function fetchProtectedData(url) {
-        const response = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) { // Неавторизований або заборонено
-                localStorage.removeItem('authToken');
-                window.location.href = 'login-page.html';
-                return Promise.reject(new Error('Unauthorized or Forbidden'));
-            }
-            const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
-            return Promise.reject(errorData);
+    async function fetchProtectedData(url, options = {}) {
+        const currentToken = localStorage.getItem('authToken'); // Завжди читаємо актуальний токен
+        console.log(`[fetchProtectedData] Fetching ${url} with token:`, currentToken ? currentToken.substring(0,20)+'...' : 'NO TOKEN');
+
+        if (!currentToken) { // Подвійна перевірка, хоча вже є на початку
+            console.error('[fetchProtectedData] No token available for protected request. Redirecting.');
+            window.location.href = 'login-page.html';
+            return Promise.reject(new Error('No token, redirecting.'));
         }
-        return response.json();
+
+        const defaultHeaders = {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json' // Потрібно для POST/PUT, для GET не завжди, але не завадить
+        };
+
+        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
+
+        try {
+            const response = await fetch(url, fetchOptions);
+            console.log(`[fetchProtectedData] Response status for ${url}: ${response.status}`);
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.error(`[fetchProtectedData] Unauthorized (401) or Forbidden (403) for ${url}. Removing token and redirecting.`);
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login-page.html';
+                    return Promise.reject(new Error('Unauthorized or Forbidden, token removed.'));
+                }
+                // Спробуємо отримати тіло помилки, якщо воно є
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status} for ${url}` }));
+                console.error(`[fetchProtectedData] Error data for ${url}:`, errorData);
+                return Promise.reject(errorData);
+            }
+            return response.json(); // Повертаємо розпарсений JSON
+        } catch (error) {
+             console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
+             return Promise.reject(error); // Передаємо помилку далі
+        }
     }
 
     // Завантаження даних профілю
     async function loadProfileData() {
+        console.log('[ProfilePage] Attempting to load profile data...');
         try {
             const data = await fetchProtectedData('/api/profile');
+            console.log('[ProfilePage] Profile data received from server:', data);
             if (data.success && data.profile) {
                 if (userNameElement) userNameElement.textContent = data.profile.username || data.profile.email.split('@')[0];
                 if (userUIDElement) userUIDElement.textContent = `UID: ${data.profile.uid || 'N/A'}`;
+                console.log('[ProfilePage] Profile data rendered.');
             } else {
-                console.error('Failed to load profile data:', data.message);
+                console.error('[ProfilePage] Failed to load profile data from server:', data.message);
+                if (userNameElement) userNameElement.textContent = 'Error';
             }
         } catch (error) {
-            console.error('Error fetching profile data:', error.message || error);
+            console.error('[ProfilePage] Error in loadProfileData:', error.message || error);
+            if (userNameElement) userNameElement.textContent = 'Error loading profile';
         }
     }
 
     // Завантаження балансу
     async function loadBalance() {
+        console.log('[ProfilePage] Attempting to load balance data...');
         try {
             const data = await fetchProtectedData('/api/balance');
+            console.log('[ProfilePage] Balance data received from server:', data);
             if (data.success) {
                 if (estimatedBalanceElement) estimatedBalanceElement.textContent = `$${parseFloat(data.balance).toFixed(2)} USD`;
+                console.log('[ProfilePage] Balance data rendered.');
             } else {
-                console.error('Failed to load balance:', data.message);
+                console.error('[ProfilePage] Failed to load balance from server:', data.message);
                 if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ N/A';
             }
         } catch (error) {
-            console.error('Error fetching balance:', error.message || error);
+            console.error('[ProfilePage] Error in loadBalance:', error.message || error);
             if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ Error';
         }
     }
 
     // Завантаження та відображення улюблених ринків
     async function loadAndRenderFavouriteMarkets() {
-        if (!favouriteMarketsTable) return;
+        if (!favouriteMarketsTable) {
+            console.warn('[ProfilePage] Favourite markets table element not found.');
+            return;
+        }
+        console.log('[ProfilePage] Attempting to load favourite markets data...');
 
         const header = favouriteMarketsTable.querySelector('.custom-table-header');
-        favouriteMarketsTable.innerHTML = ''; // Очищаємо все
-        if (header) favouriteMarketsTable.appendChild(header); // Повертаємо заголовок
+        favouriteMarketsTable.innerHTML = '';
+        if (header) favouriteMarketsTable.appendChild(header);
+        favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Loading favourite markets...</div>');
+
 
         try {
             const data = await fetchProtectedData('/api/markets/favourites');
+            console.log('[ProfilePage] Favourite markets data received from server:', data);
+
+            const currentPlaceholder = favouriteMarketsTable.querySelector('.no-data-placeholder');
+            if (currentPlaceholder) currentPlaceholder.remove();
+
+
             if (data.success && data.markets) {
                 if (data.markets.length === 0) {
                     favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">You have no favourite markets yet. <a href="markets.html">Add some</a>!</div>');
@@ -222,41 +265,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                     button.addEventListener('click', async (event) => {
                         const marketId = event.currentTarget.dataset.marketId;
                         if (!confirm('Are you sure you want to remove this market from favourites?')) return;
+                        console.log(`[ProfilePage] Attempting to remove favourite market ID: ${marketId}`);
                         try {
-                            const deleteResponse = await fetch(`/api/favourites/${marketId}`, {
-                                method: 'DELETE',
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            const deleteData = await deleteResponse.json();
-                            if (deleteResponse.ok && deleteData.success) {
-                                event.currentTarget.closest('.custom-table-row').remove();
-                                // Перевірити, чи не залишилося жодного улюбленого
-                                if (favouriteMarketsTable.querySelectorAll('.custom-table-row').length === 0) {
-                                     favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">You have no favourite markets yet. <a href="markets.html">Add some</a>!</div>');
-                                }
-                            } else {
-                                alert(deleteData.message || 'Failed to remove favourite.');
-                            }
+                            await fetchProtectedData(`/api/favourites/${marketId}`, { method: 'DELETE' });
+                            // Після успішного видалення, перезавантажуємо список улюблених
+                            console.log(`[ProfilePage] Favourite market ID: ${marketId} remove request sent. Reloading favourites.`);
+                            loadAndRenderFavouriteMarkets(); // Оновлюємо список
                         } catch (err) {
-                            console.error('Error removing favourite:', err);
-                            alert('Error removing favourite.');
+                            console.error('[ProfilePage] Error removing favourite:', err);
+                            alert(err.message || 'Error removing favourite.');
                         }
                     });
                 });
-
+                console.log('[ProfilePage] Favourite markets rendered.');
             } else {
                 favouriteMarketsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Could not load favourite markets.'}</div>`);
             }
         } catch (error) {
-            console.error('Error fetching favourite markets:', error.message || error);
+            console.error('[ProfilePage] Error in loadAndRenderFavouriteMarkets:', error.message || error);
+             const currentPlaceholderOnError = favouriteMarketsTable.querySelector('.no-data-placeholder');
+            if (currentPlaceholderOnError) currentPlaceholderOnError.remove();
             favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading favourite markets. Please try again.</div>');
         }
     }
 
     // Завантажуємо всі дані при завантаженні сторінки
-    loadProfileData();
-    loadBalance();
-    loadAndRenderFavouriteMarkets();
+    console.log('[ProfilePage] Starting initial data load.');
+    await loadProfileData();
+    await loadBalance();
+    await loadAndRenderFavouriteMarkets();
+    console.log('[ProfilePage] Initial data load sequence finished.');
 });
 </script>
 </body>
