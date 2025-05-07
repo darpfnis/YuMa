@@ -4,25 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>General Settings - YuMa</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/header.css">
-    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/styles.css"> <!-- Головний файл стилів -->
+    <link rel="stylesheet" href="../css/header.css"> <!-- Стилі для хедера -->
+    <link rel="stylesheet" href="../css/global.css"> <!-- Глобальні стилі -->
+    <!-- <link rel="stylesheet" href="../css/settings.css"> -- Специфічні стилі для цієї сторінки, якщо є -->
     <style>
+        /* Тимчасові стилі для швидкого старту, краще винести в CSS */
         .avatar-preview {
             width: 100px; height: 100px; border-radius: 50%;
-            background-color: #e0e0e0; margin-bottom: 1rem;
+            background-color: #e9ecef; margin-bottom: 1rem;
             background-size: cover; background-position: center;
-            border: 2px solid #ccc;
+            border: 2px solid #ced4da;
             display: flex; align-items: center; justify-content: center;
-            color: #777; font-size: 1.2rem;
+            color: #6c757d; font-size: 1.2rem;
         }
-        .settings-form input[type="file"] { margin-top: 0.5rem; }
-        .form-group .current-value {
+        .settings-form input[type="url"], .settings-form input[type="text"], .settings-form select {
+            margin-bottom: 1rem; /* Відступ під інпутами/селектами */
+        }
+        .settings-form small { display: block; margin-top: -0.5rem; margin-bottom: 1rem; font-size: 1.2rem; color: #6c757d; }
+        .form-message { font-size: 1.3rem; margin-top: 1rem; padding: 0.5rem 0; }
+        .form-message.success { color: #28a745; }
+        .form-message.error { color: #dc3545; }
+        .current-value {
             font-style: italic;
-            color: #555;
-            font-size: 0.9em;
-            margin-bottom: 0.5em;
+            color: #495057; /* Трохи темніше */
+            font-size: 1.4rem; /* Трохи більше */
+            margin-bottom: 0.8rem; /* Відступ під поточним значенням */
             display: block;
+        }
+        .settings-section hr {
+            border: 0;
+            border-top: 1px solid #dee2e6; /* Світліший розділювач */
+            margin: 2.5rem 0;
+        }
+        .settings-form button.action-button {
+             margin-top: 0.5rem; /* Невеликий відступ над кнопками */
+        }
+        .profile-card.settings-section { /* Додамо трохи більше падінгу до секцій */
+            padding: 2.5rem;
+        }
+        .form-group { /* Додамо відступ для груп полів */
+            margin-bottom: 2rem;
+        }
+        .form-group:last-child {
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -62,8 +87,7 @@
 
             <section class="profile-card settings-section">
                 <h3>Profile Settings</h3>
-                <!-- Форма для аватара (або просто блок, якщо кнопка поза формою) -->
-                <div class="settings-form">
+                <div class="settings-form"> <!-- Контейнер для аватара, не форма -->
                     <div class="form-group">
                         <label for="avatarUrlInput">Profile Picture URL:</label>
                         <div id="avatarPreview" class="avatar-preview">No Image</div>
@@ -82,17 +106,44 @@
                         <span class="current-value" id="currentUsername">Loading...</span>
                         <input type="text" id="usernameInput" name="username" placeholder="Enter new username" minlength="3" required>
                     </div>
-                    <!-- КНОПКА ЗБЕРЕЖЕННЯ НІКНЕЙМУ МАЄ БУТИ ТИПУ SUBMIT І ВСЕРЕДИНІ ФОРМИ -->
                     <button type="submit" class="action-button primary-action">Save Username</button>
                     <div id="usernameMessage" class="form-message"></div>
                 </form>
             </section>
 
-            {/* Секції Preferences та Notification Settings залишаються як були */}
             <section class="profile-card settings-section">
                 <h3>Preferences</h3>
                 <form id="preferencesForm" class="settings-form">
-                    {/* ... поля ... */}
+                    <div class="form-group">
+                        <label for="language">Language:</label>
+                        <select id="language" name="language">
+                            <option value="en">English</option>
+                            <option value="ua" selected>Українська</option>
+                            <option value="es">Español</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="currency">Default Currency Display:</label>
+                        <select id="currency" name="currency">
+                            <option value="usd">USD</option>
+                            <option value="eur">EUR</option>
+                            <option value="uah">UAH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timezone">Timezone:</label>
+                        <select id="timezone" name="timezone">
+                            <option value="utc">UTC</option>
+                            <option value="gmt3">(GMT+03:00) Kyiv</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label>Theme:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="theme" value="light" checked> Light</label>
+                            <label><input type="radio" name="theme" value="dark"> Dark</label>
+                        </div>
+                    </div>
                     <button type="submit" class="action-button primary-action">Save Preferences</button>
                      <div id="preferencesMessage" class="form-message"></div>
                 </form>
@@ -101,7 +152,18 @@
             <section class="profile-card settings-section">
                 <h3>Notification Settings</h3>
                 <form id="notificationsForm" class="settings-form">
-                    {/* ... поля ... */}
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="email_trades" checked> Email on Trade Execution</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="email_deposits" checked> Email on Deposit/Withdrawal</label>
+                    </div>
+                     <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="email_news"> Email for News & Announcements</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="push_alerts" disabled> Push Notifications for Price Alerts (App Only)</label>
+                    </div>
                     <button type="submit" class="action-button primary-action">Save Notifications</button>
                      <div id="notificationsMessage" class="form-message"></div>
                 </form>
@@ -114,7 +176,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SettingsPage] DOMContentLoaded.');
     const token = localStorage.getItem('authToken');
 
-    // Елементи для налаштувань профілю
     const avatarPreview = document.getElementById('avatarPreview');
     const avatarUrlInput = document.getElementById('avatarUrlInput');
     const saveAvatarBtn = document.getElementById('saveAvatarBtn');
@@ -122,13 +183,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const currentUsernameElement = document.getElementById('currentUsername');
     const usernameInput = document.getElementById('usernameInput');
-    const usernameSettingsForm = document.getElementById('usernameSettingsForm'); // Форма для нікнейму
+    const usernameSettingsForm = document.getElementById('usernameSettingsForm');
     const usernameMessage = document.getElementById('usernameMessage');
+
+    const preferencesForm = document.getElementById('preferencesForm');
+    const preferencesMessage = document.getElementById('preferencesMessage');
+    const notificationsForm = document.getElementById('notificationsForm');
+    const notificationsMessage = document.getElementById('notificationsMessage');
 
     const logoutButton = document.getElementById('logoutButtonSettings');
 
     if (!token) {
-        window.location.href = 'login-page.html';
+        window.location.href = 'login-page.html'; // Шлях до сторінки входу
         return;
     }
 
@@ -145,13 +211,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function fetchApiData(url, options = {}) {
-        // ... (ваша повна функція fetchApiData, яка обробляє помилки і повертає {success: false, ...} ) ...
-        // Я залишу її скороченою тут для прикладу
         const currentToken = localStorage.getItem('authToken');
         const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
+
         if (requiresAuth && !currentToken) {
              window.location.href = 'login-page.html';
-             return Promise.resolve({ success: false, message: 'Auth token missing.', shouldRedirect: true });
+             return Promise.resolve({ success: false, message: 'Auth token missing, redirecting.', shouldRedirect: true });
         }
         const headers = { 'Content-Type': 'application/json' };
         if (requiresAuth && currentToken) {
@@ -162,11 +227,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch(url, fetchOptions);
             if (!response.ok) {
                 if ((response.status === 401 || response.status === 403) && requiresAuth) {
-                    localStorage.removeItem('authToken'); window.location.href = 'login-page.html';
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login-page.html';
                     return Promise.resolve({ success: false, message: `Auth error. Redirecting.`, shouldRedirect: true });
                 }
-                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
-                return { success: false, ...errorData };
+                try {
+                    const errorData = await response.json();
+                    return { success: false, ...errorData };
+                } catch (jsonError) {
+                    const errorText = await response.text();
+                    return { success: false, message: `Server error: ${response.status}. Resp: ${errorText.substring(0,100)}`};
+                }
             }
             return response.json();
         } catch (error) {
@@ -179,13 +250,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadCurrentProfileSettings() {
-        avatarMessage.textContent = ''; usernameMessage.textContent = '';
+        if(avatarMessage) avatarMessage.textContent = ''; 
+        if(usernameMessage) usernameMessage.textContent = '';
         try {
             const data = await fetchApiData('/api/profile', { requiresAuth: true });
             if (data && data.success && data.profile) {
                 const profile = data.profile;
                 if (currentUsernameElement) currentUsernameElement.textContent = `Current: ${profile.username || 'Not set'}`;
-                if (usernameInput) usernameInput.value = profile.username || ''; // Встановлюємо поточний нік в поле
+                if (usernameInput) usernameInput.value = profile.username || '';
                 
                 if (avatarUrlInput) avatarUrlInput.value = profile.avatar_url || '';
                 if (avatarPreview) {
@@ -198,10 +270,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             } else {
-                alert(data.message || 'Failed to load profile settings.');
+                const errorMsg = data ? data.message : 'Failed to load profile settings (undefined response).';
+                alert(errorMsg);
             }
         } catch (error) {
-            alert(error.message || 'Error loading profile settings.');
+            alert(error.message || 'Could not load profile settings due to an error.');
         }
     }
 
@@ -220,11 +293,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (data && data.success) {
                     avatarMessage.textContent = data.message || 'Avatar updated!';
                     avatarMessage.classList.add('success');
-                    if (avatarPreview && data.avatarUrl !== undefined) { // Перевіряємо, чи сервер повернув avatarUrl
+                    if (avatarPreview && data.avatarUrl !== undefined) {
                         if (data.avatarUrl) {
                             avatarPreview.style.backgroundImage = `url('${data.avatarUrl}')`;
                             avatarPreview.textContent = '';
-                        } else { // Якщо сервер повернув порожній avatarUrl (видалення)
+                        } else {
                             avatarPreview.style.backgroundImage = 'none';
                             avatarPreview.textContent = 'No Image';
                         }
@@ -242,7 +315,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (usernameSettingsForm) {
         usernameSettingsForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // ВАЖЛИВО для форм
+            event.preventDefault();
             const newUsername = usernameInput.value.trim();
             usernameMessage.textContent = 'Saving...';
             usernameMessage.className = 'form-message';
@@ -263,12 +336,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     usernameMessage.textContent = data.message || 'Username updated!';
                     usernameMessage.classList.add('success');
                     if (currentUsernameElement && data.user) currentUsernameElement.textContent = `Current: ${data.user.username}`;
-                    // Опціонально: очистити поле вводу або оновити його значенням з сервера
-                    // usernameInput.value = ''; 
-                    if (usernameInput && data.user) usernameInput.placeholder = data.user.username;
-
-
-                    if (data.token) { // Якщо сервер повернув новий токен
+                    // Очищаємо поле після успішного збереження або встановлюємо нове значення
+                    if (usernameInput && data.user) usernameInput.value = data.user.username; 
+                    
+                    if (data.token) {
                         localStorage.setItem('authToken', data.token);
                         console.log('[SettingsPage] New JWT token saved after username update.');
                     }
@@ -283,24 +354,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    
-    // Обробники для інших форм (поки просто показують повідомлення)
-    if(preferencesForm) {
-        preferencesForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            preferencesMessage.textContent = 'Preferences saving not implemented yet.';
-            preferencesMessage.style.color = 'orange';
-        });
+    // Плейсхолдери для інших форм
+    function showNotImplementedMessage(form, messageElement) {
+        if (form && messageElement) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                messageElement.textContent = 'This feature is not implemented yet.';
+                messageElement.className = 'form-message'; // Скидаємо класи
+                messageElement.style.color = 'orange';
+            });
+        }
     }
-    if(notificationsForm) {
-        notificationsForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            notificationsMessage.textContent = 'Notification settings saving not implemented yet.';
-            notificationsMessage.style.color = 'orange';
-        });
-    }
+    showNotImplementedMessage(preferencesForm, preferencesMessage);
+    showNotImplementedMessage(notificationsForm, notificationsMessage);
 
-    // Завантажуємо поточні налаштування при завантаженні сторінки
     loadCurrentProfileSettings();
 });
 </script>
