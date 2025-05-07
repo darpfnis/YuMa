@@ -55,7 +55,8 @@ app.use('/frontend', express.static(frontendPath));
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    console.log('[AuthMiddleware] Auth Header:', authHeader); // Логування
+    console.log('[AuthMiddleware] Auth Header:', authHeader);
+    console.log('[AuthMiddleware] Token Extracted:', token);
 
     if (token == null) {
         console.log('[AuthMiddleware] Token missing.');
@@ -64,11 +65,11 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, JWT_SECRET, (err, userPayload) => {
         if (err) {
-            console.error('[AuthMiddleware] JWT verification error:', err.message);
+            console.error('[AuthMiddleware] JWT verification error:', err.message); // ДУЖЕ ВАЖЛИВИЙ ЛОГ
             return res.status(403).json({ success: false, message: 'Invalid or expired token.' });
         }
-        req.user = userPayload; // payload з токена
-        console.log('[AuthMiddleware] Token verified. User:', req.user); // Логування
+        req.user = userPayload;
+        console.log('[AuthMiddleware] Token verified. User:', req.user);
         next();
     });
 };
@@ -263,8 +264,3 @@ htmlPages.forEach(page => {
 app.listen(port, () => {
     console.log(`YuMa Backend Server is running on http://localhost:${port}`);
 });
-
-// --- Обробка закриття сервера ---
-async function gracefulShutdown() { /* ... ваш код для закриття пулу ... */ }
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);
