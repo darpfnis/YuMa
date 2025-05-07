@@ -9,12 +9,15 @@
     <link rel="stylesheet" href="../css/global.css">
     <style>
         /* ... (ваші стилі з попередньої відповіді залишаються тут) ... */
-        .favourite-btn, .remove-favourite-btn { /* ... */ }
-        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite { /* ... */ }
-        .positive-change { /* ... */ }
-        .negative-change { /* ... */ }
-        .coin-symbol-small { /* ... */ }
-        .no-data-placeholder a { /* ... */ }
+        .favourite-btn, .remove-favourite-btn {
+            cursor: pointer; font-size: 1.8rem; color: #ccc;
+            border: none; background: none; padding: 0.2rem 0.5rem;
+        }
+        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite { color: #ffc107; }
+        .positive-change { color: green; }
+        .negative-change { color: red; }
+        .coin-symbol-small { color: #777; font-size: 0.85em; margin-left: 0.3em; }
+        .no-data-placeholder a { color: #007bff; text-decoration: underline; }
 
         /* Стиль для аватара на дашборді */
         .user-avatar-placeholder {
