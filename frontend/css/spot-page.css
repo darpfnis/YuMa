@@ -49,9 +49,15 @@
 /* Тут можуть бути лише специфічні перевизначення для .order-book-card тощо, якщо вони потрібні */
 
 .chart-card {
-  /* Специфічний розмір для картки графіка */
-  flex-basis: 65%;
-  min-height: 20rem;
+  flex-basis: 70%; /* Або скільки потрібно для висоти */
+  min-height: 25rem; /* Наприклад, 400px - мінімальна висота */
+  padding: 0.5rem; /* Зменшуємо padding, щоб віджет мав більше місця */
+  display: flex; /* Щоб внутрішній tradingview-widget-container розтягувався */
+  flex-direction: column;
+}
+
+.tradingview-widget-container {
+  flex-grow: 1; /* Дозволяє віджету заповнити доступний простір в .chart-card */
 }
 
 .spot-trading-panel-card {
