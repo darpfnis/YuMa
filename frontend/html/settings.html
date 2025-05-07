@@ -117,26 +117,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[SettingsPage] DOMContentLoaded.');
     const token = localStorage.getItem('authToken');
-    const logoutButton = document.getElementById('logoutButtonSettings');
 
-    // Елементи для налаштувань профілю
     const avatarPreview = document.getElementById('avatarPreview');
-    const avatarUrlInput = document.getElementById('avatarUrl');
+    const avatarUrlInput = document.getElementById('avatarUrlInput'); // Оновлено ID
     const saveAvatarBtn = document.getElementById('saveAvatarBtn');
     const avatarMessage = document.getElementById('avatarMessage');
 
     const currentUsernameElement = document.getElementById('currentUsername');
-    const usernameInput = document.getElementById('username');
+    const usernameInput = document.getElementById('usernameInput'); // Оновлено ID
     const usernameSettingsForm = document.getElementById('usernameSettingsForm');
     const usernameMessage = document.getElementById('usernameMessage');
 
-    // Елементи для інших форм (поки без реальної логіки збереження)
-    const preferencesForm = document.getElementById('preferencesForm');
-    const preferencesMessage = document.getElementById('preferencesMessage');
-    const notificationsForm = document.getElementById('notificationsForm');
-    const notificationsMessage = document.getElementById('notificationsMessage');
-
+    const logoutButton = document.getElementById('logoutButtonSettings');
 
     if (!token) {
         window.location.href = 'login-page.html';
@@ -148,13 +142,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         logoutButton.addEventListener('click', async () => { /* ... логіка виходу ... */ });
     }
 
-    async function fetchApiData(url, options = {}) { /* ... ваша функція fetchApiData ... */ }
+    async function fetchApiData(url, options = {}) {
+        const currentToken = localStorage.getItem('authToken');
+        const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
+        console.log(`[fetchApiData] Fetching ${url}. Auth: ${requiresAuth}`);
 
-    // Завантаження поточних даних профілю (включаючи username та avatar_url)
+        if (requiresAuth && !currentToken) {
+             window.location.href = 'login-page.html';
+             return Promise.resolve({ success: false, message: 'Auth token missing, redirecting.', shouldRedirect: true });
+        }
+        const headers = { 'Content-Type': 'application/json' };
+        if (requiresAuth && currentToken) {
+            headers['Authorization'] = `Bearer ${currentToken}`;
+        }
+        const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
+        try {
+            const response = await fetch(url, fetchOptions);
+            // console.log(`[fetchApiData] Response status for ${url}: ${response.status}`);
+            if (!response.ok) {
+                if ((response.status === 401 || response.status === 403) && requiresAuth) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'login-page.html';
+                    return Promise.resolve({ success: false, message: `Unauthorized/Forbidden for ${url}. Redirecting.`, shouldRedirect: true });
+                }
+                try {
+                    const errorData = await response.json();
+                    console.error(`[fetchApiData] Server error for ${url} (status ${response.status}):`, errorData);
+                    return { success: false, ...errorData }; // Повертаємо об'єкт помилки з сервера
+                } catch (jsonError) {
+                    const errorText = await response.text();
+                    console.error(`[fetchApiData] Server error for ${url} (status ${response.status}). Resp not JSON:`, errorText);
+                    return { success: false, message: `Server error: ${response.status}. Resp: ${errorText.substring(0,100)}`};
+                }
+            }
+            return response.json(); // Повертає Promise, який розв'язується в JSON
+        } catch (error) {
+             console.error(`[fetchApiData] Network or other critical error for ${url}:`, error);
+             if (error.message && error.message.toLowerCase().includes("failed to fetch")) {
+                alert(`Network error: Could not connect to server for ${url}.`);
+             }
+             return { success: false, message: error.message || `Network error or unable to fetch ${url}.`, isFetchError: true };
+        }
+    }
+
     async function loadCurrentProfileSettings() {
+        console.log('[SettingsPage] Loading current profile settings...');
+        avatarMessage.textContent = ''; usernameMessage.textContent = ''; // Очищаємо попередні повідомлення
         try {
             const data = await fetchApiData('/api/profile', { requiresAuth: true });
-            if (data.success && data.profile) {
+            console.log('[SettingsPage] Profile data from server:', data);
+            if (data && data.success && data.profile) {
                 const profile = data.profile;
                 if (currentUsernameElement) currentUsernameElement.textContent = `Current: ${profile.username || 'Not set'}`;
                 if (usernameInput) usernameInput.placeholder = profile.username || 'Enter new username';
@@ -163,26 +200,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (avatarPreview) {
                     if (profile.avatar_url) {
                         avatarPreview.style.backgroundImage = `url('${profile.avatar_url}')`;
-                        avatarPreview.textContent = ''; // Прибираємо "No Image"
+                        avatarPreview.textContent = '';
                     } else {
                         avatarPreview.style.backgroundImage = 'none';
                         avatarPreview.textContent = 'No Image';
                     }
                 }
             } else {
-                console.error('Failed to load profile settings:', data.message);
+                const errorMsg = data ? data.message : 'Failed to load profile settings (undefined response).';
+                console.error('[SettingsPage]', errorMsg);
+                alert(errorMsg); // Показати користувачу
             }
-        } catch (error) {
-            console.error('Error loading profile settings:', error);
+        } catch (error) { // Цей catch спрацює, якщо fetchApiData повернула відхилений Promise
+            console.error('[SettingsPage] Error loading profile settings in catch:', error);
+            alert(error.message || 'Could not load profile settings due to an error.');
         }
     }
 
-    // Обробник для збереження URL аватара
     if (saveAvatarBtn) {
         saveAvatarBtn.addEventListener('click', async () => {
             const newAvatarUrl = avatarUrlInput.value.trim();
-            avatarMessage.textContent = '';
-            avatarMessage.style.color = 'green';
+            console.log('[SettingsPage] Save Avatar clicked. URL:', newAvatarUrl);
+            avatarMessage.textContent = 'Saving...';
+            avatarMessage.className = 'form-message'; // Скидаємо клас
 
             try {
                 const data = await fetchApiData('/api/profile/avatar', {
@@ -190,40 +230,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ avatarUrl: newAvatarUrl }),
                     requiresAuth: true
                 });
-                if (data.success) {
-                    avatarMessage.textContent = data.message;
+                console.log('[SettingsPage] Save Avatar response:', data);
+
+                if (data && data.success) { // ЗАВЖДИ ПЕРЕВІРЯЙТЕ НАЯВНІСТЬ data ПЕРЕД data.success
+                    avatarMessage.textContent = data.message || 'Avatar updated successfully!';
+                    avatarMessage.classList.add('success');
                     if (avatarPreview) {
-                        if (newAvatarUrl) {
-                            avatarPreview.style.backgroundImage = `url('${newAvatarUrl}')`;
+                        if (data.avatarUrl) { // Використовуємо URL з відповіді сервера
+                            avatarPreview.style.backgroundImage = `url('${data.avatarUrl}')`;
                             avatarPreview.textContent = '';
                         } else {
                             avatarPreview.style.backgroundImage = 'none';
                             avatarPreview.textContent = 'No Image';
                         }
                     }
-                    // Якщо аватар використовується в хедері, його теж треба оновити
                 } else {
                     avatarMessage.textContent = data.message || 'Failed to update avatar.';
-                    avatarMessage.style.color = 'red';
+                    avatarMessage.classList.add('error');
                 }
-            } catch (error) {
+            } catch (error) { // Цей catch спрацює для помилок, які повернула fetchApiData
+                console.error('[SettingsPage] Error saving avatar in catch:', error);
                 avatarMessage.textContent = error.message || 'Error updating avatar.';
-                avatarMessage.style.color = 'red';
+                avatarMessage.classList.add('error');
             }
         });
     }
 
-    // Обробник для збереження нікнейму
     if (usernameSettingsForm) {
         usernameSettingsForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const newUsername = usernameInput.value.trim();
-            usernameMessage.textContent = '';
-            usernameMessage.style.color = 'green';
+            console.log('[SettingsPage] Save Username submitted. New Username:', newUsername);
+            usernameMessage.textContent = 'Saving...';
+            usernameMessage.className = 'form-message';
+
 
             if (newUsername.length < 3) {
                 usernameMessage.textContent = 'Username must be at least 3 characters.';
-                usernameMessage.style.color = 'red';
+                usernameMessage.classList.add('error');
                 return;
             }
 
@@ -233,25 +277,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ newUsername: newUsername }),
                     requiresAuth: true
                 });
+                console.log('[SettingsPage] Save Username response:', data);
 
-                if (data.success) {
-                    usernameMessage.textContent = data.message;
-                    if (currentUsernameElement) currentUsernameElement.textContent = `Current: ${data.user.username}`;
-                    if (usernameInput) usernameInput.value = ''; // Очищаємо поле
-                    if (data.token) { // Якщо сервер повернув новий токен
+                if (data && data.success) {
+                    usernameMessage.textContent = data.message || 'Username updated!';
+                    usernameMessage.classList.add('success');
+                    if (currentUsernameElement && data.user) currentUsernameElement.textContent = `Current: ${data.user.username}`;
+                    if (usernameInput) usernameInput.value = '';
+                    if (data.token) {
                         localStorage.setItem('authToken', data.token);
-                        console.log('New JWT token saved after username update.');
+                        console.log('[SettingsPage] New JWT token saved after username update.');
                     }
                 } else {
                     usernameMessage.textContent = data.message || 'Failed to update username.';
-                    usernameMessage.style.color = 'red';
+                    usernameMessage.classList.add('error');
                 }
             } catch (error) {
+                console.error('[SettingsPage] Error saving username in catch:', error);
                 usernameMessage.textContent = error.message || 'Error updating username.';
-                usernameMessage.style.color = 'red';
+                usernameMessage.classList.add('error');
             }
         });
     }
+    
     
     // Обробники для інших форм (поки просто показують повідомлення)
     if(preferencesForm) {
