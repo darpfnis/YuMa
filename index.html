@@ -3,63 +3,114 @@
     <head>
         <meta charset="UTF-8">
         <title>YuMa - Головна</title>
-        <!-- Правильні ВІДНОСНІ шляхи для локального відкриття -->
-        <link rel="stylesheet" href="./frontend/css/main-page.css">
-        <link rel="stylesheet" href="./frontend/css/header.css">
         <link rel="stylesheet" href="./frontend/css/global.css">
+        <link rel="stylesheet" href="./frontend/css/header.css">
         <link rel="stylesheet" href="./frontend/css/cards.css">
-        <!-- Якщо є загальний клієнтський script.js у frontend/js/ -->
-        <!-- <script defer src="./frontend/js/script.js"></script> -->
+        <link rel="stylesheet" href="./frontend/css/main-page.css">
     </head>
+
 <body>
     <header>
+        <!-- ... (твій поточний хедер без змін) ... -->
         <div class="header-left">
-            <!-- Головна сторінка - це сама себе (index.html) -->
-            <div class="logo"><a href="./index.html">YuMa</a></div> <!-- або просто "index.html" -->
+            <div class="logo"><a href="index.html">YuMa</a></div>
             <nav class="main-nav">
-                <!-- Правильні ВІДНОСНІ шляхи до інших HTML-файлів,
-                     які знаходяться в frontend/html/ -->
-                <a href="./frontend/html/buy_crypto-page.html">Buy Crypto</a>
-                <a href="./frontend/html/markets.html">Markets</a>
-
+                <a href="buy_crypto-page.html">Buy Crypto</a>
+                <a href="markets.html">Markets</a>
                 <div class="dropdown-container">
                     <a href="#" class="nav-link dropdown-toggle">Trade</a>
                     <div class="dropdown-content trade-dropdown">
                         <div class="dropdown-column">
-                            <a href="./frontend/html/spot-page.html">Spot</a>
+                            <a href="spot-page.html">Spot</a>
                             <a href="#">Margin</a>
                             <a href="#">P2P</a>
                             <a href="#">Convert & Block Trade</a>
                         </div>
                     </div>
                 </div>
-
                 <div class="dropdown-container">
                     <a href="#" class="nav-link dropdown-toggle">Futures</a>
                     <div class="dropdown-content futures-dropdown">
-                        <a href="./frontend/html/futures-page.html">USDⓈ-M Futures</a>
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
                         <a href="#">COIN-M Futures</a>
                         <a href="#">Options</a>
                         <a href="#">Leaderboard</a>
                     </div>
                 </div>
-                <a href="#">FAQ</a> <!-- Якщо є faq.html в frontend/html/ -> ./frontend/html/faq.html -->
+                <a href="#">FAQ</a>
             </nav>
         </div>
         <nav class="user-nav">
-            <a href="./frontend/html/sign_up-page.html">Sign up</a>
-            <a href="./frontend/html/login-page.html">Log in</a>
+            <a href="sign_up-page.html">Sign up</a>
+            <a href="login-page.html">Log in</a>
         </nav>
     </header>
-    <main>
-        <section class="cards">
-            <div class="card card-base">News</div>
-            <div class="card card-base">Cryptocurrencies</div>
+
+    <main class="main-page-layout"> <!-- Новий клас для головного контейнера -->
+        <section class="hero-section"> <!-- Ліва колонка з великим текстом та формою -->
+            <div class="hero-text">
+                <h1><span class="highlight-text">YuMa</span><br>БЕРЕМО<br>І<br>РОБИМО</h1>
+                <!-- Заміни XXX на потрібне число -->
+            </div>
+            <div class="hero-signup-form"> <!-- Форма, схожа на signup-section, але тут -->
+                <input type="email" placeholder="Ел. пошта/номер телефону">
+                <button>Почати</button> <!-- Або "Sign Up" -->
+            </div>
+            <div class="alternative-signup-options">
+                <p>Або продовжити через</p>
+                <div class="social-buttons">
+                    <a href="#" class="social-btn google-btn">G</a> <!-- Заміни на іконки -->
+                    <a href="#" class="social-btn apple-btn">A</a>  <!-- Заміни на іконки -->
         </section>
-        <section class="signup-section">
-            <input type="email" placeholder="Email/phone number">
-            <button>Sign up</button>
-        </section>
+
+        <aside class="sidebar-section"> <!-- Права колонка з картками -->
+            <div class="sidebar-card card-base news-card">
+                <h3 class="sidebar-card-title">News</h3>
+                <!-- TradingView Widget BEGIN -->
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+                    {
+                    "feedMode": "all_symbols",
+                    "isTransparent": true,
+                    "displayMode": "regular", /* Змінено на regular для більшого розміру */
+                    "width": "100%",
+                    "height": "100%", /* Або фіксована висота, наприклад 400 */
+                    "colorTheme": "light",
+                    "locale": "en"
+                  }
+                    </script>
+                </div>
+                <!-- TradingView Widget END -->
+            </div>
+            <div class="sidebar-card card-base crypto-overview-card">
+                <h3 class="sidebar-card-title">Overview</h3>
+                <!-- TradingView Widget BEGIN -->
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+                    {
+                    "colorTheme": "light",
+                    "dateRange": "12M",
+                    "showChart": false,
+                    "locale": "en",
+                    "width": "100%",
+                    "height": "100%", /* Або фіксована висота, наприклад 400 */
+                    "largeChartUrl": "",
+                    "isTransparent": false, /* Зміни на false */
+                    "showSymbolLogo": true,
+                    "showFloatingTooltip": true,
+                    "tabs": [ /* ... твої таби ... */ ]
+                  }
+                    </script>
+                </div>
+                <!-- TradingView Widget END -->
+            </div>
+        </aside>
     </main>
+    <!-- Існуюча signup-section знизу може бути видалена, якщо форма тепер у hero-section -->
+    <!-- <section class="signup-section"> ... </section> -->
 </body>
 </html>
