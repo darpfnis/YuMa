@@ -99,20 +99,20 @@ header nav a:hover {
   display: flex;
   align-items: flex-start;
   margin-bottom: 1.5625rem; /* 25px */
-  min-height: 25rem;
+  min-height: 25rem; /* Можливо, потрібно буде трохи збільшити, якщо поля високі */
 }
 
 .buy-card-overlapper,
 .sell-card-overlapped {
-  min-height: 24rem;
-  font-size: 1.8em;
+  min-height: 24rem; /* Або auto, якщо вміст визначатиме висоту */
+  font-size: 1.8em; /* Розмір тексту "Buy" / "Sell" */
   position: relative;
   transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
     box-shadow 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
     opacity 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
-  justify-content: flex-start;
-  align-items: flex-start;
-  padding: 1.5rem;
+  justify-content: flex-start; /* Текст "Buy"/"Sell" та поля вводу будуть зверху */
+  align-items: flex-start; /* Вирівнювання по лівому краю */
+  padding: 1.5rem; /* Загальні відступи картки */
 }
 
 .buy-card-overlapper {
@@ -137,6 +137,8 @@ header nav a:hover {
   box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.22);
 }
 
+/* ВИДАЛЕНО СТИЛІ ДЛЯ .card-actions та .small-action-button */
+/*
 .card-actions {
   margin-top: 1.5rem;
   display: flex;
@@ -162,6 +164,90 @@ header nav a:hover {
 .small-action-button:hover {
   background-color: #f065f7;
 }
+*/
+
+/* НОВІ СТИЛІ ДЛЯ ПОЛІВ ВВОДУ */
+.input-field-group {
+  width: 100%;
+  margin-top: 1.5rem; /* Відступ від напису "Buy" / "Sell" або попереднього поля */
+  margin-bottom: 1rem;
+}
+
+.input-field-group:first-of-type {
+  /* Перша група полів після напису Buy/Sell */
+  margin-top: 2rem; /* Більший відступ для першої групи */
+}
+
+.input-field-group label {
+  display: block;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  font-weight: 500; /* Трохи жирніший текст для міток */
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #f0f2f5;
+  border-radius: 0.375rem; /* 6px, трохи менше заокруглення */
+  padding: 0.1rem 0.75rem; /* Зменшено вертикальний padding */
+  border: 1px solid #dde0e3; /* Колір рамки як у Binance */
+  height: 3.5rem; /* Фіксована висота поля, як на Binance (приблизно 56px) */
+  box-sizing: border-box; /* Щоб padding і border не збільшували висоту */
+}
+
+.input-wrapper input[type="number"] {
+  flex-grow: 1;
+  border: none;
+  background-color: transparent;
+  font-size: 1.25rem; /* 20px, більший шрифт для суми */
+  color: #1e2329;
+  padding: 0.5rem 0.25rem; /* Відступи всередині інпута */
+  outline: none;
+  -moz-appearance: textfield;
+  width: 100%; /* Дозволяє інпуту краще розтягуватись */
+  height: 100%; /* Займає всю висоту .input-wrapper */
+  box-sizing: border-box;
+}
+
+.input-wrapper input[type="number"]::-webkit-outer-spin-button,
+.input-wrapper input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.currency-selector {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+  cursor: pointer;
+  border-left: 1px solid #dde0e3; /* Розділювач */
+  margin-left: 0.75rem;
+  height: 60%; /* Займає частину висоти .input-wrapper */
+  box-sizing: border-box;
+}
+
+.currency-selector .currency-icon {
+  width: 22px; /* Трохи більші іконки */
+  height: 22px;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+}
+
+.currency-selector span:not(.dropdown-arrow) {
+  /* Текст валюти, крім стрілки */
+  font-size: 1rem; /* 16px */
+  font-weight: 500;
+  color: #1e2329;
+}
+
+.currency-selector .dropdown-arrow {
+  margin-left: 0.6rem;
+  font-size: 0.75rem; /* 12px */
+  color: #707a8a; /* Колір стрілки як у Binance */
+}
 
 .payment-buttons-container {
   display: flex;
@@ -181,7 +267,7 @@ header nav a:hover {
   cursor: pointer;
   transition: background-color 0.2s;
   width: 100%;
-  max-width: 25rem; /* Максимальна ширина залишається, але кнопки будуть центровані в .right-column */
+  max-width: 25rem;
   text-align: center;
 }
 .main-page-button:hover {
@@ -195,18 +281,19 @@ header nav a:hover {
 }
 
 /* --- СТИЛІ З cards.css (якщо вони не підключені окремим файлом) --- */
+/* Ці стилі залишаються, оскільки вони є базовими для карток */
 .card-base {
   background-color: white;
   padding: 1.25rem; /* 20px */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  /* align-items: center; -- ЦЕ ПЕРЕВИЗНАЧЕНО В .buy-card-overlapper */
+  /* justify-content: center; -- ЦЕ ПЕРЕВИЗНАЧЕНО В .buy-card-overlapper */
   font-size: 1.5em;
   border-radius: 1.5625rem; /* 25px */
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
   font-weight: bold;
-  text-align: center;
+  text-align: center; /* Заголовок Buy/Sell буде по центру, якщо не перевизначити */
   cursor: pointer;
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out,
     opacity 0.3s ease-out;
