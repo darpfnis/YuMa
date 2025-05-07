@@ -4,31 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile - YuMa</title>
+    <!-- Виправлені шляхи до CSS, припускаючи, що profile.html в frontend/html/ -->
     <link rel="stylesheet" href="../css/styles.css">
-    <script defer src="script.js"></script>
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <!-- <script defer src="../js/script.js"></script> -- Якщо є загальний скрипт -->
 </head>
 <body>
     <header>
+        <!-- ВИПРАВЛЕНО ШЛЯХ ДО index.html (який в корені) -->
         <div class="logo"><a href="../../index.html">YuMa</a></div>
         <nav class="header-nav">
-            <a href="#" class="nav-button">Buy Crypto</a>
-            <a href="#" class="nav-button">Markets</a>
-            <a href="#" class="nav-button">Trade</a>
+            <!-- ВИПРАВЛЕНО ШЛЯХИ ДО ІНШИХ HTML-СТОРІНОК (які в frontend/html/) -->
+            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
+            <a href="markets.html" class="nav-button">Markets</a>
+            <a href="trading-page.html" class="nav-button">Trade</a>
         </nav>
         <div class="header-actions">
             <button class="btn-deposit nav-button">Deposit</button>
-            <div class="icon-placeholder dark-square"></div> <!-- Темний квадрат -->
+            <div class="icon-placeholder dark-square"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
-            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile">👤</a></div> <!-- Іконка профілю -->
+            <button id="logoutButton" class="nav-button" style="display: none;">Log out</button> <!-- Кнопка виходу, спочатку прихована -->
         </div>
     </header>
 
     <div class="page-wrapper-profile">
         <aside class="sidebar">
             <nav>
-                <a href="#" class="sidebar-button active">dashboard</a>
+                <a href="profile.html" class="sidebar-button active">dashboard</a>
                 <a href="assets.html" class="sidebar-button">assets</a>
                 <a href="order.html" class="sidebar-button">order</a>
                 <a href="account.html" class="sidebar-button">account</a>
@@ -38,54 +44,141 @@
 
         <main class="main-content-profile">
             <section class="user-info-header">
-                <div class="user-avatar-placeholder">picture</div>
+                <div class="user-avatar-placeholder" id="userAvatar">picture</div>
                 <div class="user-details">
-                    <h2>User-1488</h2>
-                    <span class="uid-placeholder">uid</span>
+                    <h2 id="userName">Loading...</h2> <!-- ID для імені користувача -->
+                    <span class="uid-placeholder" id="userUID">UID: Loading...</span> <!-- ID для UID -->
                 </div>
             </section>
 
             <section class="dashboard-cards">
                 <div class="profile-card card-balance">
                     <p>Estimated Balance</p>
-                    <!-- Тут може бути сума балансу -->
+                    <h3 id="estimatedBalance">$0.00 USD</h3> <!-- ID для балансу -->
                 </div>
                 <div class="profile-card card-chart">
-                    <p>Chart</p>
-                    <!-- Тут може бути графік -->
+                    <p>Portfolio Chart</p>
+                    <div id="portfolioChartPlaceholder" style="width:100%; height:150px; background:#f0f0f0; display:flex; align-items:center; justify-content:center;">Chart Area</div>
                 </div>
             </section>
 
             <section class="markets-section">
-                <h3>Markets</h3>
+                <h3>My Favourite Markets</h3> <!-- Змінив заголовок для прикладу -->
                 <div class="market-filters">
-                    <button class="filter-button">holding</button>
-                    <button class="filter-button">hot</button>
-                    <button class="filter-button">new listing</button>
-                    <button class="filter-button active">favourite</button> <!-- Приклад активного фільтра -->
-                    <button class="filter-button">top gainers</button>
-                    <button class="filter-button">24h volume</button>
+                    <button class="filter-button active" data-filter="favourite">Favourite</button>
+                    <button class="filter-button" data-filter="holding">Holding</button>
+                    <button class="filter-button" data-filter="hot">Hot</button>
+                    <!-- ... інші фільтри ... -->
                 </div>
-                <div class="market-table-container">
-                    <div class="market-table-header">
+                <div class="market-table-container" id="favouriteMarketsTable">
+                    <div class="custom-table-header"> <!-- Використовуємо custom-table-header -->
                         <span>Coin</span>
-                        <span>Amount</span>
-                        <span>Coin Price/Cost Price</span>
+                        <span>Last Price</span>
                         <span>24h Change</span>
+                        <span>Action</span>
                     </div>
-                    <div class="market-table-row">
-                        <span class="coin-name">BNB</span>
-                        <!-- Дані для Amount, Price, Change -->
-                    </div>
-                    <div class="market-table-row">
-                        <span class="coin-name">BTC</span>
-                    </div>
-                    <div class="market-table-row">
-                        <span class="coin-name">USDT</span>
-                    </div>
+                    <!-- Сюди будуть динамічно додаватися рядки -->
+                    <div class="no-data-placeholder">Loading favourite markets...</div>
                 </div>
             </section>
         </main>
     </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const userNameElement = document.getElementById('userName');
+    const userUIDElement = document.getElementById('userUID');
+    const estimatedBalanceElement = document.getElementById('estimatedBalance');
+    const favouriteMarketsTable = document.getElementById('favouriteMarketsTable');
+    const logoutButton = document.getElementById('logoutButton');
+
+    // УВАГА: Це MVP! Для реальної аутентифікації потрібні JWT або сесії.
+    // Зараз ми просто беремо email з localStorage, як робили раніше для MVP.
+    // У реальному додатку тут була б перевірка токена.
+    const userEmailForMVP = localStorage.getItem('userEmailForMVP');
+
+    if (!userEmailForMVP) {
+        // Якщо користувач не "залогінений" (немає email в localStorage),
+        // перенаправляємо на сторінку входу.
+        // В реальному додатку тут була б перевірка токена з сервера.
+        window.location.href = 'login-page.html'; // Або ../../login-page.html якщо ви запускаєте з frontend/html/
+        return;
+    }
+
+    // Якщо "залогінений", показуємо кнопку виходу
+    if (logoutButton) {
+        logoutButton.style.display = 'inline-block';
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('userEmailForMVP'); // Видаляємо "сесію" MVP
+            // В реальному додатку тут був би запит на /auth/logout на сервер
+            window.location.href = 'login-page.html'; // Або ../../login-page.html
+        });
+    }
+
+    // --- Завантаження даних профілю (приклад) ---
+    // У реальному додатку тут був би fetch запит до вашого API, наприклад, /api/profile
+    // з токеном авторизації. Зараз імітуємо дані.
+    if (userNameElement) userNameElement.textContent = userEmailForMVP.split('@')[0]; // Показуємо частину email
+    if (userUIDElement) userUIDElement.textContent = `UID: FAKE${Math.random().toString(36).substr(2, 9).toUpperCase()}`; // Фейковий UID
+
+    // --- Завантаження балансу (приклад) ---
+    // fetch('/api/balance', { headers: { 'Authorization': `Bearer ${токен}` }})
+    // .then(res => res.json()).then(data => {
+    //     if (estimatedBalanceElement) estimatedBalanceElement.textContent = `$${data.balance.toFixed(2)} USD`;
+    // });
+    if (estimatedBalanceElement) estimatedBalanceElement.textContent = `$${(Math.random() * 10000).toFixed(2)} USD`; // Фейковий баланс
+
+    // --- Завантаження улюблених ринків (приклад) ---
+    // fetch('/api/markets/favourites', { headers: { 'Authorization': `Bearer ${токен}` }})
+    // .then(res => res.json()).then(markets => {
+    //     if (favouriteMarketsTable) {
+    //         const noDataPlaceholder = favouriteMarketsTable.querySelector('.no-data-placeholder');
+    //         if (noDataPlaceholder) noDataPlaceholder.remove();
+
+    //         // Очищаємо попередні рядки, крім заголовка
+    //         const rows = favouriteMarketsTable.querySelectorAll('.custom-table-row');
+    //         rows.forEach(row => row.remove());
+
+    //         markets.forEach(market => {
+    //             const row = document.createElement('div');
+    //             row.classList.add('custom-table-row'); // Використовуємо custom-table-row
+    //             row.innerHTML = `
+    //                 <span class="coin-name">${market.pair.split('/')[0]} <span class="coin-symbol-small">(${market.pair})</span></span>
+    //                 <span>$${market.lastPrice.toFixed(2)}</span>
+    //                 <span class="${market.change24h >= 0 ? 'positive-change' : 'negative-change'}">${market.change24h.toFixed(2)}%</span>
+    //                 <span><a href="trading-page.html?pair=${market.pair}" class="action-link">Trade</a></span>
+    //             `;
+    //             favouriteMarketsTable.appendChild(row);
+    //         });
+    //     }
+    // });
+    // Імітація завантаження ринків
+    if (favouriteMarketsTable) {
+        const noDataPlaceholder = favouriteMarketsTable.querySelector('.no-data-placeholder');
+        if (noDataPlaceholder) noDataPlaceholder.textContent = 'No favourite markets yet.';
+        // Тут можна додати фейкові дані для демонстрації
+        const fakeMarkets = [
+            { pair: 'BTC/USDT', lastPrice: 40000, change24h: 2.5 },
+            { pair: 'ETH/USDT', lastPrice: 2500, change24h: -1.2 }
+        ];
+        const rows = favouriteMarketsTable.querySelectorAll('.custom-table-row');
+        rows.forEach(row => row.remove()); // Очищаємо попередні, якщо були в HTML
+
+        fakeMarkets.forEach(market => {
+            const row = document.createElement('div');
+            row.classList.add('custom-table-row');
+            row.innerHTML = `
+                <span class="coin-name">${market.pair.split('/')[0]} <span class="coin-symbol-small">(${market.pair.replace('/', '')})</span></span>
+                <span>$${market.lastPrice.toFixed(2)}</span>
+                <span class="${market.change24h >= 0 ? 'positive-change' : 'negative-change'}">${market.change24h.toFixed(2)}%</span>
+                <span><a href="trading-page.html?pair=${market.pair.replace('/', '_')}" class="action-link">Trade</a></span>
+            `; // Використовуємо _ замість / для параметра URL
+            favouriteMarketsTable.appendChild(row);
+        });
+    }
+
+    // Додайте логіку для кнопки "Log out" та інших динамічних елементів
+});
+</script>
 </body>
 </html>
