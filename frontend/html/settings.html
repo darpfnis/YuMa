@@ -120,14 +120,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SettingsPage] DOMContentLoaded.');
     const token = localStorage.getItem('authToken');
 
+    // Елементи для налаштувань профілю
     const avatarPreview = document.getElementById('avatarPreview');
-    const avatarUrlInput = document.getElementById('avatarUrlInput'); // Оновлено ID
+    const avatarUrlInput = document.getElementById('avatarUrlInput');
     const saveAvatarBtn = document.getElementById('saveAvatarBtn');
     const avatarMessage = document.getElementById('avatarMessage');
 
     const currentUsernameElement = document.getElementById('currentUsername');
-    const usernameInput = document.getElementById('usernameInput'); // Оновлено ID
-    const usernameSettingsForm = document.getElementById('usernameSettingsForm');
+    const usernameInput = document.getElementById('usernameInput');
+    const usernameSettingsForm = document.getElementById('usernameSettingsForm'); // Форма для нікнейму
     const usernameMessage = document.getElementById('usernameMessage');
 
     const logoutButton = document.getElementById('logoutButtonSettings');
@@ -139,17 +140,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (logoutButton) {
         logoutButton.style.display = 'inline-block';
-        logoutButton.addEventListener('click', async () => { /* ... логіка виходу ... */ });
+        logoutButton.addEventListener('click', async () => {
+            const currentToken = localStorage.getItem('authToken');
+            localStorage.removeItem('authToken');
+            try {
+                await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
+            } catch(e) { console.error('Logout API error', e); }
+            window.location.href = 'login-page.html';
+        });
     }
 
     async function fetchApiData(url, options = {}) {
+        // ... (ваша повна функція fetchApiData, яка обробляє помилки і повертає {success: false, ...} ) ...
+        // Я залишу її скороченою тут для прикладу
         const currentToken = localStorage.getItem('authToken');
         const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
-        console.log(`[fetchApiData] Fetching ${url}. Auth: ${requiresAuth}`);
-
         if (requiresAuth && !currentToken) {
              window.location.href = 'login-page.html';
-             return Promise.resolve({ success: false, message: 'Auth token missing, redirecting.', shouldRedirect: true });
+             return Promise.resolve({ success: false, message: 'Auth token missing.', shouldRedirect: true });
         }
         const headers = { 'Content-Type': 'application/json' };
         if (requiresAuth && currentToken) {
@@ -158,43 +166,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
         try {
             const response = await fetch(url, fetchOptions);
-            // console.log(`[fetchApiData] Response status for ${url}: ${response.status}`);
             if (!response.ok) {
                 if ((response.status === 401 || response.status === 403) && requiresAuth) {
-                    localStorage.removeItem('authToken');
-                    window.location.href = 'login-page.html';
-                    return Promise.resolve({ success: false, message: `Unauthorized/Forbidden for ${url}. Redirecting.`, shouldRedirect: true });
+                    localStorage.removeItem('authToken'); window.location.href = 'login-page.html';
+                    return Promise.resolve({ success: false, message: `Auth error. Redirecting.`, shouldRedirect: true });
                 }
-                try {
-                    const errorData = await response.json();
-                    console.error(`[fetchApiData] Server error for ${url} (status ${response.status}):`, errorData);
-                    return { success: false, ...errorData }; // Повертаємо об'єкт помилки з сервера
-                } catch (jsonError) {
-                    const errorText = await response.text();
-                    console.error(`[fetchApiData] Server error for ${url} (status ${response.status}). Resp not JSON:`, errorText);
-                    return { success: false, message: `Server error: ${response.status}. Resp: ${errorText.substring(0,100)}`};
-                }
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+                return { success: false, ...errorData };
             }
-            return response.json(); // Повертає Promise, який розв'язується в JSON
+            return response.json();
         } catch (error) {
-             console.error(`[fetchApiData] Network or other critical error for ${url}:`, error);
+             console.error(`[fetchApiData] Network error for ${url}:`, error);
              if (error.message && error.message.toLowerCase().includes("failed to fetch")) {
                 alert(`Network error: Could not connect to server for ${url}.`);
              }
-             return { success: false, message: error.message || `Network error or unable to fetch ${url}.`, isFetchError: true };
+             return { success: false, message: error.message || `Network error.`, isFetchError: true };
         }
     }
 
     async function loadCurrentProfileSettings() {
-        console.log('[SettingsPage] Loading current profile settings...');
-        avatarMessage.textContent = ''; usernameMessage.textContent = ''; // Очищаємо попередні повідомлення
+        avatarMessage.textContent = ''; usernameMessage.textContent = '';
         try {
             const data = await fetchApiData('/api/profile', { requiresAuth: true });
-            console.log('[SettingsPage] Profile data from server:', data);
             if (data && data.success && data.profile) {
                 const profile = data.profile;
                 if (currentUsernameElement) currentUsernameElement.textContent = `Current: ${profile.username || 'Not set'}`;
-                if (usernameInput) usernameInput.placeholder = profile.username || 'Enter new username';
+                if (usernameInput) usernameInput.value = profile.username || ''; // Встановлюємо поточний нік в поле
                 
                 if (avatarUrlInput) avatarUrlInput.value = profile.avatar_url || '';
                 if (avatarPreview) {
@@ -207,22 +204,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             } else {
-                const errorMsg = data ? data.message : 'Failed to load profile settings (undefined response).';
-                console.error('[SettingsPage]', errorMsg);
-                alert(errorMsg); // Показати користувачу
+                alert(data.message || 'Failed to load profile settings.');
             }
-        } catch (error) { // Цей catch спрацює, якщо fetchApiData повернула відхилений Promise
-            console.error('[SettingsPage] Error loading profile settings in catch:', error);
-            alert(error.message || 'Could not load profile settings due to an error.');
+        } catch (error) {
+            alert(error.message || 'Error loading profile settings.');
         }
     }
 
     if (saveAvatarBtn) {
         saveAvatarBtn.addEventListener('click', async () => {
             const newAvatarUrl = avatarUrlInput.value.trim();
-            console.log('[SettingsPage] Save Avatar clicked. URL:', newAvatarUrl);
             avatarMessage.textContent = 'Saving...';
-            avatarMessage.className = 'form-message'; // Скидаємо клас
+            avatarMessage.className = 'form-message';
 
             try {
                 const data = await fetchApiData('/api/profile/avatar', {
@@ -230,16 +223,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ avatarUrl: newAvatarUrl }),
                     requiresAuth: true
                 });
-                console.log('[SettingsPage] Save Avatar response:', data);
-
-                if (data && data.success) { // ЗАВЖДИ ПЕРЕВІРЯЙТЕ НАЯВНІСТЬ data ПЕРЕД data.success
-                    avatarMessage.textContent = data.message || 'Avatar updated successfully!';
+                if (data && data.success) {
+                    avatarMessage.textContent = data.message || 'Avatar updated!';
                     avatarMessage.classList.add('success');
-                    if (avatarPreview) {
-                        if (data.avatarUrl) { // Використовуємо URL з відповіді сервера
+                    if (avatarPreview && data.avatarUrl !== undefined) { // Перевіряємо, чи сервер повернув avatarUrl
+                        if (data.avatarUrl) {
                             avatarPreview.style.backgroundImage = `url('${data.avatarUrl}')`;
                             avatarPreview.textContent = '';
-                        } else {
+                        } else { // Якщо сервер повернув порожній avatarUrl (видалення)
                             avatarPreview.style.backgroundImage = 'none';
                             avatarPreview.textContent = 'No Image';
                         }
@@ -248,8 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     avatarMessage.textContent = data.message || 'Failed to update avatar.';
                     avatarMessage.classList.add('error');
                 }
-            } catch (error) { // Цей catch спрацює для помилок, які повернула fetchApiData
-                console.error('[SettingsPage] Error saving avatar in catch:', error);
+            } catch (error) {
                 avatarMessage.textContent = error.message || 'Error updating avatar.';
                 avatarMessage.classList.add('error');
             }
@@ -258,12 +248,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (usernameSettingsForm) {
         usernameSettingsForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
+            event.preventDefault(); // ВАЖЛИВО для форм
             const newUsername = usernameInput.value.trim();
-            console.log('[SettingsPage] Save Username submitted. New Username:', newUsername);
             usernameMessage.textContent = 'Saving...';
             usernameMessage.className = 'form-message';
-
 
             if (newUsername.length < 3) {
                 usernameMessage.textContent = 'Username must be at least 3 characters.';
@@ -277,14 +265,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ newUsername: newUsername }),
                     requiresAuth: true
                 });
-                console.log('[SettingsPage] Save Username response:', data);
-
                 if (data && data.success) {
                     usernameMessage.textContent = data.message || 'Username updated!';
                     usernameMessage.classList.add('success');
                     if (currentUsernameElement && data.user) currentUsernameElement.textContent = `Current: ${data.user.username}`;
-                    if (usernameInput) usernameInput.value = '';
-                    if (data.token) {
+                    // Опціонально: очистити поле вводу або оновити його значенням з сервера
+                    // usernameInput.value = ''; 
+                    if (usernameInput && data.user) usernameInput.placeholder = data.user.username;
+
+
+                    if (data.token) { // Якщо сервер повернув новий токен
                         localStorage.setItem('authToken', data.token);
                         console.log('[SettingsPage] New JWT token saved after username update.');
                     }
@@ -293,7 +283,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     usernameMessage.classList.add('error');
                 }
             } catch (error) {
-                console.error('[SettingsPage] Error saving username in catch:', error);
                 usernameMessage.textContent = error.message || 'Error updating username.';
                 usernameMessage.classList.add('error');
             }
