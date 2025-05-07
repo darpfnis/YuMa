@@ -109,6 +109,9 @@
                     } else {
                         currentErrorDiv.textContent = data.message || 'Login failed.';
                         console.error('[LoginPage] Login failed on client side. Server message:', data.message);
+                        // в login-page.html, після отримання відповіді
+                        console.log('[LoginPage] Token received from server:', data.token);
+                        localStorage.setItem('authToken', data.token);
                     }
                 } catch (err) {
                     console.error('[LoginPage] Login request/processing error:', err);

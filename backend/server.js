@@ -166,6 +166,7 @@ app.post('/auth/login', async (req, res) => {
                 JWT_SECRET,
                 { expiresIn: '1h' }
             );
+            console.log('[Login] Generated Access Token:', accessToken);
             res.status(200).json({
                 success: true, message: 'Login successful!', token: accessToken,
                 user: { id: user.id, email: user.email, username: user.username, uid: user.uid }
