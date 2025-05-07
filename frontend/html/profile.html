@@ -240,8 +240,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                     favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">No favourite markets yet. <a href="markets.html">Add some</a>!</div>');
                     return;
                 }
-                data.markets.forEach(market => { /* ... код рендерингу рядків як раніше, з кнопкою видалення ... */ });
-                // Додайте обробники для кнопок видалення, як у попередній версії profile.html
+                data.markets.forEach(market => {
+                    const row = document.createElement('div');
+                    row.classList.add('custom-table-row');
+                    // На цьому етапі currentPrice та change24hPercent можуть бути null, якщо WebSocket ще не працює
+                    // або якщо для цих пар немає даних у currentMarketData на сервері.
+                    const price = market.currentPrice ? `$${parseFloat(market.currentPrice).toFixed(2)}` : 'N/A';
+                    const change = market.change24hPercent ? parseFloat(market.change24hPercent).toFixed(2) + '%' : 'N/A';
+                    const changeClass = market.change24hPercent ? (parseFloat(market.change24hPercent) >= 0 ? 'positive-change' : 'negative-change') : '';
+
+                    row.innerHTML = `
+                        <span class="coin-name">${market.symbol.split('/')[0]} <span class="coin-symbol-small">(${market.symbol.replace('/', '')})</span></span>
+                        <span>${price}</span>
+                        <span class="${changeClass}">${change}</span>
+                        <span>
+                            <a href="trading-page.html?pair=${market.symbol.replace('/', '_')}" class="action-link">Trade</a>
+                            <button class="remove-favourite-btn is-favourite" data-market-id="${market.id}" title="Remove from Favourites">★</button>
+                        </span>
+                    `;
+                    favouriteMarketsTable.appendChild(row);
+                });
                 document.querySelectorAll('.remove-favourite-btn').forEach(button => {
                     button.addEventListener('click', async (event) => { /* ... логіка видалення ... */ });
                 });
