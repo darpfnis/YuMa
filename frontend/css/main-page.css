@@ -1,74 +1,144 @@
 /* main-page.css */
 
-/*
-    ВСІ СТИЛІ, ЩО СТОСУЮТЬСЯ:
-    header,
-    .header-left,
-    .logo,
-    .logo a,
-    .main-nav,
-    .main-nav > a,
-    .dropdown-container,
-    .dropdown-toggle,
-    .dropdown-toggle::after,
-    .dropdown-content,
-    .trade-dropdown,
-    .dropdown-column,
-    .dropdown-column h4,
-    .dropdown-content a,
-    .new-badge,
-    .user-nav,
-    .user-nav a
-    ТЕПЕР ЗНАХОДЯТЬСЯ В ОКРЕМОМУ ФАЙЛІ header.css
-  */
+/* Стилі для body залишаються, якщо вони в global.css, то тут не потрібні */
+/* Стилі для header, .logo і т.д. - в header.css */
 
-main {
-  max-width: 62.5rem; /* 1000px */
-  margin: 3.125rem auto; /* 50px auto */
-  padding: 1.25rem; /* 20px */
-  text-align: center;
-}
-
-.cards {
+/* Новий макет для головної сторінки */
+.main-page-layout {
   display: flex;
-  justify-content: space-between;
-  gap: 1.25rem; /* 20px */
-  margin-bottom: 3.125rem; /* 50px */
+  gap: 1.5rem; /* 24px - відстань між лівою та правою колонками */
+  padding: 2rem 3rem; /* 32px 48px - відступи для всього main */
+  max-width: 85rem; /* 1360px - або інша бажана максимальна ширина */
+  margin: 2rem auto; /* Центрування та відступи зверху/знизу */
+  align-items: flex-start; /* Вирівнювання колонок по верху */
 }
 
-.card {
-  flex: 1;
-  height: 18.75rem; /* 300px */
+/* Ліва колонка */
+.hero-section {
+  flex: 1 1 60%; /* Займає більше місця, гнучка */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Вирівнювання контенту по лівому краю */
+  padding-right: 2rem; /* Відступ справа, щоб не прилягати до правої колонки */
 }
 
-.signup-section {
-  background-color: white;
-  padding: 1.875rem 1.25rem; /* 30px 20px */
-  border-radius: 0.75rem; /* 12px */
-  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
-  display: inline-block;
+.hero-text h1 {
+  font-size: 3.8rem; /* Дуже великий шрифт, підбери потрібний */
+  font-weight: 700; /* Жирний */
+  line-height: 1.1;
+  margin: 0 0 2rem 0;
+  color: #1e2329; /* Темний колір, як на Binance */
+  text-align: left;
 }
 
-.signup-section input {
-  padding: 0.75rem; /* 12px */
-  width: 15.625rem; /* 250px */
-  margin-bottom: 0.9375rem; /* 15px */
-  border: 0.0625rem solid #ccc; /* 1px */
-  border-radius: 0.375rem; /* 6px */
-  font-size: 1em;
+.hero-text .highlight-text {
+  color: #f065f7;
 }
 
-.signup-section button {
-  padding: 0.75rem 1.875rem; /* 12px 30px */
+.hero-signup-form {
+  display: flex;
+  width: 100%;
+  max-width: 28rem; /* 450px - обмеження ширини форми */
+  margin-bottom: 1.5rem;
+}
+
+.hero-signup-form input[type="email"] {
+  flex-grow: 1;
+  padding: 0.875rem 1rem; /* 14px 16px */
+  font-size: 1rem;
+  border: 1px solid #d9d9d9; /* Світло-сіра рамка */
+  border-right: none; /* Щоб кнопка прилягала */
+  border-radius: 0.25rem 0 0 0.25rem; /* 4px - заокруглення тільки зліва */
+  outline: none;
+}
+.hero-signup-form input[type="email"]:focus {
+  border-color: #f0b90b;
+  box-shadow: 0 0 0 2px rgba(240, 185, 11, 0.2);
+}
+
+.hero-signup-form button {
+  padding: 0.875rem 1.5rem; /* 14px 24px */
+  font-size: 1rem;
+  font-weight: 500;
   background-color: #222;
   color: white;
   border: none;
-  border-radius: 0.375rem; /* 6px */
-  font-size: 1em;
+  border-radius: 0 0.25rem 0.25rem 0; /* Заокруглення тільки справа */
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.signup-section button:hover {
-  background-color: #444;
+.hero-signup-form button:hover {
+  background-color: #f065f7; /* Трохи світліший жовтий */
 }
+
+.alternative-signup-options {
+  color: #222; /* Сірий текст */
+  font-size: 0.875rem;
+  text-align: left;
+}
+.alternative-signup-options p {
+  margin: 0.5rem 0;
+}
+
+.social-buttons {
+  display: flex;
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem; /* 40px */
+  height: 2.5rem; /* 40px */
+  border: 1px solid #eaecef;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  font-size: 1.25rem; /* Розмір для іконок-літер */
+  color: #1e2329;
+  /* Тут потрібно буде вставити SVG іконки або іконковий шрифт замість літер "G" та "A" */
+}
+.download-app-link {
+  /* Стилі для посилання на завантаження застосунку, якщо потрібно */
+}
+
+/* Права колонка */
+.sidebar-section {
+  flex: 0 0 38%; /* Займає менше місця, фіксована ширина або відсоток */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Відстань між картками новин та огляду */
+}
+
+.sidebar-card {
+  /* Спільні стилі для карток у сайдбарі, успадковуються з .card-base */
+  /* Можна перевизначити padding, якщо потрібно */
+  padding: 1rem; /* 16px */
+  min-height: 20rem; /* 320px - Мінімальна висота, можна налаштувати */
+  /* Збільшуємо висоту відносно попереднього значення */
+  height: auto; /* Дозволяємо контенту визначати висоту, але з min-height */
+  display: flex; /* Для розтягування TradingView віджета */
+  flex-direction: column;
+}
+.sidebar-card .tradingview-widget-container {
+  flex-grow: 1; /* Дозволяє віджету зайняти весь доступний простір */
+  min-height: 18.75rem; /* 300px - для віджетів, щоб вони не колапсували */
+}
+
+.news-card {
+  /* Специфічні стилі для картки новин, якщо є */
+}
+
+.crypto-overview-card {
+  /* Специфічні стилі для картки огляду, якщо є */
+}
+
+/* Видаляємо старі стилі для .cards та .signup-section, якщо вони більше не використовуються */
+.cards {
+  display: none;
+} /* Або повністю видалити селектор */
+.signup-section {
+  display: none;
+} /* Або повністю видалити селектор */
