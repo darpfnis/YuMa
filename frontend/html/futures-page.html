@@ -2,11 +2,11 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>YuMa - Futures Торгівля</title>
-    <link rel="stylesheet" href="../css/header.css">
+    <title>YuMa - Spot trading</title>
+    <link rel="stylesheet" href="../css/header.css"> 
+    <link rel="stylesheet" href="../css/spot-page.css">
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/cards.css">
-    <link rel="stylesheet" href="../css/futures-page.css">
 </head>
 <body>
 
@@ -46,24 +46,25 @@
     </header>
 
     <div class="page-specific-title">
-        <h1>Futures</h1>
+        <h1>Spot Trading</h1>
     </div>
 
-    <!-- Припустимо, що сіра панель поки не використовується, як у попередньому CSS -->
-    <!-- <div class="secondary-header-panel"> ... </div> -->
-
-    <main class="futures-interface-layout">
-        <section class="main-chart-area panel-column">
-            <!-- ЗАМІНЕНО card-base на ui-panel -->
-            <div class="panel-card chart-card ui-panel">
+    <main class="spot-interface-layout">
+        <aside class="left-panel panel-column">
+            <div class="ui-panel order-book-card"> <!-- Змінено клас -->
+                <div class="panel-title">Order book</div>
+            </div>
+        </aside>
+    
+        <section class="center-content panel-column">
+            <div class="ui-panel chart-card"> <!-- Змінено клас -->
                 <!-- TradingView Widget BEGIN -->
 <div class="tradingview-widget-container" style="height:100%;width:100%">
     <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
     {
     "autosize": true,
-    "symbol": "BINANCE:BTCUSDT.P",
+    "symbol": "BINANCE:BTCUSDT",
     "interval": "D",
     "timezone": "Etc/UTC",
     "theme": "light",
@@ -75,18 +76,16 @@
     </script>
   </div>
   <!-- TradingView Widget END -->
+                
             </div>
-            <div class="panel-card positions-history-card ui-panel">
-                <div class="panel-title">Positions, opened orders, orders history</div>
+            <div class="ui-panel spot-trading-panel-card"> <!-- Змінено клас -->
+                <div class="panel-title">Spot trading panel</div>
             </div>
         </section>
-
-        <aside class="right-sidebar panel-column">
-            <div class="panel-card order-book-card ui-panel">
-                <div class="panel-title">Order book</div>
-            </div>
-            <div class="panel-card trading-panel-card ui-panel">
-                <div class="panel-title">Trading panel</div>
+    
+        <aside class="right-panel panel-column">
+            <div class="ui-panel market-card"> <!-- Змінено клас -->
+                <div class="panel-title">Market</div>
             </div>
         </aside>
     </main>
