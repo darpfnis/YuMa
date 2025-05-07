@@ -13,31 +13,36 @@ const connectionString = process.env.DATABASE_URL; // Цю змінну нада
 
 if (!connectionString) {
     console.error('FATAL ERROR: DATABASE_URL environment variable is not set.');
-    // Для локальної розробки, якщо DATABASE_URL не встановлено:
-    // Замініть на ваш реальний рядок підключення до локального PostgreSQL, якщо тестуєте локально з PG
-    // const localConnectionString = "postgres://your_local_user:your_local_password@localhost:5432/your_local_database_name";
-    // if (localConnectionString && process.env.NODE_ENV !== 'production') {
-    //     console.log("Using local PostgreSQL connection string as DATABASE_URL is not set.");
-    //     // connectionString = localConnectionString; // НЕ РОЗКОМЕНТОВУЙТЕ ЦЕ ДЛЯ RENDER
+    // Для локальної розробки, якщо DATABASE_URL не встановлено, можна тут тимчасово задати рядок підключення
+    // до вашого локального PostgreSQL, якщо ви його використовуєте для тестів.
+    // Наприклад:
+    // const localDevConnectionString = "postgres://your_local_user:your_local_password@localhost:5432/your_local_db_name";
+    // if (process.env.NODE_ENV !== 'production' && localDevConnectionString) {
+    //     console.warn("DATABASE_URL not set, using local development connection string.");
+    //     // connectionString = localDevConnectionString; // НЕ РОЗКОМЕНТОВУЙТЕ ДЛЯ RENDER
     // } else {
-    //     process.exit(1); // Якщо на Render немає DATABASE_URL, це проблема
+    //    process.exit(1); // Якщо на Render немає DATABASE_URL, це критична помилка
     // }
-    process.exit(1); // Для Render DATABASE_URL має бути встановлено
+    process.exit(1); // На Render DATABASE_URL має бути завжди встановлено
 }
 
 const pool = new Pool({
     connectionString: connectionString,
-    // SSL потрібен для підключення до баз даних на Render
+    // SSL потрібен для підключення до баз даних на Render та багатьох інших хмарних провайдерах
+    // process.env.NODE_ENV автоматично встановлюється в 'production' на Render
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.connect((err, client, release) => {
     if (err) {
-        console.error('Error acquiring client for PostgreSQL:', err.stack);
-        process.exit(1);
+        console.error('Error acquiring client for PostgreSQL on startup:', err.stack);
+        // Не завершуємо процес тут, щоб дати можливість побачити інші логи,
+        // але запити до БД не працюватимуть.
+        // В ідеалі, додаток не має стартувати без успішного підключення до БД.
+    } else {
+        console.log('Successfully connected to the PostgreSQL database via pool on startup.');
+        if (client) client.release(); // Важливо звільнити клієнта після перевірки
     }
-    console.log('Successfully connected to the PostgreSQL database via pool.');
-    if (client) client.release(); // Важливо звільнити клієнта після перевірки
 });
 
 // --- Middleware ---
@@ -46,16 +51,15 @@ app.use(express.urlencoded({ extended: true })); // Для парсингу URL-
 
 // --- Обслуговування статичних файлів ---
 // __dirname тут буде .../gdc/backend/
-// Вказуємо шлях до папки frontend, яка знаходиться на один рівень вище
+// Шлях до папки frontend, яка знаходиться на один рівень вище
 const frontendPath = path.join(__dirname, '..', 'frontend');
-// Вказуємо шлях до кореневої папки проекту (де лежить index.html)
+// Шлях до кореневої папки проекту (де лежить index.html)
 const projectRootPath = path.join(__dirname, '..');
 
-// Обслуговуємо вміст папки /frontend (наприклад, /css, /js)
+// 1. Обслуговуємо вміст папки /frontend (наприклад, /css, /js, /html)
 // Запит /frontend/css/styles.css буде шукати .../gdc/frontend/css/styles.css
-// Це важливо, оскільки ваші HTML-файли посилаються на CSS через /frontend/css/...
+// Це потрібно, оскільки ваші HTML-файли посилаються на CSS через /frontend/css/...
 app.use('/frontend', express.static(frontendPath));
-
 
 // --- API Ендпоінти ---
 // 1. Реєстрація
@@ -73,7 +77,7 @@ app.post('/auth/register', async (req, res) => {
         if (error.code === '23505') { // Unique violation в PostgreSQL
             return res.status(409).json({ success: false, message: 'Email already exists.' });
         }
-        console.error("Error during user registration (PostgreSQL):", error);
+        console.error("Error during user registration (PostgreSQL):", error.message, error.stack);
         res.status(500).json({ success: false, message: 'Failed to register user due to a server error.' });
     }
 });
@@ -101,7 +105,7 @@ app.post('/auth/login', async (req, res) => {
             res.status(401).json({ success: false, message: 'Invalid credentials. Password incorrect.' });
         }
     } catch (error) {
-        console.error("Error during login (PostgreSQL):", error);
+        console.error("Error during login (PostgreSQL):", error.message, error.stack);
         res.status(500).json({ success: false, message: 'Server error during login.' });
     }
 });
@@ -111,9 +115,30 @@ app.post('/auth/login', async (req, res) => {
 
 // Маршрут для головної сторінки (index.html знаходиться в корені проекту)
 app.get('/', (req, res) => {
-    // __dirname = .../gdc/backend/
-    // path.join(__dirname, '..', 'index.html') = .../gdc/index.html
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+    const indexPath = path.join(projectRootPath, 'index.html');
+    console.log(`[ROUTE /] Attempting to serve index.html from: ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error(`[ROUTE /] Error sending index.html: ${err.message}`, err.stack);
+            if (!res.headersSent) { // Перевіряємо, чи не були вже відправлені заголовки
+                res.status(500).send("Error serving the main page.");
+            }
+        }
+    });
+});
+
+// Якщо користувач явно запитує /index.html
+app.get('/index.html', (req, res) => {
+    const indexPath = path.join(projectRootPath, 'index.html');
+    console.log(`[ROUTE /index.html] Attempting to serve index.html from: ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error(`[ROUTE /index.html] Error sending index.html: ${err.message}`, err.stack);
+            if (!res.headersSent) {
+                res.status(500).send("Error serving the main page.");
+            }
+        }
+    });
 });
 
 // Інші HTML сторінки (знаходяться в frontend/html/)
@@ -127,44 +152,22 @@ const htmlPages = [
 ];
 
 htmlPages.forEach(page => {
-    // backend/server.js
-
-app.get('/', (req, res) => {
-    const indexPath = path.join(__dirname, '..', 'index.html');
-    console.log(`Attempting to serve index.html from: ${indexPath}`); // ДІАГНОСТИКА
-    res.sendFile(indexPath, (err) => {
-        if (err) {
-            console.error(`Error sending index.html: ${err.message}`); // ДІАГНОСТИКА
-            res.status(err.status || 500).end();
-        }
-    });
-});
-
-htmlPages.forEach(page => {
     app.get(`/${page}`, (req, res) => {
-        const pagePath = path.join(__dirname, '..', 'frontend', 'html', page);
-        console.log(`Attempting to serve ${page} from: ${pagePath}`); // ДІАГНОСТИКА
+        const pagePath = path.join(frontendPath, 'html', page);
+        console.log(`[ROUTE /${page}] Attempting to serve ${page} from: ${pagePath}`);
         res.sendFile(pagePath, (err) => {
             if (err) {
-                console.error(`Error sending ${page}: ${err.message}`); // ДІАГНОСТИКА
-                // Не відправляйте тут відповідь, якщо це помилка шляху для статичного файлу,
-                // Express має перейти до наступного обробника або видати 404.
-                // Але якщо це помилка читання файлу, то 500.
-                // Якщо ви хочете, щоб Express сам обробляв 404 для неіснуючих файлів,
-                // не надсилайте тут res.status(...).end() для помилок ENOENT.
-                if (err.code !== 'ENOENT') { // ENOENT = No such file or directory
-                   res.status(err.status || 500).end();
-                } else {
-                    // Якщо файл не знайдено, Express має сам повернути 404,
-                    // якщо немає інших обробників для цього шляху
-                    console.log(`File not found for ${page}: ${pagePath}`);
-                    // Передаємо помилку далі, щоб Express обробив її як 404, якщо немає інших маршрутів
-                    // next(err); // Потрібен next як параметр функції маршруту (req, res, next)
+                console.error(`[ROUTE /${page}] Error sending ${page} (${pagePath}): ${err.message}`, err.stack);
+                if (!res.headersSent) {
+                    if (err.code === 'ENOENT') { // ENOENT = No such file or directory
+                        res.status(404).send(`Cannot GET /${page}`);
+                    } else {
+                        res.status(500).send(`Error serving ${page}.`);
+                    }
                 }
             }
         });
     });
-});
 });
 
 
@@ -175,9 +178,9 @@ app.listen(port, () => {
 
 // --- Обробка закриття сервера (для коректного закриття пулу БД) ---
 async function gracefulShutdown() {
-    console.log('Received kill signal, shutting down gracefully.');
+    console.log('Received signal to terminate, shutting down gracefully.');
     try {
-        if (pool) { // Перевіряємо, чи пул взагалі був ініціалізований
+        if (pool) {
             await pool.end();
             console.log('PostgreSQL pool has ended.');
         }
@@ -188,4 +191,4 @@ async function gracefulShutdown() {
     }
 }
 process.on('SIGINT', gracefulShutdown); // Обробка Ctrl+C
-process.on('SIGTERM', gracefulShutdown); // Обробка сигналу завершення
+process.on('SIGTERM', gracefulShutdown); // Обробка сигналу завершення (наприклад, від Render)
