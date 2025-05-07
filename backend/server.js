@@ -188,24 +188,94 @@ app.post('/auth/logout', (req, res) => { // Можна додати authenticate
 
 // ПРОФІЛЬ, АКТИВИ, РИНКИ, ОРДЕРИ
 app.get('/api/profile', authenticateToken, async (req, res) => {
-    const userId = req.user.userId; // Отримуємо з payload токена
+    const userId = req.user.userId;
     console.log(`[API GET /api/profile] Request for user ID: ${userId}`);
     try {
-        const sql = `SELECT id, email, username, uid, created_at FROM users WHERE id = $1`;
+        const sql = `SELECT id, email, username, uid, created_at, avatar_url FROM users WHERE id = $1`; // Додали avatar_url
         const result = await pool.query(sql, [userId]);
-
         if (result.rows.length === 0) {
-            console.warn(`[API GET /api/profile] User profile not found for ID: ${userId}`);
             return res.status(404).json({ success: false, message: 'User profile not found.' });
         }
-        const userProfile = result.rows[0];
-        console.log(`[API GET /api/profile] Profile data for user ID ${userId}:`, userProfile);
-        res.json({ success: true, profile: userProfile });
+        res.json({ success: true, profile: result.rows[0] });
     } catch (error) {
-        console.error("[API GET /api/profile] Error fetching user profile:", error.message, error.stack);
+        console.error("[API GET /api/profile] Error:", error.message, error.stack);
         res.status(500).json({ success: false, message: 'Server error fetching profile.' });
     }
 });
+
+// НОВИЙ ЕНДПОІНТ: Оновлення нікнейму
+app.put('/api/profile/username', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { newUsername } = req.body;
+    console.log(`[API PUT /api/profile/username] User ID: ${userId}, New Username: ${newUsername}`);
+
+    if (!newUsername || newUsername.trim().length < 3) { // Проста валідація
+        return res.status(400).json({ success: false, message: 'Username must be at least 3 characters long.' });
+    }
+
+    try {
+        // Перевірка, чи нікнейм вже не зайнятий іншим користувачем (якщо username UNIQUE)
+        const checkSql = `SELECT id FROM users WHERE username = $1 AND id != $2`;
+        const checkResult = await pool.query(checkSql, [newUsername, userId]);
+        if (checkResult.rows.length > 0) {
+            return res.status(409).json({ success: false, message: 'Username already taken.' }); // 409 Conflict
+        }
+
+        const updateSql = `UPDATE users SET username = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, username, email, uid, avatar_url`;
+        const result = await pool.query(updateSql, [newUsername.trim(), userId]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: 'User not found to update username.' });
+        }
+        // Повертаємо оновлений профіль (або тільки оновлене поле)
+        // Також потрібно оновити токен, якщо username є частиною payload токена!
+        const updatedUser = result.rows[0];
+        const newToken = jwt.sign(
+            { userId: updatedUser.id, email: updatedUser.email, username: updatedUser.username, uid: updatedUser.uid },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({ success: true, message: 'Username updated successfully.', user: updatedUser, token: newToken });
+    } catch (error) {
+        console.error("[API PUT /api/profile/username] Error:", error);
+        // Перевірка на унікальність, якщо вона не була зроблена вище
+        if (error.code === '23505' && error.constraint && error.constraint.includes('username')) {
+             return res.status(409).json({ success: false, message: 'Username already taken (DB constraint).' });
+        }
+        res.status(500).json({ success: false, message: 'Server error updating username.' });
+    }
+});
+
+// НОВИЙ ЕНДПОІНТ: Оновлення URL аватара
+app.put('/api/profile/avatar', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { avatarUrl } = req.body; // Очікуємо URL аватара
+    console.log(`[API PUT /api/profile/avatar] User ID: ${userId}, Avatar URL: ${avatarUrl}`);
+
+    if (avatarUrl === undefined) { // Дозволяємо порожній рядок для видалення аватара, але не undefined
+        return res.status(400).json({ success: false, message: 'Avatar URL is required (can be an empty string to remove).' });
+    }
+
+    // Проста валідація URL (дуже базова)
+    if (avatarUrl !== '' && !avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://')) {
+        return res.status(400).json({ success: false, message: 'Invalid avatar URL format.' });
+    }
+
+    try {
+        const sql = `UPDATE users SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING avatar_url`;
+        const result = await pool.query(sql, [avatarUrl, userId]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: 'User not found to update avatar.' });
+        }
+        res.json({ success: true, message: 'Avatar updated successfully.', avatarUrl: result.rows[0].avatar_url });
+    } catch (error) {
+        console.error("[API PUT /api/profile/avatar] Error:", error);
+        res.status(500).json({ success: false, message: 'Server error updating avatar.' });
+    }
+});
+
 
 app.get('/api/balance', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
