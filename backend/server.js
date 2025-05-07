@@ -127,11 +127,44 @@ const htmlPages = [
 ];
 
 htmlPages.forEach(page => {
-    app.get(`/${page}`, (req, res) => {
-        // __dirname = .../gdc/backend/
-        // path.join(__dirname, '..', 'frontend', 'html', page) = .../gdc/frontend/html/page_name.html
-        res.sendFile(path.join(__dirname, '..', 'frontend', 'html', page));
+    // backend/server.js
+
+app.get('/', (req, res) => {
+    const indexPath = path.join(__dirname, '..', 'index.html');
+    console.log(`Attempting to serve index.html from: ${indexPath}`); // ДІАГНОСТИКА
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error(`Error sending index.html: ${err.message}`); // ДІАГНОСТИКА
+            res.status(err.status || 500).end();
+        }
     });
+});
+
+htmlPages.forEach(page => {
+    app.get(`/${page}`, (req, res) => {
+        const pagePath = path.join(__dirname, '..', 'frontend', 'html', page);
+        console.log(`Attempting to serve ${page} from: ${pagePath}`); // ДІАГНОСТИКА
+        res.sendFile(pagePath, (err) => {
+            if (err) {
+                console.error(`Error sending ${page}: ${err.message}`); // ДІАГНОСТИКА
+                // Не відправляйте тут відповідь, якщо це помилка шляху для статичного файлу,
+                // Express має перейти до наступного обробника або видати 404.
+                // Але якщо це помилка читання файлу, то 500.
+                // Якщо ви хочете, щоб Express сам обробляв 404 для неіснуючих файлів,
+                // не надсилайте тут res.status(...).end() для помилок ENOENT.
+                if (err.code !== 'ENOENT') { // ENOENT = No such file or directory
+                   res.status(err.status || 500).end();
+                } else {
+                    // Якщо файл не знайдено, Express має сам повернути 404,
+                    // якщо немає інших обробників для цього шляху
+                    console.log(`File not found for ${page}: ${pagePath}`);
+                    // Передаємо помилку далі, щоб Express обробив її як 404, якщо немає інших маршрутів
+                    // next(err); // Потрібен next як параметр функції маршруту (req, res, next)
+                }
+            }
+        });
+    });
+});
 });
 
 
