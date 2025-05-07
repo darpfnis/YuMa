@@ -126,116 +126,96 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 console.error('[ProfilePage] Error during logout API call:', error);
             }
-            window.location.href = 'login-page.html';
+            window.location.href = 'login-page.html'; // Або правильний шлях
         });
     } else {
-        console.warn('[ProfilePage] Logout button element not found.');
+        console.warn('[ProfilePage] Logout button element not found (expected id="logoutButton").');
     }
 
     async function fetchProtectedData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
-        // console.log(`[fetchProtectedData] Attempting to fetch ${url}. Token being used:`, currentToken ? currentToken.substring(0,20)+'...' : 'NO TOKEN AT FETCH TIME');
-
         if (!currentToken) {
-            console.error(`[fetchProtectedData] CRITICAL: No token available for protected request to ${url}. Redirecting to login.`);
+            console.error(`[fetchProtectedData] CRITICAL: No token for protected request to ${url}. Redirecting.`);
             window.location.href = 'login-page.html';
-            return Promise.reject(new Error('No token, redirecting.'));
+            return Promise.resolve({ success: false, message: 'Auth token missing, redirecting.', shouldRedirect: true });
         }
-
-        const defaultHeaders = {
-            'Authorization': `Bearer ${currentToken}`,
-            'Content-Type': 'application/json'
-        };
-        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
-        // console.log(`[fetchProtectedData] Fetching ${url} with options:`, fetchOptions);
-
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}`};
+        const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
         try {
             const response = await fetch(url, fetchOptions);
-            // console.log(`[fetchProtectedData] Response status for ${url}: ${response.status}`);
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
-                    console.error(`[fetchProtectedData] Unauthorized (401) or Forbidden (403) for ${url}. Removing token and redirecting.`);
                     localStorage.removeItem('authToken');
                     window.location.href = 'login-page.html';
-                    return Promise.reject(new Error(`Unauthorized or Forbidden for ${url}, token removed.`));
+                    return Promise.resolve({ success: false, message: `Auth error for ${url}. Redirecting.`, shouldRedirect: true });
                 }
-                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status} for ${url}. Response not JSON.` }));
-                console.error(`[fetchProtectedData] Error data for ${url}:`, errorData);
-                return Promise.reject(errorData);
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+                return { success: false, ...errorData };
             }
-            const responseData = await response.json();
-            // console.log(`[fetchProtectedData] Successfully fetched and parsed JSON for ${url}:`, responseData);
-            return responseData;
+            return response.json();
         } catch (error) {
              console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
-             if (error.message === "Failed to fetch") {
-                alert(`Network error: Could not connect to the server to fetch ${url}. Please check your connection or contact support.`);
+             if (error.message && error.message.toLowerCase().includes("failed to fetch")) {
+                alert(`Network error: Could not connect to server for ${url}.`);
              }
-             return Promise.reject(error);
+             return { success: false, message: error.message || `Network error.`, isFetchError: true };
         }
     }
+
     async function loadProfileData() {
-        console.log('[ProfilePage] Attempting to load profile data...');
+        console.log('[ProfilePage] Attempting to load profile data from /api/profile...');
         try {
-            const data = await fetchProtectedData('/api/profile'); // Цей ендпоінт тепер має повертати avatar_url
-            if (data.success && data.profile) {
+            const data = await fetchProtectedData('/api/profile'); // requiresAuth: true за замовчуванням
+            console.log('[ProfilePage] Profile data received from server:', data);
+
+            if (data && data.success && data.profile) {
                 const profile = data.profile;
                 if (userNameElement) userNameElement.textContent = profile.username || profile.email.split('@')[0];
                 if (userUIDElement) userUIDElement.textContent = `UID: ${profile.uid || 'N/A'}`;
                 
-                // Оновлення аватара на дашборді
+                // --- ОСЬ ТУТ ОНОВЛЮЄМО АВАТАР ---
                 if (userDashboardAvatarElement) {
                     if (profile.avatar_url) {
+                        console.log('[ProfilePage] Setting avatar from URL:', profile.avatar_url);
                         userDashboardAvatarElement.style.backgroundImage = `url('${profile.avatar_url}')`;
-                        userDashboardAvatarElement.textContent = ''; // Прибираємо текст "No Pic", якщо є картинка
+                        userDashboardAvatarElement.textContent = ''; // Прибираємо текст "No Pic"
                     } else {
+                        console.log('[ProfilePage] No avatar_url found, setting default.');
                         userDashboardAvatarElement.style.backgroundImage = 'none';
-                        userDashboardAvatarElement.textContent = 'No Pic'; // Або залиште "picture"
+                        userDashboardAvatarElement.textContent = 'No Pic';
                     }
+                } else {
+                    console.warn('[ProfilePage] userDashboardAvatarElement not found in DOM.');
                 }
-                console.log('[ProfilePage] Profile data (including avatar) rendered.');
-            } else {
-                console.error('[ProfilePage] Failed to load profile data from server:', data.message || 'No success field in response');
-                if (userNameElement) userNameElement.textContent = 'Error loading profile';
-            }
-        } catch (error) {
-            console.error('[ProfilePage] Error in loadProfileData catcher:', error.message || error);
-            if (userNameElement) userNameElement.textContent = 'Error (profile)';
-        }
-    }
-
-    async function loadProfileData() {
-        console.log('[ProfilePage] Attempting to load profile data...');
-        try {
-            const data = await fetchProtectedData('/api/profile');
-            if (data.success && data.profile) {
-                if (userNameElement) userNameElement.textContent = data.profile.username || data.profile.email.split('@')[0];
-                if (userUIDElement) userUIDElement.textContent = `UID: ${data.profile.uid || 'N/A'}`;
+                // --- КІНЕЦЬ ОНОВЛЕННЯ АВАТАРА ---
                 console.log('[ProfilePage] Profile data rendered.');
             } else {
-                console.error('[ProfilePage] Failed to load profile data from server:', data.message || 'No success field in response');
-                if (userNameElement) userNameElement.textContent = 'Error loading profile';
+                const errorMsg = data ? data.message : 'Failed to load profile data (undefined response or success:false).';
+                console.error('[ProfilePage] Error loading profile:', errorMsg);
+                if (userNameElement) userNameElement.textContent = 'Error (profile)';
+                // Можна також показати помилку користувачу більш явно
             }
-        } catch (error) {
-            console.error('[ProfilePage] Error in loadProfileData catcher:', error.message || error);
-            if (userNameElement) userNameElement.textContent = 'Error (profile)';
+        } catch (error) { // Цей catch спрацює, якщо fetchProtectedData повернула відхилений Promise (наприклад, через redirect)
+            console.error('[ProfilePage] Critical error in loadProfileData:', error.message || error);
+            if (userNameElement && (!error.shouldRedirect)) { // Не змінюємо, якщо йде перенаправлення
+                 userNameElement.textContent = 'Error loading data';
+            }
         }
     }
 
     async function loadBalance() {
-         console.log('[ProfilePage] Attempting to load balance data...');
+        console.log('[ProfilePage] Attempting to load balance data...');
         try {
             const data = await fetchProtectedData('/api/balance');
-            if (data.success) {
+            if (data && data.success) {
                 if (estimatedBalanceElement) estimatedBalanceElement.textContent = `$${parseFloat(data.balance).toFixed(2)} USD`;
-                console.log('[ProfilePage] Balance data rendered.');
             } else {
-                console.error('[ProfilePage] Failed to load balance from server:', data.message);
-                if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ N/A';
+                console.error('[ProfilePage] Failed to load balance:', data ? data.message : 'undefined response');
+                if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ Error';
             }
         } catch (error) {
-            console.error('[ProfilePage] Error in loadBalance catcher:', error.message || error);
-            if (estimatedBalanceElement) estimatedBalanceElement.textContent = '$ Error';
+            console.error('[ProfilePage] Critical error in loadBalance:', error);
+            if (estimatedBalanceElement && (!error.shouldRedirect)) estimatedBalanceElement.textContent = '$ Error';
         }
     }
 
