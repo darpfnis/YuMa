@@ -54,25 +54,37 @@ app.use('/frontend', express.static(frontendPath));
 // --- Middleware для перевірки JWT ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    console.log('[AuthMiddleware] Auth Header:', authHeader);
-    console.log('[AuthMiddleware] Token Extracted:', token);
+    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(`[AuthMiddleware] Request to: ${req.originalUrl} from IP: ${clientIp}`);
+    console.log('[AuthMiddleware] Auth Header Received:', authHeader);
 
-    if (token == null) {
-        console.log('[AuthMiddleware] Token missing.');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.warn('[AuthMiddleware] Token missing or malformed Bearer. Header:', authHeader);
+        return res.status(401).json({ success: false, message: 'Access token is missing or malformed.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    console.log('[AuthMiddleware] Token Extracted:', token ? token.substring(0,20) + '...' : 'NO TOKEN EXTRACTED');
+
+    if (!token) { // Додаткова перевірка, хоча startsWith('Bearer ') вже мала б це покрити
+        console.warn('[AuthMiddleware] Token is null or undefined after split.');
         return res.status(401).json({ success: false, message: 'Access token is missing.' });
     }
 
     jwt.verify(token, JWT_SECRET, (err, userPayload) => {
         if (err) {
-            console.error('[AuthMiddleware] JWT verification error:', err.message); // ДУЖЕ ВАЖЛИВИЙ ЛОГ
-            return res.status(403).json({ success: false, message: 'Invalid or expired token.' });
+            console.error('[AuthMiddleware] JWT verification error:', err.name, '-', err.message); // Логуємо назву та повідомлення помилки
+            // Деякі поширені помилки:
+            // TokenExpiredError: jwt expired
+            // JsonWebTokenError: invalid signature / jwt malformed
+            return res.status(403).json({ success: false, message: 'Invalid or expired token.', errorType: err.name });
         }
         req.user = userPayload;
-        console.log('[AuthMiddleware] Token verified. User:', req.user);
+        console.log('[AuthMiddleware] Token verified successfully. User payload:', req.user);
         next();
     });
 };
+
 
 // --- Список основних криптовалют для початкового створення активів ---
 const INITIAL_ASSETS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'YMC']; // Додайте YMC або інші потрібні

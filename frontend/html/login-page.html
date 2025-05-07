@@ -39,50 +39,82 @@
         </section>
     </main>
     <script>
-        // Ваш JavaScript для відправки форми входу, який ми обговорювали,
-        // має бути тут. Переконайтеся, що URL в fetch запиті
-        // для сервера буде /auth/login.
-
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('[LoginPage] DOMContentLoaded. Script loaded.');
             const loginForm = document.getElementById('loginForm');
-            if (loginForm) {
-                loginForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    const errorDiv = document.getElementById('loginError') || this.appendChild(document.createElement('div'));
-                    errorDiv.id = 'loginError';
-                    errorDiv.style.color = 'red'; errorDiv.style.marginTop = '1rem'; errorDiv.style.textAlign = 'center';
-                    errorDiv.textContent = '';
+            const errorDiv = document.getElementById('loginError');
 
-                    const identifier = document.getElementById('identifier').value;
-                    const password = document.getElementById('password').value;
-
-                    if (!identifier || !password) {
-                        errorDiv.textContent = 'Email/identifier and password are required.'; return;
-                    }
-
-                    try {
-                        // ПРИ ЛОКАЛЬНОМУ ВІДКРИТТІ ЦЕЙ FETCH НЕ ПРАЦЮВАТИМЕ БЕЗ СЕРВЕРА
-                        // При роботі через сервер шлях має бути /auth/login
-                        const response = await fetch('/auth/login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ identifier, password })
-                        });
-                        const data = await response.json();
-                        if (response.ok && data.success) {
-                            if (data.user && data.user.email) {
-                                localStorage.setItem('userEmailForMVP', data.user.email);
-                            }
-                            window.location.href = 'profile.html'; // Перенаправлення на іншу сторінку в тій самій папці
-                        } else {
-                            errorDiv.textContent = data.message || 'Login failed.';
-                        }
-                    } catch (err) {
-                        console.error('Login error:', err);
-                        errorDiv.textContent = 'An error occurred. Is the server running?';
-                    }
-                });
+            if (!loginForm) {
+                console.error('[LoginPage] CRITICAL: Login form with id "loginForm" not found!');
+                return;
             }
+            if (!errorDiv) {
+                console.warn('[LoginPage] Warning: Error div with id "loginError" not found. Will attempt to create.');
+            }
+
+
+            loginForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                console.log('[LoginPage] Login form submitted.');
+
+                let currentErrorDiv = document.getElementById('loginError');
+                if (!currentErrorDiv) {
+                    currentErrorDiv = document.createElement('div');
+                    currentErrorDiv.id = 'loginError';
+                    currentErrorDiv.style.color = 'red';
+                    currentErrorDiv.style.marginTop = '1rem';
+                    currentErrorDiv.style.textAlign = 'center';
+                    this.appendChild(currentErrorDiv);
+                }
+                currentErrorDiv.textContent = '';
+
+                const identifier = document.getElementById('identifier').value;
+                const password = document.getElementById('password').value;
+                console.log('[LoginPage] Attempting login with Identifier:', identifier, 'Password:', password ? '******' : 'EMPTY');
+
+
+                if (!identifier || !password) {
+                    currentErrorDiv.textContent = 'Email/identifier and password are required.';
+                    console.log('[LoginPage] Client validation: Identifier or password missing.');
+                    return;
+                }
+
+                try {
+                    console.log('[LoginPage] Sending fetch request to /auth/login');
+                    const response = await fetch('/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifier, password })
+                    });
+                    console.log('[LoginPage] Fetch response status:', response.status);
+
+                    const data = await response.json();
+                    console.log('[LoginPage] Data from server:', data);
+
+                    if (response.ok && data.success && data.token) {
+                        console.log('[LoginPage] Login successful. Server token:', data.token ? data.token.substring(0,30) + '...' : 'NO TOKEN IN RESPONSE');
+                        localStorage.setItem('authToken', data.token);
+                        console.log('[LoginPage] authToken saved to localStorage.');
+                        // Перевіримо, чи збереглося
+                        const savedToken = localStorage.getItem('authToken');
+                        console.log('[LoginPage] Token read back from localStorage:', savedToken ? savedToken.substring(0,30) + '...' : 'NOT FOUND IN LOCALSTORAGE');
+
+                        if (data.user && data.user.email) {
+                             // Не зберігайте тут email, якщо ви його отримуєте з /api/profile
+                             // localStorage.setItem('userEmailForMVP', data.user.email);
+                             // console.log('[LoginPage] userEmailForMVP saved to localStorage:', data.user.email);
+                        }
+                        console.log('[LoginPage] Redirecting to profile.html');
+                        window.location.href = 'profile.html';
+                    } else {
+                        currentErrorDiv.textContent = data.message || 'Login failed.';
+                        console.error('[LoginPage] Login failed on client side. Server message:', data.message);
+                    }
+                } catch (err) {
+                    console.error('[LoginPage] Login request/processing error:', err);
+                    currentErrorDiv.textContent = 'An error occurred during login. Please try again later.';
+                }
+            });
         });
     </script>
 </body>
