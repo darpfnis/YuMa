@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>YuMa - Spot trading</title>
-    <link rel="stylesheet" href="../css/header.css"> <!-- Уніфікований хедер -->
-    <link rel="stylesheet" href="../css/spot-page.css">
-    <link rel="stylesheet" href="../css/global.css">
-    <link rel="stylesheet" href="../css/cards.css">
+    <link rel="stylesheet" href="../frontend/css/header.css"> <!-- Уніфікований хедер -->
+    <link rel="stylesheet" href="../frontend/css/spot-page.css">
+    <link rel="stylesheet" href="../frontend/css/global.css">
+    <link rel="stylesheet" href="../frontend/css/cards.css">
 </head>
 <body>
 
     <header> <!-- HTML-структура хедера з main-page.html (з спадними меню) -->
         <div class="header-left">
-            <div class="logo"><a href="../../index.html">YuMa</a></div>
+            <div class="logo"><a href="index.html">YuMa</a></div>
             <nav class="main-nav">
-                <a href="../html/trading-page.html">Buy Crypto</a>
+                <a href="trading-page.html">Buy Crypto</a>
                 <a href="markets.html">Markets</a>
                 <div class="dropdown-container">
                     <a href="#" class="nav-link dropdown-toggle">Trade</a>
@@ -58,7 +58,26 @@
     
         <section class="center-content panel-column">
             <div class="ui-panel chart-card"> <!-- Змінено клас -->
-                <div class="panel-title">Charts</div>
+                <!-- TradingView Widget BEGIN -->
+<div class="tradingview-widget-container" style="height:100%;width:100%">
+    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+    {
+    "autosize": true,
+    "symbol": "BINANCE:BTCUSDT",
+    "interval": "D",
+    "timezone": "Etc/UTC",
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "allow_symbol_change": true,
+    "support_host": "https://www.tradingview.com"
+  }
+    </script>
+  </div>
+  <!-- TradingView Widget END -->
+                
             </div>
             <div class="ui-panel spot-trading-panel-card"> <!-- Змінено клас -->
                 <div class="panel-title">Spot trading panel</div>
