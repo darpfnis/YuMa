@@ -321,15 +321,41 @@ app.get('/api/orders/open', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/orders/history', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    try {
-        const sql = `SELECT id, pair, type, side, avg_fill_price, filled_amount_base, amount, status, created_at FROM orders WHERE user_id = $1 AND status IN ('filled', 'canceled', 'partially_filled') ORDER BY created_at DESC`;
-        const result = await pool.query(sql, [userId]);
-        res.json({ success: true, orders: result.rows });
-    } catch (error) {
-        console.error("[API /orders/history] Error:", error);
-        res.status(500).json({ success: false, message: 'Server error fetching order history.' });
-    }
+    const { dateFrom, dateTo, pair, type, side } = req.query;
+let conditions = ["o.user_id = $1", "o.status IN ('filled', 'canceled', 'partially_filled')"];
+let queryValues = [userId];
+let paramIndex = 2;
+
+if (dateFrom) {
+    conditions.push(`o.created_at >= $${paramIndex++}`);
+    queryValues.push(dateFrom);
+}
+if (dateTo) {
+    // Додаємо один день до dateTo, щоб включити весь день
+    const nextDay = new Date(dateTo);
+    nextDay.setDate(nextDay.getDate() + 1);
+    conditions.push(`o.created_at < $${paramIndex++}`);
+    queryValues.push(nextDay.toISOString().split('T')[0]);
+}
+if (pair) {
+    conditions.push(`o.pair ILIKE $${paramIndex++}`); // ILIKE для пошуку без урахування регістру
+    queryValues.push(`%${pair}%`);
+}
+if (type) {
+    conditions.push(`o.type = $${paramIndex++}`);
+    queryValues.push(type);
+}
+if (side) {
+    conditions.push(`o.side = $${paramIndex++}`);
+    queryValues.push(side);
+}
+
+const conditionsStr = conditions.join(' AND ');
+const sql = `SELECT id, pair, type, side, avg_fill_price, filled_amount_base, amount, status, created_at
+             FROM orders o
+             WHERE ${conditionsStr}
+             ORDER BY o.created_at DESC`;
+const result = await pool.query(sql, queryValues);
 });
 
 

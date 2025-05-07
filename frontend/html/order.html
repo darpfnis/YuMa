@@ -3,26 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order History - YuMa</title>
+    <title>Order Management - YuMa</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <script defer src="script.js"></script>
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <!-- <link rel="stylesheet" href="../css/orders.css"> -- Якщо є специфічні стилі -->
+    <style>
+        /* Стилі для статусів, сторін (можна винести в CSS) */
+        .side-buy { color: green; font-weight: bold; }
+        .side-sell { color: red; font-weight: bold; }
+        .status-filled { color: green; }
+        .status-canceled { color: #6c757d; }
+        .status-open, .status-partially_filled { color: #ffc107; } /* Жовтий для відкритих/частково виконаних */
+        .action-link.danger-link { color: #dc3545; }
+        .action-link.danger-link:hover { color: #c82333; }
+    </style>
 </head>
 <body>
     <header>
-        <!-- ... такий самий хедер, як на assets.html ... -->
-        <div class="logo"><a href="index.html">YuMa</a></div>
+        <div class="logo"><a href="../../index.html">YuMa</a></div>
         <nav class="header-nav">
-            <a href="#" class="nav-button">Buy Crypto</a>
-            <a href="#" class="nav-button">Markets</a>
-            <a href="#" class="nav-button">Trade</a>
+            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
+            <a href="markets.html" class="nav-button">Markets</a>
+            <a href="trading-page.html" class="nav-button">Trade</a>
         </nav>
         <div class="header-actions">
-            <button class="btn-deposit nav-button">Deposit</button>
+            <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
             <div class="icon-placeholder dark-square"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
             <div class="icon-placeholder"></div>
-            <div class="icon-placeholder"></div>
+            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
+            <button id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</button>
         </div>
     </header>
 
@@ -43,19 +55,20 @@
             </section>
 
             <div class="tabs-container">
-                <button class="tab-button active" data-tab="open-orders">Open Orders</button>
-                <button class="tab-button" data-tab="order-history">Order History</button>
-                <button class="tab-button" data-tab="trade-history">Trade History</button>
+                <button class="tab-button active" data-tab="open-orders-content">Open Orders</button>
+                <button class="tab-button" data-tab="order-history-content">Order History</button>
+                <button class="tab-button" data-tab="trade-history-content">Trade History</button>
             </div>
 
-            <div id="open-orders" class="tab-content active">
+            <!-- Вміст для Відкритих Ордерів -->
+            <div id="open-orders-content" class="tab-content active">
                 <section class="orders-list-section">
                     <h3>Open Orders</h3>
                      <div class="table-controls">
-                        <input type="text" placeholder="Search Pair (e.g. BTC/USDT)..." class="search-input large-search">
-                        <button class="action-button danger-action">Cancel All Orders</button>
+                        <input type="text" id="searchOpenOrdersPair" placeholder="Search Pair (e.g. BTC/USDT)..." class="search-input large-search">
+                        <button id="cancelAllOpenOrdersBtn" class="action-button danger-action">Cancel All Orders</button>
                     </div>
-                    <div class="custom-table-wrapper">
+                    <div class="custom-table-wrapper" id="openOrdersTable">
                         <div class="custom-table-header">
                             <span>Date</span>
                             <span>Pair</span>
@@ -67,37 +80,26 @@
                             <span>Total</span>
                             <span>Action</span>
                         </div>
-                        <!-- Приклад відкритого ордера -->
-                        <div class="custom-table-row order-row">
-                            <span>2024-05-07 10:30:15</span>
-                            <span>BTC/USDT</span>
-                            <span>Limit</span>
-                            <span class="side-buy">Buy</span>
-                            <span>$40,000.00</span>
-                            <span>0.1 BTC</span>
-                            <span>0%</span>
-                            <span>$4,000.00</span>
-                            <span><a href="#" class="action-link danger-link">Cancel</a></span>
-                        </div>
-                        <!-- ... інші відкриті ордери ... -->
-                         <div class="no-data-placeholder">No open orders.</div>
+                        <div class="no-data-placeholder">Loading open orders...</div>
+                        <!-- Рядки будуть додані динамічно -->
                     </div>
                 </section>
             </div>
 
-            <div id="order-history" class="tab-content">
+            <!-- Вміст для Історії Ордерів -->
+            <div id="order-history-content" class="tab-content">
                 <section class="orders-list-section">
                     <h3>Order History</h3>
                      <div class="table-controls">
-                        <input type="date" class="date-input">
+                        <input type="date" id="orderHistoryDateFrom" class="date-input">
                         <span>to</span>
-                        <input type="date" class="date-input">
-                        <input type="text" placeholder="Pair..." class="search-input small-search">
-                        <select class="filter-select"><option>All Types</option><option>Limit</option><option>Market</option></select>
-                        <select class="filter-select"><option>All Sides</option><option>Buy</option><option>Sell</option></select>
-                        <button class="action-button">Search</button>
+                        <input type="date" id="orderHistoryDateTo" class="date-input">
+                        <input type="text" id="orderHistoryPair" placeholder="Pair..." class="search-input small-search">
+                        <select id="orderHistoryType" class="filter-select"><option value="">All Types</option><option value="limit">Limit</option><option value="market">Market</option></select>
+                        <select id="orderHistorySide" class="filter-select"><option value="">All Sides</option><option value="buy">Buy</option><option value="sell">Sell</option></select>
+                        <button id="searchOrderHistoryBtn" class="action-button">Search</button>
                     </div>
-                    <div class="custom-table-wrapper">
+                    <div class="custom-table-wrapper" id="orderHistoryTable">
                         <div class="custom-table-header">
                             <span>Date</span>
                             <span>Pair</span>
@@ -109,41 +111,20 @@
                             <span>Total</span>
                             <span>Status</span>
                         </div>
-                        <!-- Приклад ордера з історії -->
-                        <div class="custom-table-row order-row">
-                            <span>2024-05-06 15:00:00</span>
-                            <span>ETH/USDT</span>
-                            <span>Market</span>
-                            <span class="side-sell">Sell</span>
-                            <span>$1,505.50</span>
-                            <span>2.0 ETH</span>
-                            <span>2.0 ETH</span>
-                            <span>$3,011.00</span>
-                            <span class="status-filled">Filled</span>
-                        </div>
-                         <div class="custom-table-row order-row">
-                            <span>2024-05-05 12:00:00</span>
-                            <span>ADA/BTC</span>
-                            <span>Limit</span>
-                            <span class="side-buy">Buy</span>
-                            <span>0.00001500 BTC</span>
-                            <span>1000 ADA</span>
-                            <span>0 ADA</span>
-                            <span>0.015 BTC</span>
-                            <span class="status-canceled">Canceled</span>
-                        </div>
-                        <!-- ... інші ордери з історії ... -->
+                         <div class="no-data-placeholder">Loading order history...</div>
+                        <!-- Рядки будуть додані динамічно -->
                     </div>
                 </section>
             </div>
             
-            <div id="trade-history" class="tab-content">
+            <!-- Вміст для Історії Угод (поки плейсхолдер) -->
+            <div id="trade-history-content" class="tab-content">
                 <section class="orders-list-section">
                     <h3>Trade History</h3>
                      <div class="table-controls">
                         <!-- Фільтри схожі на Order History -->
                      </div>
-                    <div class="custom-table-wrapper">
+                    <div class="custom-table-wrapper" id="tradeHistoryTable">
                         <div class="custom-table-header">
                             <span>Date</span>
                             <span>Pair</span>
@@ -154,23 +135,214 @@
                             <span>Role</span>
                             <span>Total</span>
                         </div>
-                        <!-- ... дані про угоди ... -->
-                        <div class="no-data-placeholder">No trade history for the selected period.</div>
+                        <div class="no-data-placeholder">Trade history feature coming soon.</div>
                     </div>
                 </section>
             </div>
         </main>
     </div>
-    <script>
-        // Простий JS для перемикання табів
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                document.getElementById(button.dataset.tab).classList.add('active');
-            });
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('authToken');
+    const logoutButton = document.getElementById('logoutButtonOrders');
+
+    // Контейнери для таблиць
+    const openOrdersTableContainer = document.getElementById('openOrdersTable');
+    const orderHistoryTableContainer = document.getElementById('orderHistoryTable');
+    // const tradeHistoryTableContainer = document.getElementById('tradeHistoryTable'); // Для майбутнього
+
+    if (!token) {
+        window.location.href = 'login-page.html';
+        return;
+    }
+
+    if (logoutButton) {
+        logoutButton.style.display = 'inline-block';
+        logoutButton.addEventListener('click', async () => {
+            localStorage.removeItem('authToken');
+            try {
+                await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
+            } catch(e) { console.error('Logout API error', e); }
+            window.location.href = 'login-page.html';
         });
-    </script>
+    }
+
+    // --- Утиліта для запитів ---
+    async function fetchProtectedData(url, options = {}) {
+        const currentToken = localStorage.getItem('authToken');
+        if (!currentToken) {
+            window.location.href = 'login-page.html';
+            return Promise.reject(new Error('No token, redirecting.'));
+        }
+        const defaultHeaders = {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+        };
+        const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
+        const response = await fetch(url, fetchOptions);
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('authToken');
+                window.location.href = 'login-page.html';
+                return Promise.reject(new Error('Unauthorized or Forbidden.'));
+            }
+            const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+            return Promise.reject(errorData);
+        }
+        return response.json();
+    }
+
+    // --- Функції для Відкритих Ордерів ---
+    async function loadOpenOrders() {
+        if (!openOrdersTableContainer) return;
+        const header = openOrdersTableContainer.querySelector('.custom-table-header');
+        openOrdersTableContainer.innerHTML = ''; // Очищаємо
+        if (header) openOrdersTableContainer.appendChild(header);
+        openOrdersTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Loading open orders...</div>');
+
+        try {
+            const data = await fetchProtectedData('/api/orders/open');
+            const placeholder = openOrdersTableContainer.querySelector('.no-data-placeholder');
+            if (placeholder) placeholder.remove();
+
+            if (data.success && data.orders) {
+                if (data.orders.length === 0) {
+                    openOrdersTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">No open orders.</div>');
+                    return;
+                }
+                data.orders.forEach(order => {
+                    const row = document.createElement('div');
+                    row.classList.add('custom-table-row', 'order-row');
+                    const filledPercent = (parseFloat(order.filled_amount_base) / parseFloat(order.amount) * 100).toFixed(0);
+                    const totalValue = order.price && order.amount ? (parseFloat(order.price) * parseFloat(order.amount)).toFixed(2) : 'N/A';
+                    // Форматування дати (можна використовувати бібліотеку типу date-fns або moment.js)
+                    const orderDate = new Date(order.created_at).toLocaleString();
+
+                    row.innerHTML = `
+                        <span>${orderDate}</span>
+                        <span>${order.pair}</span>
+                        <span>${order.type}</span>
+                        <span class="side-${order.side.toLowerCase()}">${order.side.toUpperCase()}</span>
+                        <span>${order.price ? '$' + parseFloat(order.price).toFixed(2) : 'Market'}</span>
+                        <span>${parseFloat(order.amount).toFixed(6)} ${order.pair.split('/')[0]}</span>
+                        <span>${filledPercent}%</span>
+                        <span>${totalValue !== 'N/A' ? '$' + totalValue : 'N/A'}</span>
+                        <span><a href="#" class="action-link danger-link cancel-order-btn" data-order-id="${order.id}">Cancel</a></span>
+                    `;
+                    openOrdersTableContainer.appendChild(row);
+                });
+                // Додати обробники для кнопок "Cancel" (поки не реалізовано API)
+            } else {
+                 openOrdersTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Could not load open orders.'}</div>`);
+            }
+        } catch (error) {
+            console.error('Error fetching open orders:', error);
+            const placeholder = openOrdersTableContainer.querySelector('.no-data-placeholder');
+            if(placeholder) placeholder.remove();
+            openOrdersTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading open orders.</div>');
+        }
+    }
+
+    // --- Функції для Історії Ордерів ---
+    async function loadOrderHistory() {
+        if (!orderHistoryTableContainer) return;
+        const header = orderHistoryTableContainer.querySelector('.custom-table-header');
+        orderHistoryTableContainer.innerHTML = ''; // Очищаємо
+        if (header) orderHistoryTableContainer.appendChild(header);
+        orderHistoryTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Loading order history...</div>');
+
+        // TODO: Отримати значення фільтрів, якщо вони є, і додати їх до URL запиту
+        // const dateFrom = document.getElementById('orderHistoryDateFrom').value;
+        // const dateTo = document.getElementById('orderHistoryDateTo').value;
+        // const pair = document.getElementById('orderHistoryPair').value;
+        // ... і т.д.
+        // let queryParams = '?';
+        // if (dateFrom) queryParams += `dateFrom=${dateFrom}&`;
+        // Додати інші параметри...
+
+        try {
+            const data = await fetchProtectedData(`/api/orders/history`); // Додати queryParams, якщо потрібно
+            const placeholder = orderHistoryTableContainer.querySelector('.no-data-placeholder');
+            if (placeholder) placeholder.remove();
+
+            if (data.success && data.orders) {
+                 if (data.orders.length === 0) {
+                    orderHistoryTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">No order history found.</div>');
+                    return;
+                }
+                data.orders.forEach(order => {
+                    const row = document.createElement('div');
+                    row.classList.add('custom-table-row', 'order-row');
+                    const orderDate = new Date(order.created_at).toLocaleString();
+                    const avgPrice = order.avg_fill_price ? '$' + parseFloat(order.avg_fill_price).toFixed(2) : 'N/A';
+                    const executedAmount = order.filled_amount_base ? parseFloat(order.filled_amount_base).toFixed(6) + ' ' + order.pair.split('/')[0] : 'N/A';
+                    const totalExecuted = order.avg_fill_price && order.filled_amount_base ? '$' + (parseFloat(order.avg_fill_price) * parseFloat(order.filled_amount_base)).toFixed(2) : 'N/A';
+
+                    row.innerHTML = `
+                        <span>${orderDate}</span>
+                        <span>${order.pair}</span>
+                        <span>${order.type}</span>
+                        <span class="side-${order.side.toLowerCase()}">${order.side.toUpperCase()}</span>
+                        <span>${avgPrice}</span>
+                        <span>${executedAmount}</span>
+                        <span>${parseFloat(order.amount).toFixed(6)} ${order.pair.split('/')[0]}</span>
+                        <span>${totalExecuted}</span>
+                        <span class="status-${order.status.toLowerCase().replace('_', '')}">${order.status.replace('_', ' ').toUpperCase()}</span>
+                    `;
+                    orderHistoryTableContainer.appendChild(row);
+                });
+            } else {
+                orderHistoryTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Could not load order history.'}</div>`);
+            }
+        } catch (error) {
+            console.error('Error fetching order history:', error);
+            const placeholder = orderHistoryTableContainer.querySelector('.no-data-placeholder');
+            if(placeholder) placeholder.remove();
+            orderHistoryTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading order history.</div>');
+        }
+    }
+
+
+    // --- Перемикання табів та завантаження даних ---
+    const tabs = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    function activateTab(tabId) {
+        tabContents.forEach(content => content.classList.remove('active'));
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        const activeContent = document.getElementById(tabId);
+        const activeButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+
+        if (activeContent) activeContent.classList.add('active');
+        if (activeButton) activeButton.classList.add('active');
+
+        // Завантажуємо дані для активного таба
+        if (tabId === 'open-orders-content') {
+            loadOpenOrders();
+        } else if (tabId === 'order-history-content') {
+            loadOrderHistory();
+        } else if (tabId === 'trade-history-content') {
+            // loadTradeHistory(); // Для майбутнього
+            const tradeHistoryPlaceholder = document.querySelector('#trade-history-content .no-data-placeholder');
+            if (tradeHistoryPlaceholder) tradeHistoryPlaceholder.textContent = 'Trade history will be available soon.';
+        }
+    }
+
+    tabs.forEach(button => {
+        button.addEventListener('click', () => {
+            activateTab(button.dataset.tab);
+        });
+    });
+
+    // Завантажуємо дані для початкового активного таба
+    activateTab('open-orders-content');
+
+    // TODO: Додати обробники для фільтрів та пошуку, які б викликали відповідні функції load... з параметрами
+    // const searchOrderHistoryBtn = document.getElementById('searchOrderHistoryBtn');
+    // if(searchOrderHistoryBtn) searchOrderHistoryBtn.addEventListener('click', loadOrderHistory);
+
+});
+</script>
 </body>
 </html>
