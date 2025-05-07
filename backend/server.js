@@ -302,11 +302,237 @@ app.get('/api/markets', tryAuthenticateToken, async (req, res) => {
     }
 });
 
-app.get('/api/markets/favourites', authenticateToken, async (req, res) => { /* ... код з попередніх відповідей, адаптований ... */ });
-app.post('/api/favourites', authenticateToken, async (req, res) => { /* ... код ... */ });
-app.delete('/api/favourites/:marketPairId', authenticateToken, async (req, res) => { /* ... код ... */ });
-app.get('/api/orders/open', authenticateToken, async (req, res) => { /* ... код ... */ });
-app.get('/api/orders/history', authenticateToken, async (req, res) => { /* ... код ... */ });
+app.get('/api/markets/favourites', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    console.log(`[API /api/markets/favourites] Request for user ID: ${userId}`); // ДІАГНОСТИКА
+    try {
+        const sql = `
+            SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name
+            FROM market_pairs mp
+            JOIN user_favourite_markets ufm ON mp.id = ufm.market_pair_id
+            WHERE ufm.user_id = $1 AND mp.is_active = TRUE
+            ORDER BY mp.symbol;
+        `;
+        const result = await pool.query(sql, [userId]);
+        const marketsWithLiveData = result.rows.map(pair => {
+            const liveData = currentMarketData[pair.symbol] || currentMarketData[pair.binance_symbol] || {}; // currentMarketData має оновлюватися
+            return {
+                ...pair,
+                currentPrice: liveData.price, // Ці дані будуть null, якщо currentMarketData порожній
+                change24hPercent: liveData.priceChangePercent,
+            };
+        });
+        console.log(`[API /api/markets/favourites] Found ${marketsWithLiveData.length} favourite markets for user ID: ${userId}`); // ДІАГНОСТИКА
+        res.json({ success: true, markets: marketsWithLiveData });
+    } catch (error) {
+        console.error("[API /api/markets/favourites] Error:", error.message, error.stack); // ДІАГНОСТИКА
+        res.status(500).json({ success: false, message: 'Server error fetching favourite markets.' });
+    }
+});
+
+// backend/server.js
+// ... (ваш існуючий код: require, app, port, JWT_SECRET, pool, middleware, auth ендпоінти, /api/profile, /api/balance, /api/assets, /api/assets/base, /api/markets) ...
+
+// УЛЮБЛЕНІ РИНКИ (вимагають аутентифікації)
+app.get('/api/markets/favourites', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    console.log(`[API /api/markets/favourites] Request for user ID: ${userId}`);
+    try {
+        const sql = `
+            SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name
+            FROM market_pairs mp
+            JOIN user_favourite_markets ufm ON mp.id = ufm.market_pair_id
+            WHERE ufm.user_id = $1 AND mp.is_active = TRUE
+            ORDER BY mp.symbol;
+        `;
+        const result = await pool.query(sql, [userId]);
+        const marketsWithLiveData = result.rows.map(pair => {
+            const liveData = currentMarketData[pair.symbol] || currentMarketData[pair.binance_symbol] || {};
+            return {
+                ...pair,
+                // Ці поля будуть null/undefined, якщо currentMarketData не заповнене для цих пар
+                currentPrice: liveData.price,
+                change24hPercent: liveData.priceChangePercent,
+            };
+        });
+        console.log(`[API /api/markets/favourites] Found ${marketsWithLiveData.length} favourite markets for user ID: ${userId}`);
+        res.json({ success: true, markets: marketsWithLiveData });
+    } catch (error) {
+        console.error("[API /api/markets/favourites] Error:", error.message, error.stack);
+        res.status(500).json({ success: false, message: 'Server error fetching favourite markets.' });
+    }
+});
+
+app.post('/api/favourites', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { marketPairId } = req.body; // Очікуємо ID пари з market_pairs
+    console.log(`[API /api/favourites POST] User ID: ${userId}, MarketPairID: ${marketPairId}`);
+
+    if (!marketPairId) {
+        return res.status(400).json({ success: false, message: 'Market Pair ID is required.' });
+    }
+    if (isNaN(parseInt(marketPairId))) {
+        return res.status(400).json({ success: false, message: 'Invalid Market Pair ID format.' });
+    }
+
+    try {
+        // Перевіряємо, чи існує така пара
+        const pairCheckSql = `SELECT id FROM market_pairs WHERE id = $1 AND is_active = TRUE`;
+        const pairCheckResult = await pool.query(pairCheckSql, [marketPairId]);
+        if (pairCheckResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Active market pair not found.' });
+        }
+
+        const sql = `INSERT INTO user_favourite_markets (user_id, market_pair_id) VALUES ($1, $2) ON CONFLICT (user_id, market_pair_id) DO NOTHING RETURNING *`;
+        const result = await pool.query(sql, [userId, marketPairId]);
+
+        if (result.rows.length > 0) {
+            console.log(`[API /api/favourites POST] Market pair ${marketPairId} added to favourites for user ${userId}`);
+            res.status(201).json({ success: true, message: 'Market pair added to favourites.', favourite: result.rows[0] });
+        } else {
+            // Якщо ON CONFLICT DO NOTHING спрацював, значить запис вже існував
+            console.log(`[API /api/favourites POST] Market pair ${marketPairId} was already in favourites for user ${userId}`);
+            res.status(200).json({ success: true, message: 'Market pair was already in favourites.' });
+        }
+    } catch (error) {
+        console.error("[API /api/favourites POST] Error:", error.message, error.stack);
+        res.status(500).json({ success: false, message: 'Server error adding to favourites.' });
+    }
+});
+
+app.delete('/api/favourites/:marketPairId', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const marketPairId = parseInt(req.params.marketPairId, 10);
+    console.log(`[API /api/favourites DELETE] User ID: ${userId}, MarketPairID: ${marketPairId}`);
+
+
+    if (isNaN(marketPairId)) {
+        return res.status(400).json({ success: false, message: 'Invalid Market Pair ID.' });
+    }
+
+    try {
+        const sql = `DELETE FROM user_favourite_markets WHERE user_id = $1 AND market_pair_id = $2 RETURNING *`;
+        const result = await pool.query(sql, [userId, marketPairId]);
+
+        if (result.rowCount > 0) {
+            console.log(`[API /api/favourites DELETE] Market pair ${marketPairId} removed from favourites for user ${userId}`);
+            res.status(200).json({ success: true, message: 'Market pair removed from favourites.' });
+        } else {
+            console.log(`[API /api/favourites DELETE] Favourite market pair ${marketPairId} not found for user ${userId} or already removed`);
+            res.status(404).json({ success: false, message: 'Favourite market pair not found or already removed.' });
+        }
+    } catch (error) {
+        console.error("[API /api/favourites DELETE] Error:", error.message, error.stack);
+        res.status(500).json({ success: false, message: 'Server error removing from favourites.' });
+    }
+});
+
+// ОРДЕРИ (повертають дані з БД, поки без real-time оновлень)
+app.get('/api/orders/open', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    console.log(`[API /api/orders/open] Request for user ID: ${userId}`);
+    try {
+        // Додамо більше полів, які можуть бути корисні на фронтенді
+        const sql = `
+            SELECT 
+                id, pair, type, side, price, amount, 
+                filled_amount_base, 
+                (price * amount) as total_value, -- Загальна вартість ордера, якщо є ціна
+                created_at, status 
+            FROM orders 
+            WHERE user_id = $1 AND status = 'open' -- Або інші статуси, що вважаються відкритими
+            ORDER BY created_at DESC;
+        `;
+        const result = await pool.query(sql, [userId]);
+        console.log(`[API /api/orders/open] Found ${result.rows.length} open orders for user ID: ${userId}`);
+        res.json({ success: true, orders: result.rows });
+    } catch (error) {
+        console.error("[API /api/orders/open] Error:", error.message, error.stack);
+        res.status(500).json({ success: false, message: 'Server error fetching open orders.' });
+    }
+});
+
+app.get('/api/orders/history', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    // TODO: Додати обробку параметрів запиту для фільтрації (dateFrom, dateTo, pair, type, side)
+    const { dateFrom, dateTo, pair, type, side } = req.query;
+    console.log(`[API /api/orders/history] Request for user ID: ${userId}, Filters:`, req.query);
+
+    let queryParams = [userId];
+    let conditions = ["o.user_id = $1", "o.status IN ('filled', 'canceled', 'partially_filled')"]; // Приклад статусів для історії
+    let paramIndex = 2;
+
+    if (dateFrom) {
+        conditions.push(`o.created_at >= $${paramIndex++}`);
+        queryParams.push(dateFrom);
+    }
+    if (dateTo) {
+        const nextDay = new Date(dateTo);
+        nextDay.setDate(nextDay.getDate() + 1);
+        conditions.push(`o.created_at < $${paramIndex++}`);
+        queryParams.push(nextDay.toISOString().split('T')[0]);
+    }
+    if (pair) {
+        conditions.push(`o.pair ILIKE $${paramIndex++}`);
+        queryParams.push(`%${pair}%`);
+    }
+    if (type) {
+        conditions.push(`o.type = $${paramIndex++}`);
+        queryParams.push(type);
+    }
+    if (side) {
+        conditions.push(`o.side = $${paramIndex++}`);
+        queryParams.push(side);
+    }
+    const conditionsStr = conditions.join(' AND ');
+
+    try {
+        const sql = `
+            SELECT 
+                o.id, o.pair, o.type, o.side, o.avg_fill_price, 
+                o.filled_amount_base, o.amount, 
+                (o.avg_fill_price * o.filled_amount_base) as total_executed_value, 
+                o.status, o.created_at 
+            FROM orders o
+            WHERE ${conditionsStr}
+            ORDER BY o.created_at DESC;
+        `;
+        console.log(`[API /api/orders/history] SQL: ${sql} PARAMS: ${JSON.stringify(queryParams)}`);
+        const result = await pool.query(sql, queryParams);
+        console.log(`[API /api/orders/history] Found ${result.rows.length} orders in history for user ID: ${userId}`);
+        res.json({ success: true, orders: result.rows });
+    } catch (error) {
+        console.error("[API /api/orders/history] Error:", error.message, error.stack);
+        res.status(500).json({ success: false, message: 'Server error fetching order history.' });
+    }
+});
+
+
+htmlPages.forEach(page => {
+    app.get(`/${page}`, (req, res) => res.sendFile(path.join(frontendPath, 'html', page)));
+});
+
+// --- Запуск сервера ---
+// ... (цей блок залишається без змін) ...
+app.listen(port, () => {
+    console.log(`YuMa Backend Server is running on http://localhost:${port}`);
+});
+
+// --- Обробка закриття сервера ---
+// ... (цей блок залишається без змін) ...
+async function gracefulShutdown() {
+    console.log('Received signal to terminate, shutting down gracefully.');
+    try {
+        if (pool) await pool.end();
+        console.log('PostgreSQL pool has ended.');
+        process.exit(0);
+    } catch (e) {
+        console.error('Error during shutdown:', e.stack);
+        process.exit(1);
+    }
+}
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
 
 
 // --- Обслуговування HTML сторінок ---
