@@ -4,52 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>General Settings - YuMa</title>
-    <link rel="stylesheet" href="../css/styles.css"> <!-- Головний файл стилів -->
-    <link rel="stylesheet" href="../css/header.css"> <!-- Стилі для хедера -->
-    <link rel="stylesheet" href="../css/global.css"> <!-- Глобальні стилі -->
-    <!-- <link rel="stylesheet" href="../css/settings.css"> -- Специфічні стилі для цієї сторінки, якщо є -->
-    <style>
-        /* Тимчасові стилі для швидкого старту, краще винести в CSS */
-        .avatar-preview {
-            width: 100px; height: 100px; border-radius: 50%;
-            background-color: #e9ecef; margin-bottom: 1rem;
-            background-size: cover; background-position: center;
-            border: 2px solid #ced4da;
-            display: flex; align-items: center; justify-content: center;
-            color: #6c757d; font-size: 1.2rem;
-        }
-        .settings-form input[type="url"], .settings-form input[type="text"], .settings-form select {
-            margin-bottom: 1rem; /* Відступ під інпутами/селектами */
-        }
-        .settings-form small { display: block; margin-top: -0.5rem; margin-bottom: 1rem; font-size: 1.2rem; color: #6c757d; }
-        .form-message { font-size: 1.3rem; margin-top: 1rem; padding: 0.5rem 0; }
-        .form-message.success { color: #28a745; }
-        .form-message.error { color: #dc3545; }
-        .current-value {
-            font-style: italic;
-            color: #495057; /* Трохи темніше */
-            font-size: 1.4rem; /* Трохи більше */
-            margin-bottom: 0.8rem; /* Відступ під поточним значенням */
-            display: block;
-        }
-        .settings-section hr {
-            border: 0;
-            border-top: 1px solid #dee2e6; /* Світліший розділювач */
-            margin: 2.5rem 0;
-        }
-        .settings-form button.action-button {
-             margin-top: 0.5rem; /* Невеликий відступ над кнопками */
-        }
-        .profile-card.settings-section { /* Додамо трохи більше падінгу до секцій */
-            padding: 2.5rem;
-        }
-        .form-group { /* Додамо відступ для груп полів */
-            margin-bottom: 2rem;
-        }
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/styles.css"> 
+    <link rel="stylesheet" href="../css/header.css"> 
+    <link rel="stylesheet" href="../css/global.css"> 
+    <link rel="stylesheet" href="../css/settings.css"> 
 </head>
 <body>
     <header>
@@ -72,11 +30,11 @@
     <div class="page-wrapper-profile">
         <aside class="sidebar">
             <nav>
-                <a href="profile.html" class="sidebar-button">dashboard</a>
-                <a href="assets.html" class="sidebar-button">assets</a>
-                <a href="order.html" class="sidebar-button">order</a>
-                <a href="account.html" class="sidebar-button">account</a>
-                <a href="settings.html" class="sidebar-button active">settings</a>
+                <a href="profile.html" class="sidebar-button">Dashboard</a>
+                <a href="assets.html" class="sidebar-button">Assets</a>
+                <a href="order.html" class="sidebar-button">Order</a>
+                <a href="account.html" class="sidebar-button">Account</a>
+                <a href="settings.html" class="sidebar-button active">Settings</a>
             </nav>
         </aside>
 
@@ -87,7 +45,7 @@
 
             <section class="profile-card settings-section">
                 <h3>Profile Settings</h3>
-                <div class="settings-form"> <!-- Контейнер для аватара, не форма -->
+                <div class="settings-form">
                     <div class="form-group">
                         <label for="avatarUrlInput">Profile Picture URL:</label>
                         <div id="avatarPreview" class="avatar-preview">No Image</div>
@@ -98,14 +56,13 @@
                     <div id="avatarMessage" class="form-message"></div>
                 </div>
 
-
                 <form id="usernameSettingsForm" class="settings-form">
-                     <div class="form-group">
+                    <div class="form-group">
                         <label for="usernameInput">Username:</label>
                         <span class="current-value" id="currentUsername">Loading...</span>
                         <input type="text" id="usernameInput" name="username" placeholder="Enter new username" minlength="3" required>
                     </div>
-                    <button type="submit" class="action-button primary-action">Save Username</button>
+                    <button type="submit" class="action-button">Save Username</button>
                     <div id="usernameMessage" class="form-message"></div>
                 </form>
             </section>
@@ -136,35 +93,37 @@
                             <option value="gmt3">(GMT+03:00) Kyiv</option>
                         </select>
                     </div>
-                     <div class="form-group">
-                        <label>Theme:</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="theme" value="light" checked> Light</label>
-                            <label><input type="radio" name="theme" value="dark"> Dark</label>
+                    <div class="form-group">
+                        <div class="theme-label">
+                            <span>Theme:</span>
+                            <label class="theme-switch">
+                                <input type="checkbox" id="themeToggle">
+                                <span class="theme-slider"></span>
+                            </label>
                         </div>
+                        <small id="themeStatus">Current theme: Light</small>
                     </div>
-                    <button type="submit" class="action-button primary-action">Save Preferences</button>
-                     <div id="preferencesMessage" class="form-message"></div>
+                    <button type="submit" class="action-button">Save Preferences</button>
+                    <div id="preferencesMessage" class="form-message"></div>
                 </form>
             </section>
 
             <section class="profile-card settings-section">
                 <h3>Notification Settings</h3>
                 <form id="notificationsForm" class="settings-form">
-                    <div class="form-group checkbox-group">
-                        <label><input type="checkbox" name="email_trades" checked> Email on Trade Execution</label>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="email_trades" checked> Email on Trade Execution</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="email_deposits" checked> Email on Deposit/Withdrawal</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="email_news"> Email for News & Announcements</label>
+                        </div>
                     </div>
-                    <div class="form-group checkbox-group">
-                        <label><input type="checkbox" name="email_deposits" checked> Email on Deposit/Withdrawal</label>
-                    </div>
-                     <div class="form-group checkbox-group">
-                        <label><input type="checkbox" name="email_news"> Email for News & Announcements</label>
-                    </div>
-                    <div class="form-group checkbox-group">
-                        <label><input type="checkbox" name="push_alerts" disabled> Push Notifications for Price Alerts (App Only)</label>
-                    </div>
-                    <button type="submit" class="action-button primary-action">Save Notifications</button>
-                     <div id="notificationsMessage" class="form-message"></div>
+                    <button type="submit" class="action-button">Save Notifications</button>
+                    <div id="notificationsMessage" class="form-message"></div>
                 </form>
             </section>
         </main>
@@ -193,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const logoutButton = document.getElementById('logoutButtonSettings');
 
     if (!token) {
-        window.location.href = 'login-page.html'; // Шлях до сторінки входу
+        window.location.href = 'login-page.html'; 
         return;
     }
 
