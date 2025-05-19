@@ -2,14 +2,15 @@
 
 .page-wrapper-profile {
     display: flex;
-    min-height: calc(100vh - 60px); /* Висота хедера, адаптуйте */
+    min-height: calc(100vh - 60px); /* Adjust if your header height is different */
+    background-color: #f4f6f8; /* Overall lighter page background */
 }
 
 .sidebar {
     width: 220px;
-    background-color: #f8f9fa; /* Світлий фон для сайдбару */
+    background-color: #ffffff; /* White sidebar */
     padding: 20px 0;
-    border-right: 1px solid #dee2e6;
+    border-right: 1px solid #e0e0e0; /* Lighter border */
 }
 
 .sidebar nav {
@@ -18,87 +19,101 @@
 }
 
 .sidebar-button {
-    padding: 12px 20px;
+    padding: 10px 20px; /* Slightly reduced padding */
     text-decoration: none;
-    color: #343a40; /* Темний текст для кнопок */
+    color: #333; /* Darker text for better contrast on white */
     font-weight: 500;
+    font-size: 0.95rem; /* Slightly smaller font */
     border-left: 3px solid transparent;
-    transition: background-color 0.2s ease, border-left-color 0.2s ease;
+    transition: background-color 0.2s ease, border-left-color 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-button:hover {
-    background-color: #e9ecef;
-    border-left-color: #007bff; /* Акцентний колір при наведенні */
+    background-color: #f0f4f7; /* Light hover */
+    color: #007bff;
+    /* border-left-color: #007bff; */ /* Keep border subtle or remove on hover if preferred */
 }
 
 .sidebar-button.active {
-    background-color: #e0eaff; /* Світло-синій для активної кнопки */
+    background-color: #e6f2ff; /* Light blue for active */
     border-left-color: #007bff;
-    color: #0056b3; /* Темніший синій для тексту активної кнопки */
+    color: #0056b3;
+    font-weight: 600;
 }
 
 .main-content-profile {
     flex-grow: 1;
-    padding: 25px;
-    background-color: #fff; /* Білий фон для основного контенту */
+    padding: 20px; /* Slightly reduced padding */
+    background-color: #f4f6f8; /* Consistent light background */
 }
 
 .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 20px; /* Reduced margin */
+    padding-bottom: 10px; /* Reduced padding */
+    border-bottom: 1px solid #e0e0e0; /* Lighter border */
 }
 
 .content-header h2 {
     margin: 0;
-    font-size: 1.8rem;
-    color: #333;
+    font-size: 1.6rem; /* Slightly smaller title */
+    color: #2c3e50; /* Darker, more professional title color */
 }
 
-.action-button { /* Загальні стилі для кнопок дій */
-    padding: 8px 15px;
+.action-button {
+    padding: 7px 14px; /* Slightly smaller buttons */
     border: 1px solid #007bff;
     background-color: #007bff;
     color: white;
-    border-radius: 5px;
+    border-radius: 4px; /* Slightly smaller radius */
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem; /* Smaller font for buttons */
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .action-button:hover {
     background-color: #0056b3;
     border-color: #0056b3;
 }
-.action-button.primary-action { /* Може мати інші стилі */ }
-
 
 .profile-card.asset-overview {
-    background-color: #f8f9fa; /* Світлий фон для картки */
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background-color: #ffffff; /* White card */
+    padding: 15px 20px; /* Adjusted padding */
+    border-radius: 6px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07); /* Softer shadow */
 }
 
 .overview-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
-    font-size: 1rem;
+    align-items: center; /* Vertically align items */
+    padding: 10px 0; /* Increased padding for better spacing */
+    font-size: 0.95rem; /* Slightly smaller font */
 }
 .overview-item:not(:last-child) {
-    border-bottom: 1px dashed #e0e0e0;
+    border-bottom: 1px solid #f0f0f0; /* Very light dashed border */
 }
 
 .overview-item .label {
     color: #555;
 }
 .overview-item .value {
-    font-weight: 500;
+    font-weight: 600; /* Bolder value */
     color: #333;
+    font-size: 1.1rem; /* Make the value stand out a bit more */
+}
+.total-value-dynamic { /* Specific styling for total portfolio value */
+    color: #007bff; /* Or your primary accent color */
+}
+
+
+.assets-list-section {
+    background-color: #ffffff; /* White background for the list section */
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
 }
 
 .assets-list-section .table-controls {
@@ -110,101 +125,121 @@
 
 .assets-list-section .search-input {
     padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    width: 250px; /* Або інша ширина */
+    border: 1px solid #ccd1d9; /* Lighter border for input */
+    border-radius: 4px;
+    width: 220px;
+    font-size: 0.9rem;
 }
+.assets-list-section .search-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    outline: none;
+}
+
 
 .assets-list-section .checkbox-label {
     display: flex;
     align-items: center;
-    font-size: 0.9rem;
-    color: #495057;
+    font-size: 0.85rem;
+    color: #555;
 }
 .assets-list-section .checkbox-label input[type="checkbox"] {
-    margin-right: 8px;
+    margin-right: 6px;
+    transform: scale(0.9); /* Slightly smaller checkbox */
 }
 
 .custom-table-wrapper {
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    overflow: hidden; /* Для заокруглення */
-    background-color: #fff;
+    border: 1px solid #e9ecef; /* Lighter border for the table wrapper */
+    border-radius: 5px;      /* Rounded corners for the table wrapper */
+    overflow: hidden;        /* To ensure border-radius clips content */
+    /* background-color: #ffffff; /* Removed, as section has it */
 }
 
 .custom-table-header, .custom-table-row {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1fr 1.5fr; /* Адаптуйте колонки */
-    padding: 12px 15px;
+    /* Columns: Coin (Name+Symbol), Total, Available, In Orders, Value (USD), Actions */
+    grid-template-columns: 2.5fr 1.5fr 1.5fr 1.5fr 1.2fr 1.8fr; /* Adjusted for clarity */
+    padding: 10px 15px; /* Reduced padding for a denser look */
     align-items: center;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef; /* Light border between rows */
+    font-size: 0.85rem; /* Smaller base font for table content */
 }
+
 .custom-table-header {
-    background-color: #f8f9fa;
+    background-color: #f8f9fa; /* Very light gray for header, no dark color */
     font-weight: 600;
-    color: #495057;
-    font-size: 0.9rem;
-    text-transform: uppercase;
+    color: #495057; /* Standard text color for header */
+    text-transform: uppercase; /* Keep uppercase for header */
+    letter-spacing: 0.5px; /* Slight letter spacing for header */
 }
+
 .custom-table-row:last-child {
     border-bottom: none;
 }
+
 .custom-table-row:hover {
-    background-color: #f1f3f5;
+    background-color: #f1f8ff; /* Light blueish hover, no dark color */
 }
 
 .custom-table-row span {
-    font-size: 0.95rem;
-    color: #333;
-    overflow: hidden; /* Щоб довгий текст не ламав сітку */
-    text-overflow: ellipsis; /* Додати три крапки */
-    white-space: nowrap; /* Запобігти переносу */
+    color: #333; /* Standard text color for rows */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .custom-table-row .coin-details {
     display: flex;
     align-items: center;
+    font-weight: 500; /* Make coin name slightly bolder */
 }
+
+.coin-name-full {
+    /* font-weight: 500; /* Already set on .coin-details */
+    color: #2c3e50;
+}
+.coin-symbol-display {
+    color: #7f8c8d; /* Muted color for symbol */
+    font-size: 0.9em; /* Relative to parent */
+    margin-left: 6px;
+}
+
 .custom-table-row .asset-actions a {
-    margin-right: 10px;
+    margin-right: 12px;
     color: #007bff;
     text-decoration: none;
-    font-size: 0.9rem;
+    /* font-size: 0.85rem; /* Consistent with row font */
 }
 .custom-table-row .asset-actions a:hover {
     text-decoration: underline;
+    color: #0056b3;
 }
 .custom-table-row .asset-actions a:last-child {
     margin-right: 0;
 }
 
 .no-data-placeholder {
-    padding: 30px;
+    padding: 25px; /* More padding */
     text-align: center;
-    color: #777;
-    font-size: 1.1rem;
+    color: #6c757d; /* Muted text color */
+    font-size: 1rem; /* Slightly larger */
+    background-color: #fdfdfd; /* Almost white, if inside the table wrapper */
 }
 .show-all-container {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 15px; /* Reduced margin */
 }
 .show-all-container .action-button {
     background-color: #6c757d;
     border-color: #6c757d;
+    font-size: 0.8rem;
+    padding: 6px 12px;
 }
 .show-all-container .action-button:hover {
     background-color: #5a6268;
     border-color: #545b62;
 }
 
-.total-value-dynamic { color: #007bff; font-weight: bold; }
-        .available-value-dynamic { color: #28a745; }
-        .coin-icon-placeholder {
-            width: 28px; height: 28px; background-color: #e9ecef; /* Світліший фон */
-            border-radius: 50%; display: inline-flex; /* Flex для центрування */
-            align-items: center; justify-content: center; /* Центрування тексту всередині */
-            margin-right: 10px; vertical-align: middle;
-            font-weight: bold; font-size: 0.9em; color: #495057; /* Колір тексту */
-            border: 1px solid #ced4da; /* Тонка рамка */
-        }
-        .coin-name-full { font-weight: 500; vertical-align: middle;}
-        .coin-symbol-display { color: #6c757d; font-size: 0.9em; vertical-align: middle; margin-left: 5px;}
+/* Ensure these specific value styles are not overridden by general span styles if specificity is an issue */
+.custom-table-row span.asset-value-usd { /* Example for targeting specific columns if needed */
+    font-weight: 500;
+}
