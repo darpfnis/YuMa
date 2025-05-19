@@ -1,75 +1,67 @@
 /* frontend/css/assets_custom.css */
 
+/* Загальний фон сторінки, якщо відрізняється від body в global.css */
 .page-wrapper-profile {
-    display: flex;
-    min-height: calc(100vh - 60px); /* Adjust if your header height is different */
-    background-color: #f4f6f8; /* Overall lighter page background */
+    min-height: calc(100vh - 60px); /* Припускаючи, що висота хедера 60px */
+    background-color: #f4f6f8; /* Світліший фон сторінки */
 }
 
 .sidebar {
-    width: 220px;
-    background-color: #ffffff; /* White sidebar */
-    padding: 20px 0;
-    border-right: 1px solid #e0e0e0; /* Lighter border */
+    width: 220px; /* Якщо потрібна інша ширина, ніж в styles.css (20rem) */
+    background-color: #ffffff; /* Білий сайдбар */
+    padding: 20px 0; /* Специфічний падінг для сайдбара */
+    border-right: 1px solid #e0e0e0; /* Світла межа */
 }
 
-.sidebar nav {
-    display: flex;
-    flex-direction: column;
-}
-
+/* Стилі для кнопок сайдбару, якщо вони відрізняються від styles.css */
 .sidebar-button {
-    padding: 10px 20px; /* Slightly reduced padding */
-    text-decoration: none;
-    color: #333; /* Darker text for better contrast on white */
+    padding: 10px 20px;
     font-weight: 500;
-    font-size: 0.95rem; /* Slightly smaller font */
-    border-left: 3px solid transparent;
+    font-size: 0.95rem;
+    border-left: 3px solid transparent; /* Замість загальної рамки */
+    /* transition вже є в styles.css, але тут додається border-left-color */
     transition: background-color 0.2s ease, border-left-color 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-button:hover {
-    background-color: #f0f4f7; /* Light hover */
+    background-color: #f0f4f7; /* Світлий ховер */
     color: #007bff;
-    /* border-left-color: #007bff; */ /* Keep border subtle or remove on hover if preferred */
+    /* border-left-color: #007bff; */
 }
 
 .sidebar-button.active {
-    background-color: #e6f2ff; /* Light blue for active */
+    background-color: #e6f2ff; /* Світло-блакитний для активного */
     border-left-color: #007bff;
     color: #0056b3;
     font-weight: 600;
 }
 
 .main-content-profile {
-    flex-grow: 1;
-    padding: 20px; /* Slightly reduced padding */
-    background-color: #f4f6f8; /* Consistent light background */
+    padding: 20px;
+    background-color: #f4f6f8; /* Фон для основного контенту, якщо потрібен */
 }
 
 .content-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px; /* Reduced margin */
-    padding-bottom: 10px; /* Reduced padding */
-    border-bottom: 1px solid #e0e0e0; /* Lighter border */
+    /* display, justify-content, align-items, margin-bottom, border-bottom - з styles.css */
+    padding-bottom: 10px; /* Зменшений падінг, якщо потрібно */
 }
 
 .content-header h2 {
-    margin: 0;
-    font-size: 1.6rem; /* Slightly smaller title */
-    color: #2c3e50; /* Darker, more professional title color */
+    /* margin - з styles.css */
+    font-size: 1.6rem; /* Зменшений розмір заголовка */
+    color: #2c3e50; /* Інший колір заголовка */
 }
 
+/* Кастомізація загальної кнопки .action-button для цієї сторінки */
+/* Якщо це має бути основним стилем кнопок на цій сторінці */
 .action-button {
-    padding: 7px 14px; /* Slightly smaller buttons */
+    padding: 7px 14px;
     border: 1px solid #007bff;
     background-color: #007bff;
     color: white;
-    border-radius: 4px; /* Slightly smaller radius */
-    cursor: pointer;
-    font-size: 0.85rem; /* Smaller font for buttons */
+    border-radius: 4px;
+    font-size: 0.85rem;
+    /* transition вже є в styles.css, але тут інші властивості */
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .action-button:hover {
@@ -78,56 +70,54 @@
 }
 
 .profile-card.asset-overview {
-    background-color: #ffffff; /* White card */
-    padding: 15px 20px; /* Adjusted padding */
+    /* background-color - з styles.css */
+    padding: 15px 20px;
     border-radius: 6px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07); /* Softer shadow */
+    margin-bottom: 20px; /* Якщо потрібен специфічний відступ */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07); /* М'якша тінь */
+    /* border - з styles.css */
 }
 
 .overview-item {
-    display: flex;
+    display: flex; /* Для розміщення label і value */
     justify-content: space-between;
-    align-items: center; /* Vertically align items */
-    padding: 10px 0; /* Increased padding for better spacing */
-    font-size: 0.95rem; /* Slightly smaller font */
+    align-items: center;
+    padding: 10px 0;
+    font-size: 0.95rem; /* Базовий розмір для label/value тут */
 }
 .overview-item:not(:last-child) {
-    border-bottom: 1px solid #f0f0f0; /* Very light dashed border */
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .overview-item .label {
-    color: #555;
+    color: #555; /* Трохи темніший, ніж у styles.css */
 }
 .overview-item .value {
-    font-weight: 600; /* Bolder value */
-    color: #333;
-    font-size: 1.1rem; /* Make the value stand out a bit more */
+    /* font-weight, color - з styles.css */
+    font-size: 1.1rem; /* Менший, ніж у styles.css */
 }
-.total-value-dynamic { /* Specific styling for total portfolio value */
-    color: #007bff; /* Or your primary accent color */
+.total-value-dynamic {
+    color: #007bff; /* Акцентний колір */
 }
 
 
 .assets-list-section {
-    background-color: #ffffff; /* White background for the list section */
-    padding: 20px;
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    /* background-color, padding - можуть бути з styles.css, якщо підходять */
+    /* padding: 20px; - такий же, як в styles.css (2rem) */
+    border-radius: 6px; /* Інший радіус */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07); /* Інша тінь */
 }
 
 .assets-list-section .table-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+    /* display, align-items, margin-bottom - з styles.css */
+    justify-content: space-between; /* Додатково до styles.css */
 }
 
 .assets-list-section .search-input {
-    padding: 8px 12px;
-    border: 1px solid #ccd1d9; /* Lighter border for input */
+    /* padding - з styles.css */
+    border: 1px solid #ccd1d9; /* Світліша межа */
     border-radius: 4px;
-    width: 220px;
+    width: 220px; /* Фіксована ширина */
     font-size: 0.9rem;
 }
 .assets-list-section .search-input:focus {
@@ -136,98 +126,93 @@
     outline: none;
 }
 
-
 .assets-list-section .checkbox-label {
-    display: flex;
-    align-items: center;
-    font-size: 0.85rem;
-    color: #555;
+    /* display, align-items, color - з styles.css */
+    font-size: 0.85rem; /* Менший шрифт */
 }
 .assets-list-section .checkbox-label input[type="checkbox"] {
-    margin-right: 6px;
-    transform: scale(0.9); /* Slightly smaller checkbox */
+    margin-right: 6px; /* Інший відступ */
+    transform: scale(0.9); /* Менший чекбокс */
 }
 
 .custom-table-wrapper {
-    border: 1px solid #e9ecef; /* Lighter border for the table wrapper */
-    border-radius: 5px;      /* Rounded corners for the table wrapper */
-    overflow: hidden;        /* To ensure border-radius clips content */
-    /* background-color: #ffffff; /* Removed, as section has it */
+    /* overflow-x: auto; - з styles.css */
+    border: 1px solid #e9ecef; /* Світла межа для обгортки таблиці */
+    border-radius: 5px;
+    overflow: hidden; /* Щоб обрізати контент по радіусу */
 }
 
 .custom-table-header, .custom-table-row {
-    display: grid;
-    /* Columns: Coin (Name+Symbol), Total, Available, In Orders, Value (USD), Actions */
-    grid-template-columns: 2.5fr 1.5fr 1.5fr 1.5fr 1.2fr 1.8fr; /* Adjusted for clarity */
-    padding: 10px 15px; /* Reduced padding for a denser look */
-    align-items: center;
-    border-bottom: 1px solid #e9ecef; /* Light border between rows */
-    font-size: 0.85rem; /* Smaller base font for table content */
+    display: grid; /* Основна зміна - з flex на grid */
+    grid-template-columns: 2.5fr 1.5fr 1.5fr 1.5fr 1.2fr 1.8fr;
+    padding: 10px 15px; /* Менший падінг */
+    /* align-items - з styles.css */
+    border-bottom: 1px solid #e9ecef; /* Світліша межа */
+    font-size: 0.85rem; /* Менший базовий шрифт */
 }
 
 .custom-table-header {
-    background-color: #f8f9fa; /* Very light gray for header, no dark color */
-    font-weight: 600;
-    color: #495057; /* Standard text color for header */
-    text-transform: uppercase; /* Keep uppercase for header */
-    letter-spacing: 0.5px; /* Slight letter spacing for header */
+    background-color: #f8f9fa; /* Дуже світло-сірий для хедера */
+    /* font-weight - з styles.css */
+    color: #495057; /* Стандартний колір тексту для хедера */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    /* font-size успадковується з попереднього правила */
 }
 
-.custom-table-row:last-child {
-    border-bottom: none;
-}
+/* .custom-table-row:last-child { border-bottom: none; } - вже є в styles.css */
 
 .custom-table-row:hover {
-    background-color: #f1f8ff; /* Light blueish hover, no dark color */
+    background-color: #f1f8ff; /* Світло-блакитний ховер */
 }
 
 .custom-table-row span {
-    color: #333; /* Standard text color for rows */
+    /* color: #333; - стандартний, може бути успадкований */
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    /* white-space: nowrap; - з styles.css */
 }
 .custom-table-row .coin-details {
-    display: flex;
-    align-items: center;
-    font-weight: 500; /* Make coin name slightly bolder */
+    /* display, align-items - з styles.css (для вмісту flex/grid елемента) */
+    font-weight: 500; /* Зробити назву монети трохи жирнішою */
 }
 
 .coin-name-full {
-    /* font-weight: 500; /* Already set on .coin-details */
+    /* font-weight - успадковується від .coin-details */
     color: #2c3e50;
 }
-.coin-symbol-display {
-    color: #7f8c8d; /* Muted color for symbol */
-    font-size: 0.9em; /* Relative to parent */
+/* Якщо в HTML використовується .coin-symbol, а не .coin-symbol-display */
+.coin-symbol { /* Або .coin-symbol-display, якщо це правильний клас */
+    color: #7f8c8d; /* Приглушений колір для символу */
+    font-size: 0.9em; /* Відносно батьківського елемента */
     margin-left: 6px;
 }
 
 .custom-table-row .asset-actions a {
-    margin-right: 12px;
-    color: #007bff;
-    text-decoration: none;
-    /* font-size: 0.85rem; /* Consistent with row font */
+    margin-right: 12px; /* Специфічний відступ */
+    /* color, text-decoration - з .action-link в styles.css */
+    /* font-size - успадковується від рядка */
 }
 .custom-table-row .asset-actions a:hover {
-    text-decoration: underline;
-    color: #0056b3;
+    /* text-decoration: underline; - з styles.css */
+    color: #0056b3; /* Темніший колір при ховері */
 }
 .custom-table-row .asset-actions a:last-child {
     margin-right: 0;
 }
 
 .no-data-placeholder {
-    padding: 25px; /* More padding */
-    text-align: center;
-    color: #6c757d; /* Muted text color */
-    font-size: 1rem; /* Slightly larger */
-    background-color: #fdfdfd; /* Almost white, if inside the table wrapper */
+    /* text-align, font-style - з styles.css */
+    padding: 25px;
+    color: #6c757d; /* Приглушений колір тексту */
+    font-size: 1rem; /* Трохи більший */
+    background-color: #fdfdfd; /* Майже білий, якщо всередині обгортки таблиці */
 }
 .show-all-container {
     text-align: center;
-    margin-top: 15px; /* Reduced margin */
+    margin-top: 15px;
 }
+/* Специфічна кнопка "Show All" */
 .show-all-container .action-button {
     background-color: #6c757d;
     border-color: #6c757d;
@@ -237,9 +222,4 @@
 .show-all-container .action-button:hover {
     background-color: #5a6268;
     border-color: #545b62;
-}
-
-/* Ensure these specific value styles are not overridden by general span styles if specificity is an issue */
-.custom-table-row span.asset-value-usd { /* Example for targeting specific columns if needed */
-    font-weight: 500;
 }
