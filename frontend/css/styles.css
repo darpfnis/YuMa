@@ -343,25 +343,41 @@ html {
     border: 1px solid #e0e0e0;
   }
   .profile-card.card-chart {
-    position: relative; /* Потрібно для правильного позиціонування canvas, якщо він буде position: absolute */
-    width: 100%;      /* Займає всю доступну ширину в секції .dashboard-cards */
-    /* Можна задати максимальну ширину, якщо потрібно */
-    /* max-width: 600px;  Приклад */
-    height: 300px;    /* Задайте бажану висоту. Chart.js спробує її використати. */
-                      /* АБО можна використовувати співвідношення сторін (див. нижче) */
-    padding: 15px;    /* Додайте внутрішні відступи, якщо потрібно */
-    box-sizing: border-box; /* Щоб padding не збільшував загальний розмір */
-    display: flex; /* Якщо ви хочете, щоб canvas був по центру, якщо він менший */
+    position: relative;
+    width: 100%;
+    /* max-width: 600px;  Якщо ви обмежуєте максимальну ширину картки */
+    height: 350px; /* Або ваша бажана висота */
+    padding: 15px; /* Збільште, якщо потрібно більше місця зверху/знизу/з боків */
+    box-sizing: border-box;
+    display: flex;
     flex-direction: column;
-    align-items: center; /* Центрування по горизонталі, якщо canvas менший */
-    justify-content: center; /* Центрування по вертикалі, якщо canvas менший */
+    /* align-items: center; -- Якщо текст має бути по центру, а не по ширині */
+    /* justify-content: center; -- Залиште, якщо хочете, щоб canvas був вертикально по центру */
+    background-color: #fff; /* Або колір вашої картки */
+    border-radius: 8px; /* Або ваш радіус */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Або ваш тінь */
+    overflow: hidden; /* Це може допомогти обрізати те, що вилазить, але краще виправити розміщення */
 }
 
-/* Стилі для самого canvas (якщо батьківський контейнер керує розміром) */
+.profile-card.card-chart p {
+    margin-bottom: 10px; /* Відступ між заголовком і графіком */
+    font-size: 1rem;     /* Налаштуйте розмір шрифту, якщо потрібно */
+    font-weight: 500;  /* Налаштуйте жирність */
+    color: #333;        /* Колір тексту */
+    text-align: center;  /* Або left, якщо вам так більше подобається */
+    width: 100%;         /* Щоб текст намагався зайняти всю ширину перед перенесенням */
+    word-wrap: break-word; /* Дозволяє переносити довгі слова, якщо вони не вміщаються */
+    overflow-wrap: break-word; /* Сучасний аналог word-wrap */
+    padding-left: 5px; /* Невеликий відступ зліва, якщо текст притискається */
+    padding-right: 5px; /* Невеликий відступ справа */
+    box-sizing: border-box;
+}
+
 #portfolioChartCanvas {
     max-width: 100%;
-    max-height: 100%; /* Дозволяє canvas зменшуватися, якщо контейнер менший */
-    /* display: block;  Зазвичай Chart.js робить це сам */
+    max-height: calc(100% - 40px); /* Приклад: Віднімаємо приблизну висоту тексту <p> та відступів */
+                                  /* Це допоможе canvas не вилазити за нижню межу, якщо <p> займає місце */
+    /* Або просто max-height: 100%; якщо flexbox добре справляється */
 }
   .profile-card p {
     color: #555;
