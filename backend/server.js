@@ -612,6 +612,58 @@ app.get('/api/orders/history', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching order history.' });
     }
 });
+app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    // Параметр для визначення періоду: '7d', '30d', '90d', '1y', 'all'
+    // За замовчуванням, наприклад, '30d'
+    const period = req.query.period || '30d'; 
+
+    let dateCondition = "";
+    const queryParams = [userId]; // Перший параметр завжди userId
+
+    // Формуємо умову для дати на основі періоду
+    switch (period) {
+        case '7d':
+            dateCondition = `AND snapshot_date >= CURRENT_DATE - INTERVAL '7 days'`;
+            break;
+        case '30d':
+            dateCondition = `AND snapshot_date >= CURRENT_DATE - INTERVAL '30 days'`;
+            break;
+        case '90d':
+            dateCondition = `AND snapshot_date >= CURRENT_DATE - INTERVAL '90 days'`;
+            break;
+        case '1y':
+            dateCondition = `AND snapshot_date >= CURRENT_DATE - INTERVAL '1 year'`;
+            break;
+        case 'all':
+            // Немає додаткової умови по даті, беремо всі записи
+            break;
+        default:
+            // Якщо передано невідомий період, можна повернути помилку або використати значення за замовчуванням
+            console.warn(`[API /portfolio/history] Unknown period: ${period}. Defaulting to 30d.`);
+            dateCondition = `AND snapshot_date >= CURRENT_DATE - INTERVAL '30 days'`;
+    }
+
+    try {
+        const sql = `
+            SELECT 
+                TO_CHAR(snapshot_date, 'YYYY-MM-DD') as date, 
+                total_value_usd as value
+            FROM portfolio_history
+            WHERE user_id = $1 ${dateCondition}
+            ORDER BY snapshot_date ASC;
+        `;
+        
+        const result = await pool.query(sql, queryParams);
+        
+        res.json({ success: true, data: result.rows });
+
+    } catch (error) {
+        console.error(`[API GET /api/portfolio/history] Error for user ${userId}, period ${period}:`, error.message);
+        res.status(500).json({ success: false, message: 'Server error fetching portfolio history.' });
+    }
+});
+
 
 
 // --- Зовнішні дані та кешування (CoinGecko) ---
