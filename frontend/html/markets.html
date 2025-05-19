@@ -45,6 +45,7 @@
             <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
             <!-- Елементи для залогіненого користувача (будуть показані через JS) -->
+            <span id="userGreetingMarkets" style="display: none; margin-right: 15px; color: #e0e0e0;"></span>
             <a href="profile.html" id="profileLinkMarkets" class="nav-button-user" style="display: none;" title="My Profile">Profile</a>
             <button id="logoutButtonMarkets" class="nav-button" style="display: none; background-color: #444; border: 1px solid #555; padding: 0.5rem 1rem;">Log out</button>
             <!-- Можна додати іконки профілю та інше сюди, якщо вони є в user-nav на інших сторінках -->
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span class="col-name">${market.name || `${market.base_asset}/${market.quote_asset}`}</span>
                 <span class="col-price">${price}</span>
                 <span class="col-change ${changeClass}">${change}</span>
-                <span class="col-action"><a href="trading-page.html?pair=${market.symbol}" class="action-link">Trade</a></span> <!-- Змінив на trading-page.html та символ без заміни / -->
+                <span class="col-action"><a href="buy_crypto-page.html?pair=${market.symbol}" class="action-link">Trade</a></span> <!-- Змінив на trading-page.html та символ без заміни / -->
             `;
             containerElement.appendChild(row);
         });
@@ -304,24 +305,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     function filterAndRenderSpotMarkets() {
-        // ... (без змін) ...
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
-        const activeAssetButton = assetSelectorBar.querySelector('.asset-button.active');
-        const selectedBaseAsset = (activeAssetButton && activeAssetButton.dataset.asset) ? activeAssetButton.dataset.asset : null;
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const activeAssetButton = assetSelectorBar.querySelector('.asset-button.active');
+    const selectedBaseAsset = (activeAssetButton && activeAssetButton.dataset.asset) ? activeAssetButton.dataset.asset : null;
+    const popularPairsSection = document.getElementById('popularPairsSection'); // Отримуємо секцію
 
-        const filtered = allMarketsDataCache.filter(market => {
-            const matchesSearch = searchTerm === '' ||
-                market.symbol.toLowerCase().includes(searchTerm) || 
-                (market.name && market.name.toLowerCase().includes(searchTerm)) ||
-                market.base_asset.toLowerCase().includes(searchTerm) ||
-                market.quote_asset.toLowerCase().includes(searchTerm);
-            
-            const matchesBaseAsset = !selectedBaseAsset || market.base_asset === selectedBaseAsset;
-            return matchesSearch && matchesBaseAsset;
-        });
-        const title = selectedBaseAsset ? `Markets for ${selectedBaseAsset}` : (searchTerm ? 'Search Results' : 'All Markets');
-        renderMarketTable(filteredPairsTable, filtered, title);
+    // --- ЗМІНА: Логіка приховування/показу популярних пар ---
+    if (popularPairsSection) {
+        if (searchTerm !== "" || selectedBaseAsset) {
+            // Якщо є текст пошуку АБО обрано конкретний актив, ховаємо популярні пари
+            popularPairsSection.style.display = 'none';
+        } else {
+            // Якщо пошук порожній І обрано "All" (selectedBaseAsset === null), показуємо популярні пари
+            popularPairsSection.style.display = 'block';
+        }
     }
+    // --- КІНЕЦЬ ЗМІНИ ---
+
+    const filtered = allMarketsDataCache.filter(market => {
+        const matchesSearch = searchTerm === '' ||
+            market.symbol.toLowerCase().includes(searchTerm) || 
+            (market.name && market.name.toLowerCase().includes(searchTerm)) ||
+            market.base_asset.toLowerCase().includes(searchTerm) ||
+            market.quote_asset.toLowerCase().includes(searchTerm);
+        
+        const matchesBaseAsset = !selectedBaseAsset || market.base_asset === selectedBaseAsset;
+        return matchesSearch && matchesBaseAsset;
+    });
+    const title = selectedBaseAsset ? `Markets for ${selectedBaseAsset}` : (searchTerm ? 'Search Results' : 'All Markets');
+    renderMarketTable(filteredPairsTable, filtered, title);
+}
     const popularPairsSection = document.getElementById('popularPairsSection');
 
     async function loadBaseAssets() {
@@ -333,21 +346,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await fetchApiData('/api/assets/base', { requiresAuth: false }); 
         if (placeholder) placeholder.remove();
         if (data.success && data.baseAssets) {
-            assetSelectorBar.innerHTML = ''; // Очищаємо перед додаванням нових кнопок
+            assetSelectorBar.innerHTML = ''; 
 
             // Кнопка "All"
             const allMarketsButton = document.createElement('button');
-            allMarketsButton.classList.add('asset-button', 'active'); // "All" активна за замовчуванням
+            allMarketsButton.classList.add('asset-button', 'active'); 
             allMarketsButton.textContent = 'All';
             allMarketsButton.addEventListener('click', () => {
                 document.querySelectorAll('.asset-button.active').forEach(b => b.classList.remove('active'));
                 allMarketsButton.classList.add('active');
-                if(searchInput) searchInput.value = '';
+                if(searchInput) searchInput.value = ''; // Очищаємо пошук
                 
-                // --- ЗМІНА: Показуємо популярні пари ---
+                // --- ЗМІНА: Показуємо популярні пари, коли "All" активна і пошук порожній ---
                 if (popularPairsSection) popularPairsSection.style.display = 'block'; 
                 
-                filterAndRenderSpotMarkets(); // Фільтрує та рендерить "All Markets"
+                filterAndRenderSpotMarkets(); 
             });
             assetSelectorBar.appendChild(allMarketsButton);
 
@@ -360,24 +373,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 button.addEventListener('click', () => {
                     document.querySelectorAll('.asset-button.active').forEach(b => b.classList.remove('active'));
                     button.classList.add('active');
-                    if(searchInput) searchInput.value = '';
+                    if(searchInput) searchInput.value = ''; // Очищаємо пошук
 
-                    // --- ЗМІНА: Приховуємо популярні пари ---
+                    // --- ЗМІНА: Приховуємо популярні пари, коли обрано конкретний актив ---
                     if (popularPairsSection) popularPairsSection.style.display = 'none'; 
 
-                    filterAndRenderSpotMarkets(); // Фільтрує та рендерить для обраного ассету
+                    filterAndRenderSpotMarkets(); 
                 });
                 assetSelectorBar.appendChild(button);
             });
 
-            // За замовчуванням популярні пари видимі, якщо "All" активна
+            // За замовчуванням популярні пари видимі
             if (popularPairsSection) popularPairsSection.style.display = 'block';
 
         } else {
             throw new Error(data.message || 'Failed to load base assets');
         }
     } catch (error) {
-        // ... (ваша обробка помилок) ...
         console.error('[MarketsPage] Error loading base assets:', error);
         if(placeholder) placeholder.textContent = error.message || 'Failed to load assets.';
         else assetSelectorBar.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Failed to load assets.'}</div>`);
@@ -391,8 +403,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const data = await fetchApiData('/api/markets?popularOnly=true', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
-            if (data.success && data.markets) {
-                renderMarketTable(popularPairsTable, data.markets);
+                        if (data.success && data.markets) {
+                const top5Popular = data.markets.slice(0, 5); // Обмежуємо до 5 пар
+                renderMarketTable(popularPairsTable, top5Popular);
             } else {
                 throw new Error(data.message || 'Failed to load popular pairs');
             }
