@@ -7,29 +7,6 @@
     <link rel="stylesheet" href="../css/header.css"> 
     <link rel="stylesheet" href="../css/global.css"> 
     <link rel="stylesheet" href="../css/markets.css"> 
-    <style>
-        /* Додаткові стилі для секції з віджетом TradingView */
-        .tradingview-market-overview-section {
-            background-color: #fff; 
-            padding: 20px;
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-            margin-bottom: 25px;
-        }
-
-        .tradingview-market-overview-section .section-title {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.6rem; /* Трохи менше ніж основні заголовки секцій */
-            color: #333; 
-        }
-
-        .tradingview-widget-container {
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            overflow: hidden; /* Щоб внутрішні елементи не виходили за межі рамки */
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -37,6 +14,7 @@
             <div class="logo"><a href="../../index.html">YuMa</a></div>
             <nav class="main-nav">
                 <a href="buy_crypto-page.html">Buy Crypto</a>
+                <!-- Додаємо клас active до посилання Markets -->
                 <a href="markets.html" class="active">Markets</a> 
                 <div class="dropdown-container">
                     <a href="#" class="nav-link dropdown-toggle">Trade</a>
@@ -62,63 +40,25 @@
             </nav>
         </div>
         <nav class="user-nav">
+            <!-- Тут мають бути кнопки Sign up/Log in або інформація про користувача/Log out -->
+            <!-- Приклад для незалогіненого користувача -->
             <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
+            <!-- Елементи для залогіненого користувача (будуть показані через JS) -->
             <span id="userGreetingMarkets" style="display: none; margin-right: 15px; color: #e0e0e0;"></span>
             <button id="logoutButtonMarkets" class="nav-button" style="display: none; background-color: #444; border: 1px solid #555; padding: 0.5rem 1rem;">Log out</button>
+            <!-- Можна додати іконки профілю та інше сюди, якщо вони є в user-nav на інших сторінках -->
         </nav>
     </header>
 
     <main class="market-page-layout">
-        
-        <!-- Секція для віджета TradingView Market Quotes -->
-        <section class="tradingview-market-overview-section">
-            <h2 class="section-title">Market Overview by TradingView</h2>
-            <div class="tradingview-widget-container" style="height: 450px; width: 100%;">
-                <div class="tradingview-widget-container__widget"></div>
-                <div class="tradingview-widget-copyright">
-                    <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank" style="font-size: 12px; color: #757575; text-decoration: none;">
-                        Track all markets on TradingView
-                    </a>
-                </div>
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
-                {
-                  "width": "100%",
-                  "height": "100%",
-                  "symbolsGroups": [
-                    {
-                      "name": "Popular Crypto",
-                      "originalName": "Crypto",
-                      "symbols": [
-                        { "name": "BINANCE:BTCUSDT", "displayName": "Bitcoin (BTC/USDT)" },
-                        { "name": "BINANCE:ETHUSDT", "displayName": "Ethereum (ETH/USDT)" },
-                        { "name": "BINANCE:SOLUSDT", "displayName": "Solana (SOL/USDT)" },
-                        { "name": "BINANCE:XRPUSDT", "displayName": "XRP (XRP/USDT)" },
-                        { "name": "BINANCE:BNBUSDT", "displayName": "BNB (BNB/USDT)" },
-                        { "name": "BINANCE:DOGEUSDT", "displayName": "Dogecoin (DOGE/USDT)" },
-                        { "name": "BINANCE:ADAUSDT", "displayName": "Cardano (ADA/USDT)" },
-                        { "name": "BINANCE:AVAXUSDT", "displayName": "Avalanche (AVAX/USDT)" },
-                        { "name": "BINANCE:DOTUSDT", "displayName": "Polkadot (DOT/USDT)" },
-                        { "name": "BINANCE:LINKUSDT", "displayName": "Chainlink (LINK/USDT)" }
-                      ]
-                    }
-                  ],
-                  "showSymbolLogo": true,
-                  "isTransparent": false, 
-                  "colorTheme": "light",
-                  "locale": "en"
-                }
-                </script>
-            </div>
-        </section>
-
         <nav class="asset-selector-bar" id="assetSelectorBar">
             <div class="no-data-placeholder">Loading assets...</div>
         </nav>
 
         <section class="popular-pairs-section">
             <div class="section-title-container">
-                <h2 class="section-title">Popular Pairs (YuMa)</h2>
+                <h2 class="section-title">Popular Pairs</h2>
             </div>
             <div class="custom-table-wrapper" id="popularPairsTable">
                 <div class="custom-table-header">
@@ -135,7 +75,7 @@
 
         <section class="filtered-pairs-section">
              <div class="section-title-container">
-                <h2 class="section-title" id="filteredPairsTitle">All Markets (YuMa)</h2>
+                <h2 class="section-title" id="filteredPairsTitle">All Markets</h2>
                 <div class="search-input-container">
                     <input type="text" id="searchMarketInput" placeholder="Search Pair, e.g. BTC or Bitcoin" class="search-input">
                 </div>
@@ -163,6 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filteredPairsTable = document.getElementById('filteredPairsTable');
     const filteredPairsTitle = document.getElementById('filteredPairsTitle');
     
+    // Оновлення для нових ID елементів хедера
     const logoutButton = document.getElementById('logoutButtonMarkets');
     const signUpLink = document.getElementById('signUpLinkMarkets');
     const loginLink = document.getElementById('loginLinkMarkets');
@@ -170,14 +111,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const searchInput = document.getElementById('searchMarketInput');
 
-    let allMarketsDataCache = []; 
+    let allMarketsDataCache = []; // Кеш для всіх ринків
 
+    // Оновлена логіка відображення кнопок в хедері
     if (token) {
         if(logoutButton) logoutButton.style.display = 'inline-block';
         if(signUpLink) signUpLink.style.display = 'none';
         if(loginLink) loginLink.style.display = 'none';
         if(userGreeting) {
-            // Можна додати логіку для отримання імені користувача
+            // Можна додати логіку для отримання імені користувача, якщо є
             // userGreeting.textContent = `Hello, User!`; 
             // userGreeting.style.display = 'inline-block';
         }
@@ -186,11 +128,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('[MarketsPage] Logout clicked.');
                 const currentToken = localStorage.getItem('authToken');
                 localStorage.removeItem('authToken');
+                // Очищаємо кеш, щоб при наступному логіні завантажились актуальні "isFavourite"
                 allMarketsDataCache = [];
                 try {
                     await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
                 } catch(e) { console.error('Logout API error', e); }
-                window.location.href = 'login-page.html';
+                window.location.href = 'login-page.html'; // Або на головну, або на markets знову
             });
         }
     } else {
@@ -202,7 +145,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function fetchApiData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
+        // Змінюємо логіку requiresAuth, щоб вона залежала від наявності токена для деяких запитів
         const requiresAuth = options.requiresAuth === undefined ? (url.includes('/api/favourites') || url.includes('/api/markets?popularOnly=true') || url === '/api/markets') : options.requiresAuth;
+
 
         const headers = { 'Content-Type': 'application/json' };
         if (requiresAuth && currentToken) {
@@ -212,7 +157,10 @@ document.addEventListener('DOMContentLoaded', async () => {
              window.location.href = 'login-page.html';
              return Promise.reject({ success: false, message: 'Authentication required.', shouldRedirect: true });
         }
-        
+        // Для /api/markets та /api/markets?popularOnly=true дозволяємо запит без токена,
+        // але isFavourite не буде встановлено або буде false.
+        // Для /api/assets/base токен не потрібен.
+
         const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
 
         try {
@@ -242,9 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function attachFavouriteButtonListeners(containerElement) {
-        if (!token) return; 
+        if (!token) return; // Не прикріплюємо, якщо немає токена
         containerElement.querySelectorAll('.favourite-btn').forEach(button => {
-            button.removeEventListener('click', toggleFavourite); 
+            button.removeEventListener('click', toggleFavourite); // Запобігаємо дублюванню
             button.addEventListener('click', toggleFavourite);
         });
     }
@@ -257,21 +205,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const rows = containerElement.querySelectorAll('.custom-table-row');
         rows.forEach(row => row.remove());
 
-        // Додаємо (YuMa) до заголовка, якщо це наші таблиці
-        let displayTitle = titleForFiltered;
-        if (containerElement === filteredPairsTable && titleForFiltered) {
-           displayTitle = titleForFiltered.includes('(YuMa)') ? titleForFiltered : `${titleForFiltered} (YuMa)`;
-        } else if (containerElement === popularPairsTable && !popularPairsTable.querySelector('.section-title-container .section-title').textContent.includes('(YuMa)')) {
-             // Для популярних пар заголовок вже змінений в HTML, але можемо перевірити
+        if (titleForFiltered && filteredPairsTitle && containerElement === filteredPairsTable) {
+            filteredPairsTitle.textContent = titleForFiltered;
         }
-        
-        if (displayTitle && filteredPairsTitle && containerElement === filteredPairsTable) {
-             filteredPairsTitle.textContent = displayTitle;
-        }
-
 
         if (!markets || markets.length === 0) {
-            const message = `No markets found${displayTitle ? ' for ' + displayTitle.replace('Markets for ', '').replace('All Markets (YuMa)', ' for current filter').replace(' (YuMa)', '') : ''}.`;
+            const message = `No markets found${titleForFiltered ? ' for ' + titleForFiltered.replace('Markets for ', '').replace('All Markets', ' for current filter') : ''}.`;
             containerElement.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${message}</div>`);
             return;
         }
@@ -281,6 +220,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             row.classList.add('custom-table-row');
             row.dataset.marketId = market.id;
 
+            // market.isFavourite буде true/false якщо користувач залогінений і сервер це повернув,
+            // інакше буде undefined або false, і кнопка буде неактивною або не буде кнопки.
             const isFav = market.isFavourite === true; 
             const price = market.currentPrice ? `$${parseFloat(market.currentPrice).toFixed(2)}` : 'N/A';
             const change = market.change24hPercent ? parseFloat(market.change24hPercent).toFixed(2) + '%' : 'N/A';
@@ -299,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             containerElement.appendChild(row);
         });
         
-        if(token) { 
+        if(token) { // Прикріплюємо слухачі тільки якщо є токен
             attachFavouriteButtonListeners(containerElement);
         }
     }
@@ -313,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const url = isCurrentlyFavourite ? `/api/favourites/${marketId}` : '/api/favourites';
 
         try {
-            const fetchOptions = { method: method, requiresAuth: true }; 
+            const fetchOptions = { method: method, requiresAuth: true }; // requiresAuth тут завжди true
             if (method === 'POST') {
                 fetchOptions.body = JSON.stringify({ marketPairId: parseInt(marketId) });
             }
@@ -337,6 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert(data.message || 'Failed to update favourites.');
             }
         } catch (error) {
+            // Якщо помилка через перенаправлення, не показуємо alert
             if (!error.shouldRedirect) {
                 alert(error.message || 'An error occurred while updating favourites.');
             }
@@ -359,13 +301,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             return matchesSearch && matchesBaseAsset;
         });
         const title = selectedBaseAsset ? `Markets for ${selectedBaseAsset}` : (searchTerm ? 'Search Results' : 'All Markets');
-        renderMarketTable(filteredPairsTable, filtered, title); // Заголовок для filteredPairsTable (YuMa) буде додано всередині функції
+        renderMarketTable(filteredPairsTable, filtered, title);
     }
 
     async function loadBaseAssets() {
         console.log('[MarketsPage] Loading base assets...');
         let placeholder = assetSelectorBar.querySelector('.no-data-placeholder');
         try {
+            // Цей запит не вимагає авторизації
             const data = await fetchApiData('/api/assets/base', { requiresAuth: false }); 
             if (placeholder) placeholder.remove();
             if (data.success && data.baseAssets) {
@@ -405,48 +348,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadPopularPairs() {
-        console.log('[MarketsPage] Loading popular pairs (YuMa)...');
+        console.log('[MarketsPage] Loading popular pairs...');
         let placeholder = popularPairsTable.querySelector('.no-data-placeholder');
         try {
+            // Якщо токен є, запит піде з ним, якщо немає - без (requiresAuth: !!token)
             const data = await fetchApiData('/api/markets?popularOnly=true', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
             if (data.success && data.markets) {
-                renderMarketTable(popularPairsTable, data.markets); // Заголовок для popularPairsTable вже є в HTML
+                renderMarketTable(popularPairsTable, data.markets);
             } else {
                 throw new Error(data.message || 'Failed to load popular pairs');
             }
         } catch (error) {
-            console.error('[MarketsPage] Error loading popular pairs (YuMa):', error);
-             if (error.shouldRedirect) return; 
+            console.error('[MarketsPage] Error loading popular pairs:', error);
+             if (error.shouldRedirect) return; // Не показуємо помилку, якщо було перенаправлення
             if(placeholder) placeholder.textContent = error.message || 'Error loading popular pairs.';
             else popularPairsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Error loading popular pairs.'}</div>`);
         }
     }
 
     async function loadInitialAllMarkets() {
-        console.log('[MarketsPage] Loading initial set of all markets (YuMa) for cache...');
+        console.log('[MarketsPage] Loading initial set of all markets for cache...');
         let placeholder = filteredPairsTable.querySelector('.no-data-placeholder');
-        if (placeholder) placeholder.textContent = 'Loading all markets (YuMa)...';
+        if (placeholder) placeholder.textContent = 'Loading all markets...';
         else {
             const header = filteredPairsTable.querySelector('.custom-table-header');
             filteredPairsTable.innerHTML = '';
             if(header) filteredPairsTable.appendChild(header);
-            filteredPairsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Loading all markets (YuMa)...</div>');
+            filteredPairsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Loading all markets...</div>');
             placeholder = filteredPairsTable.querySelector('.no-data-placeholder');
         }
 
         try {
+            // Якщо токен є, запит піде з ним, якщо немає - без (requiresAuth: !!token)
             const data = await fetchApiData('/api/markets', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
             if (data.success && data.markets) {
                 allMarketsDataCache = data.markets;
-                filterAndRenderSpotMarkets(); // Встановлює заголовок 'All Markets (YuMa)' якщо немає фільтрів
+                filterAndRenderSpotMarkets();
             } else {
                 throw new Error(data.message || 'Failed to load all markets');
             }
         } catch (error) {
-            console.error('[MarketsPage] Error loading initial all markets (YuMa):', error);
-            if (error.shouldRedirect) return; 
+            console.error('[MarketsPage] Error loading initial all markets:', error);
+            if (error.shouldRedirect) return; // Не показуємо помилку, якщо було перенаправлення
             if(placeholder) placeholder.textContent = error.message || 'Error loading all markets.';
             else filteredPairsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Error loading all markets.'}</div>`);
         }
@@ -454,7 +399,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if(searchInput) searchInput.addEventListener('input', filterAndRenderSpotMarkets);
 
+    // Послідовне завантаження
     await loadBaseAssets(); 
+    // Ці запити можуть залежати від статусу логіну, тому виконуємо їх після перевірки токена
     await loadPopularPairs();
     await loadInitialAllMarkets(); 
     console.log('[MarketsPage] Initial data loading complete.');
