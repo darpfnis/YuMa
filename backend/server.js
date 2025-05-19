@@ -679,14 +679,89 @@ let marketDataCache = { // Простий in-memory кеш
 const COINGECKO_IDS_MAP = { // Мапінг ваших символів на CoinGecko IDs
     'BTC': 'bitcoin',
     'ETH': 'ethereum',
-    'USDT': 'tether', // Для USDT як базового ID
+    'USDT': 'tether', // Потрібен, якщо ви десь використовуєте USDT як базовий актив для запиту
     'BNB': 'binancecoin',
     'SOL': 'solana',
     'XRP': 'ripple',
     'ADA': 'cardano',
     'DOGE': 'dogecoin',
-    'YMC': 'your-custom-coin-id-on-coingecko' // Якщо ваша монета є на CoinGecko
-    // Додайте всі активи, які є у вас в market_pairs.base_asset
+    'AVAX': 'avalanche-2',
+    'DOT': 'polkadot',
+    'TRX': 'tron',
+    'SHIB': 'shiba-inu',
+    'MATIC': 'matic-network', // або 'polygon-pos' - перевірте актуальний ID на CoinGecko
+    'LTC': 'litecoin',
+    'LINK': 'chainlink',
+    'UNI': 'uniswap',
+    'ATOM': 'cosmos',
+    'NEAR': 'near',
+    'FTM': 'fantom',
+    'ICP': 'internet-computer',
+    'ETC': 'ethereum-classic',
+    'XLM': 'stellar',
+    'ALGO': 'algorand',
+    'VET': 'vechain',
+    'FIL': 'filecoin',
+    'HBAR': 'hedera-hashgraph', // Або 'hedera'
+    'EOS': 'eos',
+    'AAVE': 'aave',
+    'XTZ': 'tezos',
+    'SAND': 'the-sandbox',
+    'MANA': 'decentraland',
+    'AXS': 'axie-infinity',
+    'THETA': 'theta-token',
+    'GRT': 'the-graph',
+    'EGLD': 'elrond-erd-2', // Або 'multiversx'
+    'MKR': 'maker',
+    'KSM': 'kusama',
+    'WAVES': 'waves',
+    'ZEC': 'zcash',
+    'DASH': 'dash',
+    'NEO': 'neo',
+    'CHZ': 'chiliz',
+    'ENJ': 'enjincoin',
+    'COMP': 'compound-governance-token',
+    'SNX': 'havven', // Або 'synthetix-network-token'
+    'SUSHI': 'sushi',
+    'YFI': 'yearn-finance',
+    'APT': 'aptos',
+    'ARB': 'arbitrum',
+    'OP': 'optimism',
+    'SUI': 'sui',
+    'PEPE': 'pepe',
+    'FET': 'fetch-ai',
+    'RNDR': 'render-token',
+    'INJ': 'injective-protocol', // Або 'injective'
+    'TIA': 'celestia',
+    'IMX': 'immutable-x',
+    'GALA': 'gala',
+    'MINA': 'mina-protocol',
+    'FLOW': 'flow',
+    'CRV': 'curve-dao-token',
+    'LDO': 'lido-dao',
+    'RUNE': 'thorchain',
+    'CAKE': 'pancakeswap-token',
+    'DYDX': 'dydx',
+    '1INCH': '1inch',
+    'APE': 'apecoin',
+    'STX': 'stacks', // Раніше був 'blockstack'
+    'SEI': 'sei-network', // Або 'sei'
+    'FLOKI': 'floki',
+    'BONK': 'bonk',
+    'TWT': 'trust-wallet-token',
+    'QNT': 'quant-network',
+    'KAS': 'kaspa',
+    'ORDI': 'ordinals',
+    'WLD': 'worldcoin-wld',
+    'PYTH': 'pyth-network',
+    'ROSE': 'oasis-network',
+    'ONE': 'harmony',
+    'CELO': 'celo',
+    'KAVA': 'kava',
+    'ZIL': 'zilliqa',
+    'GMT': 'stepn',
+    'JASMY': 'jasmycoin', // Або 'jasmy'
+    'WOO': 'woo-network',
 };
 
 // Функція для отримання даних з CoinGecko для списку пар
@@ -724,20 +799,27 @@ async function fetchExternalMarketData(marketPairs) { // marketPairs - маси�
         const processedData = {};
 
         for (const cgId in coingeckoData) {
-            if (coingeckoData.hasOwnProperty(cgId) && pairSymbolMap[cgId]) {
-                const originalPairSymbol = pairSymbolMap[cgId];
-                const pairData = coingeckoData[cgId];
-                if (pairData && pairData[vsCurrency] !== undefined) {
-                    processedData[originalPairSymbol] = {
-                        price: pairData[vsCurrency],
-                        priceChangePercent: pairData[`${vsCurrency}_24h_change`]
-                        // Можна додати об'єм, якщо API його повертає в цьому запиті
-                    };
-                }
-            }
-        }
-        console.log('[ExternalData] Successfully fetched and processed external data.');
-        return processedData;
+     if (coingeckoData.hasOwnProperty(cgId) && pairSymbolMap[cgId] && pairSymbolMap[cgId].length > 0) {
+         const originalPairSymbols = pairSymbolMap[cgId]; // Тепер це масив
+         const dataForCgId = coingeckoData[cgId];
+
+         if (dataForCgId && dataForCgId[vsCurrency] !== undefined) {
+             originalPairSymbols.forEach(pairSymbol => {
+                 const marketPairFromDb = marketPairs.find(p => p.symbol === pairSymbol);
+                 if (marketPairFromDb && marketPairFromDb.quote_asset.toUpperCase() === 'USDT' || marketPairFromDb.quote_asset.toUpperCase() === 'USD') {
+                    processedData[pairSymbol] = {
+                         price: dataForCgId[vsCurrency],
+                         priceChangePercent: dataForCgId[`${vsCurrency}_24h_change`]
+                     };
+                 } else {
+                    console.log(`[ExternalData] Skipping ${pairSymbol} as its quote asset is not ${vsCurrency.toUpperCase()}`);
+                 }
+             });
+         }
+     }
+ }
+ console.log('[ExternalData] Processed data:', processedData); // ДУЖЕ ВАЖЛИВИЙ ЛОГ
+ return processedData;
     } catch (error) {
         if (error.response && error.response.status === 429) {
             console.warn('[ExternalData] CoinGecko API rate limit hit.');
