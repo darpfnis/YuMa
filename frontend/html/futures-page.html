@@ -2,9 +2,9 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>YuMa - Spot trading</title>
+    <title>YuMa - USDⓈ-M Futures</title>
     <link rel="stylesheet" href="../css/header.css"> 
-    <link rel="stylesheet" href="../css/spot-page.css">
+    <link rel="stylesheet" href="../css/futures-page.css">
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/cards.css">
 </head>
@@ -46,49 +46,46 @@
     </header>
 
     <div class="page-specific-title">
-        <h1>Spot Trading</h1>
+        <h1>USDⓈ-M Futures</h1>
     </div>
 
-    <main class="spot-interface-layout">
-        <aside class="left-panel panel-column">
-            <div class="ui-panel order-book-card"> <!-- Змінено клас -->
-                <div class="panel-title">Order book</div>
-            </div>
-        </aside>
-    
-        <section class="center-content panel-column">
-            <div class="ui-panel chart-card"> <!-- Змінено клас -->
-                <!-- TradingView Widget BEGIN -->
+<main class="futures-interface-layout">
+    <section class="main-chart-area panel-column">
+<div class="ui-panel chart-card">
 <div class="tradingview-widget-container" style="height:100%;width:100%">
-    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-    {
-    "autosize": true,
-    "symbol": "BINANCE:BTCUSDT",
-    "interval": "D",
-    "timezone": "Etc/UTC",
-    "theme": "light",
-    "style": "1",
-    "locale": "en",
-    "allow_symbol_change": true,
-    "support_host": "https://www.tradingview.com"
-  }
-    </script>
-  </div>
-  <!-- TradingView Widget END -->
-                
-            </div>
-            <div class="ui-panel spot-trading-panel-card"> <!-- Змінено клас -->
-                <div class="panel-title">Spot trading panel</div>
-            </div>
-        </section>
-    
-        <aside class="right-panel panel-column">
-            <div class="ui-panel market-card"> <!-- Змінено клас -->
-                <div class="panel-title">Market</div>
-            </div>
-        </aside>
-    </main>
+  <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+  {
+  "autosize": true,
+  "symbol": "BYBIT:BTCUSDT.P",
+  "interval": "D",
+  "timezone": "Etc/UTC",
+  "theme": "light",
+  "style": "1",
+  "locale": "en",
+  "allow_symbol_change": true,
+  "support_host": "https://www.tradingview.com"
+}
+  </script>
+</div>
+</div>
+        <div class="ui-panel positions-history-card">
+            <div class="panel-title">Positions / Order History</div>
+            <!-- Тут буде вміст для позицій та історії ордерів -->
+        </div>
+    </section>
+
+    <aside class="right-sidebar panel-column">
+        <div class="ui-panel order-book-card">
+            <div class="panel-title">Order Book</div>
+            <!-- Вміст для книги ордерів -->
+        </div>
+        <div class="ui-panel trading-panel-card">
+            <div class="panel-title">Trading Panel</div>
+            <!-- Вміст для панелі торгівлі ф'ючерсами -->
+        </div>
+    </aside>
+</main>
 
 </body>
 </html>
