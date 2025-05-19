@@ -5,44 +5,40 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const axios = require('axios'); 
+const WebSocket = require('ws');
+
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; // Render надає PORT
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-final'; // ЗМІНІТЬ ЦЕ В ЗМІННИХ СЕРЕДОВИЩА!
-if (JWT_SECRET === 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-final' && process.env.NODE_ENV === 'production') {
-    console.warn('WARNING: JWT_SECRET is using a default insecure value in production! Please set a strong JWT_SECRET environment variable on Render.');
+// --- Налаштування JWT ---
+const JWT_SECRET = process.env.JWT_SECRET || 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-final-CHANGE-ME';
+if (JWT_SECRET === 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-final-CHANGE-ME' && process.env.NODE_ENV === 'production') {
+    console.warn('CRITICAL WARNING: JWT_SECRET is using a default insecure value in production! Please set a strong JWT_SECRET environment variable on Render.');
 }
 
+// --- Налаштування Бази Даних ---
 const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-    console.error('FATAL ERROR: DATABASE_URL environment variable is not set.');
-    // Для локальної розробки, якщо DATABASE_URL не встановлено, можна тут тимчасово задати:
-    // const localDevConnectionString = "postgres://your_local_user:your_local_password@localhost:5432/your_local_database_name";
-    // if (process.env.NODE_ENV !== 'production' && localDevConnectionString) {
-    //     console.warn("DATABASE_URL not set, using local development connection string.");
-    //     // connectionString = localDevConnectionString; // НЕ РОЗКОМЕНТОВУЙТЕ ДЛЯ RENDER
-    // } else {
-        process.exit(1); // Критично для Render
-    // }
+if (!connectionString && process.env.NODE_ENV === 'production') { // Критично тільки для production на Render
+    console.error('FATAL ERROR: DATABASE_URL environment variable is not set in production.');
+    process.exit(1);
 }
 
 const pool = new Pool({
-    connectionString: connectionString,
+    connectionString: connectionString || "postgres://postgres:your_local_password@localhost:5432/yuma_db", // Локальний fallback
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('connect', (client) => {
     console.log('PostgreSQL pool: New client connected to the database.');
-    client.on('error', err => { // Додаємо обробник помилок для окремого клієнта з пулу
+    client.on('error', err => {
         console.error('PostgreSQL client error within pool:', err);
     });
 });
-pool.on('error', (err, client) => { // Загальний обробник помилок пулу
-    console.error('Unexpected error on idle PostgreSQL client in pool', err);
-    // process.exit(-1); // Можливо, не варто зупиняти сервер на кожну помилку пулу
+pool.on('error', (err, client) => {
+    console.error('Unexpected error on idle PostgreSQL client in pool:', err);
 });
-
 
 // --- Middleware ---
 app.use(express.json());
@@ -52,23 +48,27 @@ const frontendPath = path.join(__dirname, '..', 'frontend');
 const projectRootPath = path.join(__dirname, '..');
 app.use('/frontend', express.static(frontendPath));
 
-
-const DEV_MODE_SKIP_AUTH = false; // Встановіть в true для вимкнення автентифікації, false для увімкнення
-const DEV_MODE_TEST_USER = { // Тестовий користувач, якщо автентифікація вимкнена
-    userId: 1, // ID існуючого тестового користувача у вашій БД
-    email: 'testuser@example.com',
-    username: 'testuser',
-    uid: 'TESTUID123'
+// --- Налаштування режиму розробки (DEV_MODE) ---
+const DEV_MODE_SKIP_AUTH = process.env.NODE_ENV !== 'production' && (process.env.DEV_MODE_SKIP_AUTH === 'true'); // true/false
+const DEV_MODE_TEST_USER = {
+    userId: 1,
+    email: 'devuser@example.com',
+    username: 'devuser',
+    uid: 'DEVUID123'
 };
+if (DEV_MODE_SKIP_AUTH) {
+    console.warn("*****************************************************************");
+    console.warn("* WARNING: DEV_MODE_SKIP_AUTH is ENABLED. Authentication is OFF *");
+    console.warn("*****************************************************************");
+}
 
+
+// --- Middleware Автентифікації ---
 const authenticateToken = (req, res, next) => {
     if (DEV_MODE_SKIP_AUTH) {
-        console.warn('[AuthMiddleware - DEV MODE] Authentication SKIPPED. Using test user.');
-        req.user = DEV_MODE_TEST_USER; 
+        req.user = DEV_MODE_TEST_USER;
         return next();
     }
-
-    // Ваша існуюча логіка перевірки токена
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) return res.status(401).json({ success: false, message: 'Token missing.' });
@@ -81,29 +81,9 @@ const authenticateToken = (req, res, next) => {
 
 const tryAuthenticateToken = (req, res, next) => {
     if (DEV_MODE_SKIP_AUTH) {
-        console.warn('[TryAuthMiddleware - DEV MODE] Authentication SKIPPED. Using test user if no real token, else anonymous.');
-        // Якщо ви хочете, щоб tryAuth завжди встановлював тестового користувача в DEV_MODE,
-        // навіть якщо токена немає (для тестів, де req.user очікується):
-        // req.user = DEV_MODE_TEST_USER;
-        // Або, якщо ви хочете імітувати ситуацію, коли користувач може бути анонімним:
-        const authHeader = req.headers['authorization']; // Перевіряємо, чи клієнт все ж надіслав токен
-        const token = authHeader && authHeader.split(' ')[1];
-        if (token) { // Якщо токен є, спробуємо його верифікувати
-            jwt.verify(token, JWT_SECRET, (err, userPayload) => {
-                req.user = err ? null : userPayload; // Якщо токен невалідний, то req.user = null
-                if(req.user) console.log('[TryAuthMiddleware - DEV MODE] Dev token verified (or real token passed). User:', req.user);
-                else console.log('[TryAuthMiddleware - DEV MODE] Dev token invalid or no token, proceeding as anonymous.');
-                next();
-            });
-        } else { // Якщо токена взагалі немає
-            req.user = null; // Або req.user = DEV_MODE_TEST_USER; залежно від потреби
-            console.log('[TryAuthMiddleware - DEV MODE] No token, proceeding as anonymous (or test user).');
-            next();
-        }
-        return; // Виходимо, щоб не виконувалася стандартна логіка
+        req.user = DEV_MODE_TEST_USER; // В DEV_MODE завжди встановлюємо тестового користувача для tryAuth
+        return next();
     }
-
-    // Ваша існуюча логіка tryAuthenticateToken
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) {
@@ -115,17 +95,338 @@ const tryAuthenticateToken = (req, res, next) => {
     });
 };
 
+// --- Дані Ринку (Binance WebSocket та CoinGecko Cache) ---
+const INITIAL_ASSETS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'YMC'];
+let currentMarketData = {}; // Має оновлюватися з WebSocket Binance
 
-const INITIAL_ASSETS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'YMC']; // YMC - ваша монета
-let currentMarketData = {}; // Це має оновлюватися з WebSocket Binance
+const BINANCE_WS_BASE_URL = 'wss://stream.binance.com:9443/ws';
+let binanceWs = null; // Зберігатиме екземпляр WebSocket
+let subscribedStreams = new Set(); // Для відстеження поточних підписок
+const RECONNECT_INTERVAL = 5000; // 5 секунд
+const MAX_STREAMS_PER_CONNECTION = 100; // Binance обмежує кількість стрімів на одне з'єднання
 
-// (ТУТ МАЄ БУТИ ВАШ КОД ДЛЯ ПІДКЛЮЧЕННЯ ДО WEBSOCKET BINANCE ТА ОНОВЛЕННЯ currentMarketData)
-// const WebSocket = require('ws');
-// function connectToBinanceMarketStreams() { /* ... */ }
-// connectToBinanceMarketStreams(); // Викликати при старті
+// Функція для оновлення currentMarketData на основі повідомлень з WebSocket
+function handleBinanceMessage(data) {
+    try {
+        const message = JSON.parse(data);
+
+        // Приклад для стріму тикера (!ticker@arr не завжди дає ціну напряму, краще @ticker або @miniTicker)
+        // Використаємо @miniTicker для простоти (ціна, об'єм)
+        if (message.e === '24hrMiniTicker') {
+            const symbol = message.s; // Наприклад, "BTCUSDT"
+            currentMarketData[symbol] = {
+                price: parseFloat(message.c), // Остання ціна
+                priceChangePercent: null, // MiniTicker не дає % зміни, потрібен @ticker або розрахунок
+                quoteVolume: parseFloat(message.q), // Об'єм в котирувальній валюті за 24 години
+                openPrice: parseFloat(message.o),
+                highPrice: parseFloat(message.h),
+                lowPrice: parseFloat(message.l),
+                volume: parseFloat(message.v), // Об'єм в базовій валюті
+                lastUpdatedAt: Date.now(),
+                source: 'BinanceWS'
+            };
+            // console.log(`[BinanceWS] Updated ${symbol}: Price ${currentMarketData[symbol].price}`);
+        }
+        // Якщо ви підписуєтесь на інші типи стрімів (наприклад, книга ордерів, угоди),
+        // додайте відповідну логіку обробки тут.
+
+    } catch (error) {
+        console.error('[BinanceWS] Error parsing message:', error, 'Data:', data.substring(0, 200));
+    }
+}
+
+// Функція для отримання списку символів для підписки з БД
+async function getBinanceSymbolsToSubscribe() {
+    let client;
+    try {
+        client = await pool.connect();
+        // Вибираємо binance_symbol, якщо є, інакше symbol. Лише активні пари.
+        const result = await client.query(
+            `SELECT DISTINCT COALESCE(NULLIF(TRIM(binance_symbol), ''), symbol) as stream_symbol 
+             FROM market_pairs 
+             WHERE is_active = TRUE AND NULLIF(TRIM(COALESCE(NULLIF(TRIM(binance_symbol), ''), symbol)), '') IS NOT NULL`
+        );
+        return result.rows.map(row => `${row.stream_symbol.toLowerCase()}@miniTicker`); // наприклад, btcusdt@miniTicker
+    } catch (error) {
+        console.error('[BinanceWS][DB] Error fetching symbols for WebSocket subscription:', error);
+        return []; // Повертаємо порожній масив у разі помилки
+    } finally {
+        if (client) client.release();
+    }
+}
 
 
-// --- API Ендпоінти ---
+function connectToBinanceStreams(streamsToSubscribe) {
+    if (binanceWs && (binanceWs.readyState === WebSocket.OPEN || binanceWs.readyState === WebSocket.CONNECTING)) {
+        console.log('[BinanceWS] WebSocket already open or connecting. Attempting to update subscriptions.');
+        // Логіка для додавання/видалення стрімів з існуючого з'єднання (якщо потрібно)
+        // Зараз ми просто перепідписуємося на новий набір при перепідключенні
+        // Для простоти, якщо список стрімів змінився, ми закриємо старе з'єднання і відкриємо нове
+        // Нижче при закритті буде спроба перепідключення, яка візьме новий список стрімів.
+        if (streamsToSubscribe.length > 0) { // Якщо є на що підписуватись
+            const currentStreamsKey = Array.from(subscribedStreams).sort().join(',');
+            const newStreamsKey = streamsToSubscribe.sort().join(',');
+            if (currentStreamsKey !== newStreamsKey) {
+                console.log('[BinanceWS] Stream list changed. Reconnecting.');
+                if (binanceWs) binanceWs.close(1000, "Reconnecting due to stream list change"); // 1000 - Normal Closure
+                return; // connectToBinanceMarketStreams буде викликано знову через on 'close'
+            } else {
+                 console.log('[BinanceWS] Stream list has not changed. No action needed on existing connection.');
+                 return;
+            }
+        } else { // Якщо немає на що підписуватись, а з'єднання є - закриваємо.
+            console.log('[BinanceWS] No streams to subscribe to, closing existing connection if open.');
+            if (binanceWs) binanceWs.close(1000, "No streams to subscribe to");
+            return;
+        }
+    }
+    
+    if (streamsToSubscribe.length === 0) {
+        console.log('[BinanceWS] No symbols to subscribe to from database. Skipping WebSocket connection.');
+        subscribedStreams.clear();
+        currentMarketData = {}; // Очищаємо дані, якщо немає підписок
+        return;
+    }
+
+    // Розділяємо стріми на чанки, якщо їх більше MAX_STREAMS_PER_CONNECTION
+    // Для цього прикладу ми не будемо робити кілька з'єднань, а просто обмежимо.
+    // У реальному продакшені може знадобитися кілька WebSocket з'єднань.
+    if (streamsToSubscribe.length > MAX_STREAMS_PER_CONNECTION) {
+        console.warn(`[BinanceWS] Warning: Number of streams (${streamsToSubscribe.length}) exceeds max per connection (${MAX_STREAMS_PER_CONNECTION}). Subscribing to the first ${MAX_STREAMS_PER_CONNECTION}.`);
+        streamsToSubscribe = streamsToSubscribe.slice(0, MAX_STREAMS_PER_CONNECTION);
+    }
+
+
+    const streamPath = streamsToSubscribe.join('/');
+    const fullUrl = `${BINANCE_WS_BASE_URL}/${streamPath}`;
+    console.log(`[BinanceWS] Connecting to: ${streamsToSubscribe.length} streams. (URL might be long, showing first few: ${streamsToSubscribe.slice(0,3).join('/')}...)`);
+
+    binanceWs = new WebSocket(fullUrl);
+    subscribedStreams = new Set(streamsToSubscribe); // Оновлюємо список активних підписок
+
+    binanceWs.on('open', () => {
+        console.log('[BinanceWS] Connected to Binance Market Streams successfully!');
+        // Підписка відбувається через URL, додаткове повідомлення не потрібне для комбінованих стрімів
+    });
+
+    binanceWs.on('message', (data) => {
+        // Binance може надсилати дані як Buffer, перетворюємо на рядок
+        handleBinanceMessage(data.toString());
+    });
+
+    binanceWs.on('error', (error) => {
+        console.error('[BinanceWS] WebSocket Error:', error.message);
+        // Спроба перепідключення не відбувається тут, а в 'close'
+    });
+
+    binanceWs.on('close', (code, reason) => {
+        console.log(`[BinanceWS] WebSocket connection closed. Code: ${code}, Reason: ${reason ? reason.toString() : 'No reason'}`);
+        binanceWs = null; // Очищаємо екземпляр
+        subscribedStreams.clear();
+        // Очистити currentMarketData для символів, що були підписані, або всі, якщо це бажано
+        // currentMarketData = {}; // Або більш вибіркова очистка
+
+        // Спроба перепідключення, якщо закриття не було навмисним (код не 1000)
+        // або якщо причина вказує на необхідність перепідключення
+        if (code !== 1000) { // 1000 - нормальне закриття
+            console.log(`[BinanceWS] Attempting to reconnect in ${RECONNECT_INTERVAL / 1000} seconds...`);
+            setTimeout(connectToBinanceMarketStreams, RECONNECT_INTERVAL); // Викликаємо головну функцію для перепідключення
+        }
+    });
+
+    binanceWs.on('ping', () => {
+        // Binance надсилає ping, ws автоматично відповідає pong
+        // console.log('[BinanceWS] Received ping, pong sent.');
+        if (binanceWs) binanceWs.pong();
+    });
+}
+
+// Головна функція для запуску та управління підключенням
+async function connectToBinanceMarketStreams() {
+    console.log('[BinanceWS] Preparing to connect/reconnect to Binance WebSocket...');
+    const streams = await getBinanceSymbolsToSubscribe();
+    if (streams.length > 0) {
+        connectToBinanceStreams(streams);
+    } else {
+        console.log('[BinanceWS] No active symbols found in DB to subscribe for Binance WebSocket.');
+        // Якщо WebSocket був активний і тепер немає символів, його потрібно закрити
+        if (binanceWs && binanceWs.readyState === WebSocket.OPEN) {
+            console.log('[BinanceWS] Closing existing WebSocket connection as there are no symbols to subscribe to.');
+            binanceWs.close(1000, "No symbols to subscribe to."); // 1000 - Normal closure
+        }
+        subscribedStreams.clear();
+    }
+}s
+
+
+// --- РОЗДІЛ ДЛЯ РИНКОВИХ ДАНИХ CoinGecko (інтегровано) ---
+let marketDataCache = { // Кеш для даних, розрахованих з CoinGecko
+    data: {},
+    lastUpdated: 0,
+    cacheDuration: 5 * 60 * 1000 // 5 хвилин
+};
+
+async function fetchIndividualAssetDataFromCoinGecko(coinGeckoIdsToFetch, cgIdToAssetSymbolMap) {
+    if (!Array.isArray(coinGeckoIdsToFetch) || coinGeckoIdsToFetch.length === 0) {
+        console.log('[ExternalDataCG] No CoinGecko IDs provided to fetch.');
+        return {};
+    }
+    if (typeof cgIdToAssetSymbolMap !== 'object' || cgIdToAssetSymbolMap === null) {
+        console.error('[ExternalDataCG] FATAL: cgIdToAssetSymbolMap is not a valid object!');
+        return {};
+    }
+
+    console.log(`[ExternalDataCG] Attempting to fetch market data for ${coinGeckoIdsToFetch.length} unique CoinGecko IDs: ${coinGeckoIdsToFetch.join(',')}`);
+    const idsQueryParam = coinGeckoIdsToFetch.join(',');
+    const vsCurrency = 'usd';
+    const coingeckoUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${idsQueryParam}&vs_currencies=${vsCurrency}&include_24hr_change=true`;
+
+    try {
+        const response = await axios.get(coingeckoUrl, { timeout: 15000 });
+        const coingeckoData = response.data;
+        const processedData = {};
+
+        for (const cgId in coingeckoData) {
+            if (coingeckoData.hasOwnProperty(cgId) && cgIdToAssetSymbolMap[cgId]) {
+                const assetSymbol = cgIdToAssetSymbolMap[cgId];
+                const dataForCgId = coingeckoData[cgId];
+                if (dataForCgId && dataForCgId[vsCurrency] !== undefined) {
+                    processedData[assetSymbol] = {
+                        price: dataForCgId[vsCurrency],
+                        priceChangePercent: dataForCgId[`${vsCurrency}_24h_change`]
+                    };
+                } else {
+                    console.warn(`[ExternalDataCG] No price data for ${vsCurrency} found for cgId: ${cgId} (mapped to ${assetSymbol})`);
+                }
+            } else {
+                 console.warn(`[ExternalDataCG] Received data for unknown cgId: ${cgId} or cgId not in cgIdToAssetSymbolMap.`);
+            }
+        }
+        return processedData;
+    } catch (error) {
+        console.error('[ExternalDataCG] Error fetching from CoinGecko:', error.message);
+        if (error.response) {
+            console.error('[ExternalDataCG] CoinGecko Response Status:', error.response.status);
+            if (error.response.data && error.response.data.error) {
+                 console.error('[ExternalDataCG] CoinGecko Error Message:', error.response.data.error);
+            }
+            if (error.response.status === 429) {
+                console.warn('[ExternalDataCG] CoinGecko API rate limit. IDs: ' + idsQueryParam.substring(0,100) + '...');
+            }
+        } else if (error.request) {
+            console.error('[ExternalDataCG] No response from CoinGecko. IDs: ' + idsQueryParam.substring(0,100) + '...');
+        } else {
+            console.error('[ExternalDataCG] Error setting up CoinGecko request:', error.message);
+        }
+        return {};
+    }
+}
+
+async function ensureMarketDataCache(forceUpdate = false) {
+    const now = Date.now();
+    if (forceUpdate || !marketDataCache.lastUpdated || (now - marketDataCache.lastUpdated > marketDataCache.cacheDuration)) {
+        console.log('[CacheCG] Market data cache (CoinGecko) is stale or missing. Updating...');
+        let client;
+        try {
+            client = await pool.connect();
+            let activePairsDbRows = [];
+            try {
+                const result = await client.query(
+                    `SELECT symbol, base_asset, quote_asset, 
+                            coingecko_base_id, coingecko_quote_id, 
+                            price_precision, quantity_precision 
+                     FROM market_pairs 
+                     WHERE is_active = TRUE`
+                );
+                activePairsDbRows = result.rows;
+            } catch (dbError) {
+                console.error('[CacheCG][DB] Error fetching active pairs for CoinGecko data:', dbError);
+                if (client) client.release();
+                return;
+            }
+
+            if (activePairsDbRows.length > 0) {
+                const uniqueCoinGeckoIds = new Set();
+                const cgIdToAssetSymbolMap = {};
+                activePairsDbRows.forEach(pair => {
+                    if (pair.coingecko_base_id && typeof pair.coingecko_base_id === 'string') {
+                        uniqueCoinGeckoIds.add(pair.coingecko_base_id.trim());
+                        cgIdToAssetSymbolMap[pair.coingecko_base_id.trim()] = pair.base_asset.toUpperCase();
+                    }
+                    if (pair.coingecko_quote_id && typeof pair.coingecko_quote_id === 'string') {
+                        uniqueCoinGeckoIds.add(pair.coingecko_quote_id.trim());
+                        cgIdToAssetSymbolMap[pair.coingecko_quote_id.trim()] = pair.quote_asset.toUpperCase();
+                    }
+                });
+
+                const coinGeckoIdsToFetchArray = Array.from(uniqueCoinGeckoIds);
+                if (coinGeckoIdsToFetchArray.length === 0) {
+                    console.log('[CacheCG] No valid CoinGecko IDs from DB. Clearing CoinGecko cache.');
+                    marketDataCache.data = {};
+                    marketDataCache.lastUpdated = now;
+                    if (client) client.release();
+                    return;
+                }
+
+                const individualAssetUsdData = await fetchIndividualAssetDataFromCoinGecko(coinGeckoIdsToFetchArray, cgIdToAssetSymbolMap);
+                if (Object.keys(individualAssetUsdData).length > 0) {
+                    const newPairDataCache = {};
+                    let processedPairsCount = 0;
+                    activePairsDbRows.forEach(pair => {
+                        const baseAssetSymbol = pair.base_asset.toUpperCase();
+                        const quoteAssetSymbol = pair.quote_asset.toUpperCase();
+                        const baseAssetData = individualAssetUsdData[baseAssetSymbol];
+                        const quoteAssetData = individualAssetUsdData[quoteAssetSymbol];
+
+                        if (baseAssetData && baseAssetData.price !== undefined &&
+                            quoteAssetData && quoteAssetData.price !== undefined && quoteAssetData.price !== 0) {
+                            const pairPrice = baseAssetData.price / quoteAssetData.price;
+                            let pairPriceChangePercent = null;
+                            if (baseAssetData.priceChangePercent !== undefined && baseAssetData.priceChangePercent !== null &&
+                                quoteAssetData.priceChangePercent !== undefined && quoteAssetData.priceChangePercent !== null) {
+                                const changeBaseFraction = baseAssetData.priceChangePercent / 100;
+                                const changeQuoteFraction = quoteAssetData.priceChangePercent / 100;
+                                if ((1 + changeQuoteFraction) !== 0) {
+                                    pairPriceChangePercent = (((1 + changeBaseFraction) / (1 + changeQuoteFraction)) - 1) * 100;
+                                }
+                            }
+                            newPairDataCache[pair.symbol] = {
+                                price: parseFloat(pairPrice.toFixed(pair.price_precision || 8)),
+                                priceChangePercent: pairPriceChangePercent !== null ? parseFloat(pairPriceChangePercent.toFixed(2)) : null,
+                                pricePrecision: pair.price_precision,
+                                quantityPrecision: pair.quantity_precision,
+                                source: 'CoinGeckoCalculated'
+                            };
+                            processedPairsCount++;
+                        }
+                    });
+                    marketDataCache.data = newPairDataCache;
+                    marketDataCache.lastUpdated = now;
+                    console.log(`[CacheCG] CoinGecko market data cache updated. Processed ${processedPairsCount} pair prices.`);
+                    if (processedPairsCount < activePairsDbRows.length) {
+                         console.warn(`[CacheCG] Could not process ${activePairsDbRows.length - processedPairsCount} pairs for CoinGecko data.`);
+                    }
+                } else {
+                    console.warn('[CacheCG] Failed to fetch any individual asset USD data from CoinGecko. CoinGecko cache may be empty or outdated.');
+                }
+            } else {
+                console.log('[CacheCG] No active market pairs in DB for CoinGecko cache.');
+                marketDataCache.data = {};
+                marketDataCache.lastUpdated = now;
+            }
+        } catch (error) {
+            console.error('[CacheCG] Critical error during CoinGecko market data cache update:', error);
+        } finally {
+            if (client) client.release();
+        }
+    } else {
+        console.log('[CacheCG] CoinGecko market data cache is fresh.');
+    }
+}
+// --- КІНЕЦЬ РОЗДІЛУ ДЛЯ РИНКОВИХ ДАНИХ CoinGecko ---
+
+
+// --- API Ендпоінти (ваші існуючі ендпоінти) ---
 
 // АУТЕНТИФІКАЦІЯ
 app.post('/auth/register', async (req, res) => {
@@ -133,9 +434,9 @@ app.post('/auth/register', async (req, res) => {
     if (!email || !password || password.length < 6) {
         return res.status(400).json({ success: false, message: 'Valid email and password (min 6 chars) are required.' });
     }
-
-    const client = await pool.connect();
+    let client;
     try {
+        client = await pool.connect();
         await client.query('BEGIN');
         const hashedPassword = await bcrypt.hash(password, 10);
         const userUid = crypto.randomBytes(8).toString('hex').toUpperCase();
@@ -154,14 +455,15 @@ app.post('/auth/register', async (req, res) => {
         await client.query('COMMIT');
         res.status(201).json({ success: true, message: 'User registered successfully! Initial assets created.', user: newUser });
     } catch (error) {
-        await client.query('ROLLBACK');
-        if (error.code === '23505') {
-            return res.status(409).json({ success: false, message: 'Email or username already exists.' });
+        if (client) await client.query('ROLLBACK');
+        if (error.code === '23505') { // Unique violation
+            const field = error.constraint && error.constraint.includes('email') ? 'Email' : 'Username';
+            return res.status(409).json({ success: false, message: `${field} already exists.` });
         }
         console.error("[Register] Error:", error);
         res.status(500).json({ success: false, message: 'Failed to register user.' });
     } finally {
-        client.release();
+        if (client) client.release();
     }
 });
 
@@ -180,9 +482,8 @@ app.post('/auth/login', async (req, res) => {
             const accessToken = jwt.sign(
                 { userId: user.id, email: user.email, username: user.username, uid: user.uid },
                 JWT_SECRET,
-                { expiresIn: '1h' }
+                { expiresIn: '1h' } // Рекомендується '1h' або '1d', не більше
             );
-            console.log('[Login] Generated Access Token:', accessToken);
             res.status(200).json({
                 success: true, message: 'Login successful!', token: accessToken,
                 user: { id: user.id, email: user.email, username: user.username, uid: user.uid }
@@ -196,8 +497,7 @@ app.post('/auth/login', async (req, res) => {
     }
 });
 
-app.post('/auth/logout', (req, res) => { // Можна додати authenticateToken, якщо логіка вимагає знати, хто виходить
-    // console.log('[Logout] User logout request. User from token (if provided):', req.user);
+app.post('/auth/logout', (req, res) => {
     res.status(200).json({ success: true, message: 'Logged out (client should clear token).' });
 });
 
@@ -205,81 +505,7 @@ app.post('/auth/logout', (req, res) => { // Можна додати authenticate
 // ПРОФІЛЬ, АКТИВИ, РИНКИ, ОРДЕРИ
 app.get('/api/profile', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
-    console.log(`[API GET /api/profile] Request for user ID: ${userId}`);
     try {
-        const sql = `SELECT id, email, username, uid, created_at, avatar_url FROM users WHERE id = $1`; // Додали avatar_url
-        const result = await pool.query(sql, [userId]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'User profile not found.' });
-        }
-        res.json({ success: true, profile: result.rows[0] });
-    } catch (error) {
-        console.error("[API GET /api/profile] Error:", error.message, error.stack);
-        res.status(500).json({ success: false, message: 'Server error fetching profile.' });
-    }
-});
-
-// НОВИЙ ЕНДПОІНТ: Оновлення нікнейму
-app.put('/api/profile/username', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    const { newUsername } = req.body;
-    console.log(`[API PUT /api/profile/username] User ID: ${userId}, New Username: ${newUsername}`);
-
-    if (!newUsername || newUsername.trim().length < 3) { // Проста валідація
-        return res.status(400).json({ success: false, message: 'Username must be at least 3 characters long.' });
-    }
-
-    try {
-        // Перевірка, чи нікнейм вже не зайнятий іншим користувачем (якщо username UNIQUE)
-        const checkSql = `SELECT id FROM users WHERE username = $1 AND id != $2`;
-        const checkResult = await pool.query(checkSql, [newUsername, userId]);
-        if (checkResult.rows.length > 0) {
-            return res.status(409).json({ success: false, message: 'Username already taken.' }); // 409 Conflict
-        }
-
-        const updateSql = `UPDATE users SET username = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, username, email, uid, avatar_url`;
-        const result = await pool.query(updateSql, [newUsername.trim(), userId]);
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({ success: false, message: 'User not found to update username.' });
-        }
-        // Повертаємо оновлений профіль (або тільки оновлене поле)
-        // Також потрібно оновити токен, якщо username є частиною payload токена!
-        const updatedUser = result.rows[0];
-        const newToken = jwt.sign(
-            { userId: updatedUser.id, email: updatedUser.email, username: updatedUser.username, uid: updatedUser.uid },
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        res.json({ success: true, message: 'Username updated successfully.', user: updatedUser, token: newToken });
-    } catch (error) {
-        console.error("[API PUT /api/profile/username] Error:", error);
-        // Перевірка на унікальність, якщо вона не була зроблена вище
-        if (error.code === '23505' && error.constraint && error.constraint.includes('username')) {
-             return res.status(409).json({ success: false, message: 'Username already taken (DB constraint).' });
-        }
-        res.status(500).json({ success: false, message: 'Server error updating username.' });
-    }
-});
-
-// НОВИЙ ЕНДПОІНТ: Оновлення URL аватара
-app.put('/api/profile/avatar', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    const { avatarUrl } = req.body; // Очікуємо URL аватара
-    console.log(`[API PUT /api/profile/avatar] User ID: ${userId}, Avatar URL: ${avatarUrl}`);
-
-    if (avatarUrl === undefined) { // Дозволяємо порожній рядок для видалення аватара, але не undefined
-        return res.status(400).json({ success: false, message: 'Avatar URL is required (can be an empty string to remove).' });
-    }
-
-    // Проста валідація URL (дуже базова)
-    if (avatarUrl !== '' && !avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://')) {
-        return res.status(400).json({ success: false, message: 'Invalid avatar URL format.' });
-    }
-    
-    try {
-        // Переконайтеся, що avatar_url є у SELECT
         const sql = `SELECT id, email, username, uid, created_at, avatar_url FROM users WHERE id = $1`;
         const result = await pool.query(sql, [userId]);
         if (result.rows.length === 0) {
@@ -287,11 +513,68 @@ app.put('/api/profile/avatar', authenticateToken, async (req, res) => {
         }
         res.json({ success: true, profile: result.rows[0] });
     } catch (error) {
-        console.error("[API GET /api/profile] Error:", error.message, error.stack);
+        console.error("[API GET /api/profile] Error:", error);
         res.status(500).json({ success: false, message: 'Server error fetching profile.' });
     }
 });
 
+app.put('/api/profile/username', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { newUsername } = req.body;
+    if (!newUsername || newUsername.trim().length < 3) {
+        return res.status(400).json({ success: false, message: 'Username must be at least 3 characters long.' });
+    }
+    try {
+        const checkSql = `SELECT id FROM users WHERE username = $1 AND id != $2`;
+        const checkResult = await pool.query(checkSql, [newUsername, userId]);
+        if (checkResult.rows.length > 0) {
+            return res.status(409).json({ success: false, message: 'Username already taken.' });
+        }
+        const updateSql = `UPDATE users SET username = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, username, email, uid, avatar_url`;
+        const result = await pool.query(updateSql, [newUsername.trim(), userId]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        const updatedUser = result.rows[0];
+        const newToken = jwt.sign(
+            { userId: updatedUser.id, email: updatedUser.email, username: updatedUser.username, uid: updatedUser.uid },
+            JWT_SECRET, { expiresIn: '1h' }
+        );
+        res.json({ success: true, message: 'Username updated.', user: updatedUser, token: newToken });
+    } catch (error) {
+        console.error("[API PUT /api/profile/username] Error:", error);
+        if (error.code === '23505' && error.constraint && error.constraint.includes('username')) {
+             return res.status(409).json({ success: false, message: 'Username already taken (DB constraint).' });
+        }
+        res.status(500).json({ success: false, message: 'Server error updating username.' });
+    }
+});
+
+// Цей ендпоінт у вас був дубльований з /api/profile, виправляю на оновлення аватара
+app.put('/api/profile/avatar', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { avatarUrl } = req.body;
+
+    if (avatarUrl === undefined) {
+        return res.status(400).json({ success: false, message: 'Avatar URL is required (can be empty string to remove).' });
+    }
+    if (avatarUrl !== '' && (!avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://'))) {
+         // Дуже базова валідація, можна покращити
+        return res.status(400).json({ success: false, message: 'Invalid avatar URL format.' });
+    }
+
+    try {
+        const updateSql = `UPDATE users SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING avatar_url`;
+        const result = await pool.query(updateSql, [avatarUrl, userId]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        res.json({ success: true, message: 'Avatar updated successfully.', avatarUrl: result.rows[0].avatar_url });
+    } catch (error) {
+        console.error("[API PUT /api/profile/avatar] Error:", error);
+        res.status(500).json({ success: false, message: 'Server error updating avatar.' });
+    }
+});
 
 app.get('/api/balance', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
@@ -299,14 +582,35 @@ app.get('/api/balance', authenticateToken, async (req, res) => {
     try {
         const assetsSql = `SELECT coin_symbol, total_balance FROM assets WHERE user_id = $1`;
         const assetsResult = await pool.query(assetsSql, [userId]);
+
         for (const asset of assetsResult.rows) {
             let priceInUSD = 0;
             const assetSymbolUpper = asset.coin_symbol.toUpperCase();
-            if (['USDT', 'USDC', 'BUSD'].includes(assetSymbolUpper)) {
+
+            if (['USDT', 'USDC', 'BUSD'].includes(assetSymbolUpper)) { // Стейблкоіни
                 priceInUSD = 1;
             } else {
-                const pairSymbolUSDT = `${assetSymbolUpper}USDT`;
-                priceInUSD = currentMarketData[pairSymbolUSDT]?.price || 0;
+                // Спочатку шукаємо ціну в currentMarketData (Binance WS)
+                const pairSymbolUSDT_Binance = `${assetSymbolUpper}USDT`;
+                const binanceData = currentMarketData[pairSymbolUSDT_Binance];
+
+                if (binanceData && binanceData.price !== undefined) {
+                    priceInUSD = parseFloat(binanceData.price);
+                } else {
+                    // Якщо немає в Binance, шукаємо в CoinGecko кеші (ціна пари відносно USDT)
+                    const pairSymbolUSDT_CoinGecko = `${assetSymbolUpper}USDT`; // Наприклад, BTCUSDT
+                    const coingeckoPairData = marketDataCache.data[pairSymbolUSDT_CoinGecko];
+                    if (coingeckoPairData && coingeckoPairData.price !== undefined) {
+                        priceInUSD = parseFloat(coingeckoPairData.price);
+                    } else {
+                        // Якщо немає пари до USDT, але є пряма ціна активу в USD з CoinGecko
+                        // (це менш ймовірно, оскільки ми розраховуємо пари)
+                        // Цю логіку можна розширити, якщо fetchIndividualAssetDataFromCoinGecko
+                        // буде зберігати і прямі ціни активів у якомусь окремому кеші.
+                        // Наразі marketDataCache.data зберігає ціни ПАР.
+                        console.warn(`[API /balance] Price not found for ${assetSymbolUpper} in Binance WS or CoinGecko USDT pair cache.`);
+                    }
+                }
             }
             totalUSDEquivalent += parseFloat(asset.total_balance) * priceInUSD;
         }
@@ -322,28 +626,40 @@ app.get('/api/assets', authenticateToken, async (req, res) => {
     try {
         const sql = `
             SELECT a.id, a.coin_symbol, COALESCE(mp.name, a.coin_symbol) as coin_name,
-                   a.total_balance, a.available_balance, a.in_order_balance
+                   a.total_balance, a.available_balance, a.in_order_balance, mp.price_precision as asset_price_precision
             FROM assets a
-            LEFT JOIN market_pairs mp ON UPPER(a.coin_symbol) = UPPER(mp.base_asset) OR UPPER(a.coin_symbol) = UPPER(mp.symbol) -- Адаптуйте JOIN
+            LEFT JOIN market_pairs mp ON UPPER(a.coin_symbol) = UPPER(mp.base_asset) AND UPPER(mp.quote_asset) = 'USDT' -- Припускаємо, що ціна в USD через USDT пару
             WHERE a.user_id = $1 ORDER BY a.coin_symbol;
         `;
         const result = await pool.query(sql, [userId]);
         const assetsWithDetails = result.rows.map(asset => {
             let valueInUSD = 0;
             const assetSymbolUpper = asset.coin_symbol.toUpperCase();
+
              if (['USDT', 'USDC', 'BUSD'].includes(assetSymbolUpper)) {
                 valueInUSD = parseFloat(asset.total_balance);
             } else {
-                const pairSymbolUSDT = `${assetSymbolUpper}USDT`;
-                const livePrice = currentMarketData[pairSymbolUSDT]?.price;
+                const pairSymbolUSDT_Binance = `${assetSymbolUpper}USDT`;
+                const binanceData = currentMarketData[pairSymbolUSDT_Binance];
+                let livePrice;
+
+                if (binanceData && binanceData.price !== undefined) {
+                    livePrice = parseFloat(binanceData.price);
+                } else {
+                    const pairSymbolUSDT_CoinGecko = `${assetSymbolUpper}USDT`;
+                    const coingeckoPairData = marketDataCache.data[pairSymbolUSDT_CoinGecko];
+                    if (coingeckoPairData && coingeckoPairData.price !== undefined) {
+                        livePrice = parseFloat(coingeckoPairData.price);
+                    }
+                }
                 if (livePrice) valueInUSD = parseFloat(asset.total_balance) * livePrice;
             }
             return {
                 ...asset,
-                total_balance: parseFloat(asset.total_balance).toFixed(8),
+                total_balance: parseFloat(asset.total_balance).toFixed(8), // Точність для балансів
                 available_balance: parseFloat(asset.available_balance).toFixed(8),
                 in_order_balance: parseFloat(asset.in_order_balance).toFixed(8),
-                value_usd: valueInUSD.toFixed(2)
+                value_usd: valueInUSD.toFixed(2) // USD зазвичай 2 знаки
             };
         });
         res.json({ success: true, assets: assetsWithDetails });
@@ -355,6 +671,7 @@ app.get('/api/assets', authenticateToken, async (req, res) => {
 
 app.get('/api/assets/base', tryAuthenticateToken, async (req, res) => {
     try {
+        // Вибираємо унікальні базові активи з активних пар
         const sql = `SELECT DISTINCT mp.base_asset FROM market_pairs mp WHERE mp.is_active = TRUE ORDER BY mp.base_asset;`;
         const result = await pool.query(sql);
         res.json({ success: true, baseAssets: result.rows.map(r => r.base_asset) });
@@ -368,67 +685,57 @@ app.get('/api/markets', tryAuthenticateToken, async (req, res) => {
     const userId = req.user ? req.user.userId : null;
     const { baseAsset, popularOnly } = req.query;
 
-    // Переконуємося, що кеш актуальний перед тим, як його використовувати
-    // Це може затримати перший запит, якщо кеш оновлюється, але забезпечить свіжі дані
-    // Для кращої продуктивності, ensureMarketDataCache може працювати у фоні,
-    // а тут ми просто читаємо поточний стан кешу.
-    // Поки що зробимо так для простоти.
-    await ensureMarketDataCache(); // Чекаємо, якщо кеш оновлюється
+    // НЕ викликаємо await ensureMarketDataCache() тут, щоб не блокувати запит.
+    // Кеш оновлюється у фоні через setInterval.
 
     try {
         let queryParams = [];
         let paramIndex = 1;
-        let selectIsFavourite = `FALSE as "isFavourite"`;
+        let selectIsFavourite = `FALSE as "isFavourite"`; // За замовчуванням не улюблена
         if (userId) {
-            selectIsFavourite = `EXISTS (SELECT 1 FROM user_favourite_markets ufm WHERE ufm.user_id = $${paramIndex++} AND ufm.market_pair_id = mp.id) as "isFavourite"`;
+            // Якщо користувач авторизований, перевіряємо, чи пара в його улюблених
+            selectIsFavourite = `EXISTS (SELECT 1 FROM user_favourite_markets ufm WHERE ufm.user_id = $${paramIndex} AND ufm.market_pair_id = mp.id) as "isFavourite"`;
             queryParams.push(userId);
+            paramIndex++;
         }
-        // Додаємо binance_symbol, якщо він у вас є і використовується для currentMarketData з Binance WS
+        
         const baseSelect = `
             SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name, 
-                   mp.is_popular, ${selectIsFavourite}, 
-                   COALESCE(mp.binance_symbol, mp.symbol) as effective_symbol_for_live_data
+                   mp.is_popular, ${selectIsFavourite}, mp.price_precision, mp.quantity_precision,
+                   COALESCE(mp.binance_symbol, mp.symbol) as effective_symbol_for_live_data 
             FROM market_pairs mp
         `;
         let conditions = ["mp.is_active = TRUE"];
         if (popularOnly === 'true') conditions.push("mp.is_popular = TRUE");
-        else if (baseAsset) {
+        else if (baseAsset && typeof baseAsset === 'string' && baseAsset.trim() !== '') {
             conditions.push(`mp.base_asset = $${paramIndex++}`);
-            queryParams.push(baseAsset);
+            queryParams.push(baseAsset.toUpperCase()); // Приводимо до верхнього регістру для порівняння
         }
-        const sql = `${baseSelect} WHERE ${conditions.join(' AND ')} ORDER BY mp.display_order, mp.symbol;`; // Додав display_order для сортування
+        const sql = `${baseSelect} WHERE ${conditions.join(' AND ')} ORDER BY mp.display_order, mp.symbol;`;
         
-        const client = await pool.connect();
-        let result;
-        try {
-            result = await client.query(sql, queryParams);
-        } finally {
-            client.release();
-        }
+        const result = await pool.query(sql, queryParams);
         
         const marketsWithLiveData = result.rows.map(pair => {
-            // Спочатку спробуємо дані з вашого `currentMarketData` (якщо це WebSocket від Binance)
-            // Потім з нашого нового `marketDataCache` (який отримує дані, наприклад, з CoinGecko)
-            const binanceLiveData = currentMarketData[pair.effective_symbol_for_live_data];
-            const cachedExternalData = marketDataCache.data[pair.symbol]; // Ключ в кеші - це ваш mp.symbol
+            const binanceLiveData = currentMarketData[pair.effective_symbol_for_live_data]; // Дані з Binance WS
+            const cachedExternalData = marketDataCache.data[pair.symbol]; // Дані з CoinGecko кешу
 
-            let livePrice, liveChange, liveVolume;
+            let livePrice, liveChangePercent, liveVolume;
 
             if (binanceLiveData && binanceLiveData.price !== undefined) {
-                livePrice = binanceLiveData.price;
-                liveChange = binanceLiveData.priceChangePercent;
-                liveVolume = binanceLiveData.quoteVolume;
+                livePrice = parseFloat(binanceLiveData.price);
+                liveChangePercent = parseFloat(binanceLiveData.priceChangePercent); // Або інше поле, якщо назва інша
+                liveVolume = parseFloat(binanceLiveData.quoteVolume); // Або інше поле
             } else if (cachedExternalData && cachedExternalData.price !== undefined) {
-                livePrice = cachedExternalData.price;
-                liveChange = cachedExternalData.priceChangePercent;
-                // Об'єм може бути недоступний або мати іншу назву в CoinGecko
+                livePrice = cachedExternalData.price; // Вже parseFloat при збереженні
+                liveChangePercent = cachedExternalData.priceChangePercent; // Вже parseFloat
+                // Об'єм з CoinGecko може бути недоступний або мати іншу структуру
             }
 
             return { 
                 ...pair, 
-                currentPrice: livePrice !== undefined ? parseFloat(livePrice).toFixed(pair.price_precision || 2) : null, // Додав price_precision
-                change24hPercent: liveChange !== undefined ? parseFloat(liveChange).toFixed(2) : null,
-                volume24h: liveVolume !== undefined ? parseFloat(liveVolume).toFixed(2) : null
+                currentPrice: livePrice !== undefined ? livePrice.toFixed(pair.price_precision || 2) : null,
+                change24hPercent: liveChangePercent !== undefined ? liveChangePercent.toFixed(2) : null,
+                volume24h: liveVolume !== undefined ? liveVolume.toFixed(2) : null // Припускаємо, що об'єм в quote валюті
             };
         });
         res.json({ success: true, markets: marketsWithLiveData });
@@ -438,142 +745,93 @@ app.get('/api/markets', tryAuthenticateToken, async (req, res) => {
     }
 });
 
-// --- Ендпоінти для Улюблених Ринкових Пар ---
 
+// --- Ендпоінти для Улюблених Ринкових Пар ---
 app.get('/api/markets/favourites', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
-    console.log(`[API GET /api/markets/favourites] Request for user ID: ${userId}`);
-    
-    await ensureMarketDataCache(); // Переконуємося, що кеш актуальний
-
     try {
         const sql = `
-            SELECT 
-                mp.id, 
-                mp.symbol, 
-                mp.base_asset, 
-                mp.quote_asset, 
-                mp.name,
-                COALESCE(mp.binance_symbol, mp.symbol) as effective_symbol_for_live_data,
-                mp.price_precision -- Додаємо точність ціни
-                -- Можна додати інші поля з market_pairs, якщо потрібно
+            SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name, mp.price_precision, mp.quantity_precision,
+                   COALESCE(mp.binance_symbol, mp.symbol) as effective_symbol_for_live_data
             FROM market_pairs mp
             JOIN user_favourite_markets ufm ON mp.id = ufm.market_pair_id
             WHERE ufm.user_id = $1 AND mp.is_active = TRUE
             ORDER BY mp.symbol;
         `;
-        
-        const client = await pool.connect();
-        let result;
-        try {
-            result = await client.query(sql, [userId]);
-        } finally {
-            client.release();
-        }
-
+        const result = await pool.query(sql, [userId]);
         const marketsWithLiveData = result.rows.map(pair => {
             const binanceLiveData = currentMarketData[pair.effective_symbol_for_live_data];
             const cachedExternalData = marketDataCache.data[pair.symbol];
             let livePrice, liveChange;
 
             if (binanceLiveData && binanceLiveData.price !== undefined) {
-                livePrice = binanceLiveData.price;
-                liveChange = binanceLiveData.priceChangePercent;
+                livePrice = parseFloat(binanceLiveData.price);
+                liveChange = parseFloat(binanceLiveData.priceChangePercent);
             } else if (cachedExternalData && cachedExternalData.price !== undefined) {
                 livePrice = cachedExternalData.price;
                 liveChange = cachedExternalData.priceChangePercent;
             }
-
             return {
                 ...pair,
-                isFavourite: true, // Всі пари тут є улюбленими
-                currentPrice: livePrice !== undefined ? parseFloat(livePrice).toFixed(pair.price_precision || 2) : null,
-                change24hPercent: liveChange !== undefined ? parseFloat(liveChange).toFixed(2) : null,
+                isFavourite: true,
+                currentPrice: livePrice !== undefined ? livePrice.toFixed(pair.price_precision || 2) : null,
+                change24hPercent: liveChange !== undefined ? liveChange.toFixed(2) : null,
             };
         });
-
-        console.log(`[API GET /api/markets/favourites] Found ${marketsWithLiveData.length} favourite markets for user ID: ${userId}`);
         res.json({ success: true, markets: marketsWithLiveData });
     } catch (error) {
-        console.error("[API GET /api/markets/favourites] Error:", error.message, error.stack);
+        console.error("[API GET /api/markets/favourites] Error:", error);
         res.status(500).json({ success: false, message: 'Server error fetching favourite markets.' });
     }
 });
 
-// ДОДАВАННЯ ПАРИ ДО УЛЮБЛЕНИХ
 app.post('/api/favourites', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
-    const { marketPairId } = req.body; // Очікуємо ID пари з market_pairs
-    console.log(`[API POST /api/favourites] User ID: ${userId}, Attempting to add MarketPairID: ${marketPairId}`);
-
+    const { marketPairId } = req.body;
     if (!marketPairId || isNaN(parseInt(marketPairId))) {
         return res.status(400).json({ success: false, message: 'Valid Market Pair ID is required.' });
     }
     const parsedMarketPairId = parseInt(marketPairId, 10);
-
     try {
-        // Перевіряємо, чи існує така пара в market_pairs
         const pairCheckSql = `SELECT id FROM market_pairs WHERE id = $1 AND is_active = TRUE`;
         const pairCheckResult = await pool.query(pairCheckSql, [parsedMarketPairId]);
         if (pairCheckResult.rows.length === 0) {
-            console.log(`[API POST /api/favourites] Active market pair with ID ${parsedMarketPairId} not found.`);
             return res.status(404).json({ success: false, message: 'Active market pair not found.' });
         }
-
-        // Додаємо до улюблених, ON CONFLICT нічого не робить, якщо вже існує
-        const sql = `
-            INSERT INTO user_favourite_markets (user_id, market_pair_id) 
-            VALUES ($1, $2) 
-            ON CONFLICT (user_id, market_pair_id) DO NOTHING 
-            RETURNING *; 
-        `;
-        // Використовуємо RETURNING * щоб перевірити, чи був вставлений новий запис
+        const sql = `INSERT INTO user_favourite_markets (user_id, market_pair_id) VALUES ($1, $2) ON CONFLICT (user_id, market_pair_id) DO NOTHING RETURNING *;`;
         const result = await pool.query(sql, [userId, parsedMarketPairId]);
-
         if (result.rows.length > 0) {
-            console.log(`[API POST /api/favourites] Market pair ${parsedMarketPairId} added to favourites for user ${userId}`);
             res.status(201).json({ success: true, message: 'Market pair added to favourites.', favourite: result.rows[0] });
         } else {
-            console.log(`[API POST /api/favourites] Market pair ${parsedMarketPairId} was already in favourites for user ${userId}`);
             res.status(200).json({ success: true, message: 'Market pair was already in favourites.' });
         }
     } catch (error) {
-        console.error("[API POST /api/favourites] Error:", error.message, error.stack);
+        console.error("[API POST /api/favourites] Error:", error);
         res.status(500).json({ success: false, message: 'Server error adding to favourites.' });
     }
 });
 
-// ВИДАЛЕННЯ ПАРИ З УЛЮБЛЕНИХ
 app.delete('/api/favourites/:marketPairId', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const marketPairId = parseInt(req.params.marketPairId, 10);
-    console.log(`[API DELETE /api/favourites] User ID: ${userId}, Attempting to remove MarketPairID: ${marketPairId}`);
-
     if (isNaN(marketPairId)) {
         return res.status(400).json({ success: false, message: 'Invalid Market Pair ID.' });
     }
-
     try {
         const sql = `DELETE FROM user_favourite_markets WHERE user_id = $1 AND market_pair_id = $2 RETURNING *`;
         const result = await pool.query(sql, [userId, marketPairId]);
-
-        if (result.rowCount > 0) { // rowCount показує кількість видалених рядків
-            console.log(`[API DELETE /api/favourites] Market pair ${marketPairId} removed from favourites for user ${userId}`);
+        if (result.rowCount > 0) {
             res.status(200).json({ success: true, message: 'Market pair removed from favourites.' });
         } else {
-            console.log(`[API DELETE /api/favourites] Favourite market pair ${marketPairId} not found for user ${userId} or already removed`);
             res.status(404).json({ success: false, message: 'Favourite market pair not found or already removed.' });
         }
     } catch (error) {
-        console.error("[API DELETE /api/favourites] Error:", error.message, error.stack);
+        console.error("[API DELETE /api/favourites] Error:", error);
         res.status(500).json({ success: false, message: 'Server error removing from favourites.' });
     }
 });
 
-
-// --- Ендпоінти для Ордерів ---
-
-// ОТРИМАННЯ ВІДКРИТИХ ОРДЕРІВ КОРИСТУВАЧА
+// --- Ендпоінти для Ордерів (скорочено, залиште вашу повну реалізацію) ---
 app.get('/api/orders/open', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     console.log(`[API GET /api/orders/open] Request for user ID: ${userId}`);
@@ -602,8 +860,6 @@ app.get('/api/orders/open', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching open orders.' });
     }
 });
-
-// ОТРИМАННЯ ІСТОРІЇ ОРДЕРІВ КОРИСТУВАЧА (з фільтрацією)
 app.get('/api/orders/history', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const { dateFrom, dateTo, pair, type, side } = req.query; // Отримуємо параметри фільтра
@@ -667,243 +923,38 @@ app.get('/api/orders/history', authenticateToken, async (req, res) => {
     }
 });
 
-const axios = require('axios'); // Популярна бібліотека для HTTP запитів
-
-// --- Глобальні змінні та кеш ---
-let marketDataCache = { // Простий in-memory кеш
-    data: {},           // Тут будуть дані { 'BTC/USDT': { price: ..., change24h: ... }, ... }
-    lastUpdated: 0,
-    cacheDuration: 5 * 60 * 1000 // 5 хвилин в мілісекундах
-};
-const KEY_BASE_ASSETS_FOR_COINGECKO = [
-    'BTC',
-    'ETH',
-    'BNB',
-    'SOL',
-    'XRP',
-    'ADA',
-    'DOGE',
-    'USDT', // USDT важливий, якщо ви хочете знати його ціну до USD (буде ~1) для розрахунків
-    'AVAX',
-    'DOT',
-    'MATIC',
-    'LINK',
-    'TRX',
-    'SHIB', // Хоча SHIB - мемкоін, його ціна може бути цікава
-    'LTC',
-    'ATOM',
-    'NEAR',
-    'FTM'
-];
-
-const COINGECKO_IDS_MAP = { // Мапінг ваших символів на CoinGecko IDs
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'USDT': 'tether', // Потрібен, якщо ви десь використовуєте USDT як базовий актив для запиту
-    'BNB': 'binancecoin',
-    'SOL': 'solana',
-    'XRP': 'ripple',
-    'ADA': 'cardano',
-    'DOGE': 'dogecoin',
-    'AVAX': 'avalanche-2',
-    'DOT': 'polkadot',
-    'TRX': 'tron',
-    'SHIB': 'shiba-inu',
-    'MATIC': 'matic-network', // або 'polygon-pos' - перевірте актуальний ID на CoinGecko
-    'LTC': 'litecoin',
-    'LINK': 'chainlink',
-    'UNI': 'uniswap',
-    'ATOM': 'cosmos',
-    'NEAR': 'near',
-    'FTM': 'fantom',
-    'ICP': 'internet-computer',
-    'ETC': 'ethereum-classic',
-    'XLM': 'stellar',
-    'ALGO': 'algorand',
-    'VET': 'vechain',
-    'FIL': 'filecoin',
-    'HBAR': 'hedera-hashgraph', // Або 'hedera'
-    'EOS': 'eos',
-    'AAVE': 'aave',
-    'XTZ': 'tezos',
-    'SAND': 'the-sandbox',
-    'MANA': 'decentraland',
-    'AXS': 'axie-infinity',
-    'THETA': 'theta-token',
-    'GRT': 'the-graph',
-    'EGLD': 'elrond-erd-2', // Або 'multiversx'
-    'MKR': 'maker',
-    'KSM': 'kusama',
-    'WAVES': 'waves',
-    'ZEC': 'zcash',
-    'DASH': 'dash',
-    'NEO': 'neo',
-    'CHZ': 'chiliz',
-    'ENJ': 'enjincoin',
-    'COMP': 'compound-governance-token',
-    'SNX': 'havven', // Або 'synthetix-network-token'
-    'SUSHI': 'sushi',
-    'YFI': 'yearn-finance',
-    'APT': 'aptos',
-    'ARB': 'arbitrum',
-    'OP': 'optimism',
-    'SUI': 'sui',
-    'PEPE': 'pepe',
-    'FET': 'fetch-ai',
-    'RNDR': 'render-token',
-    'INJ': 'injective-protocol', // Або 'injective'
-    'TIA': 'celestia',
-    'IMX': 'immutable-x',
-    'GALA': 'gala',
-    'MINA': 'mina-protocol',
-    'FLOW': 'flow',
-    'CRV': 'curve-dao-token',
-    'LDO': 'lido-dao',
-    'RUNE': 'thorchain',
-    'CAKE': 'pancakeswap-token',
-    'DYDX': 'dydx',
-    '1INCH': '1inch',
-    'APE': 'apecoin',
-    'STX': 'stacks', // Раніше був 'blockstack'
-    'SEI': 'sei-network', // Або 'sei'
-    'FLOKI': 'floki',
-    'BONK': 'bonk',
-    'TWT': 'trust-wallet-token',
-    'QNT': 'quant-network',
-    'KAS': 'kaspa',
-    'ORDI': 'ordinals',
-    'WLD': 'worldcoin-wld',
-    'PYTH': 'pyth-network',
-    'ROSE': 'oasis-network',
-    'ONE': 'harmony',
-    'CELO': 'celo',
-    'KAVA': 'kava',
-    'ZIL': 'zilliqa',
-    'GMT': 'stepn',
-    'JASMY': 'jasmycoin', // Або 'jasmy'
-    'WOO': 'woo-network',
-};
-
-// Функція для отримання даних з CoinGecko для списку пар
-async function fetchExternalMarketData(baseAssetsToFetch) {
-    if (!Array.isArray(baseAssetsToFetch)) {
-        console.error('[ExternalData] FATAL: baseAssetsToFetch is not an array!', baseAssetsToFetch);
-        return {};
-    }
-    console.log(`[ExternalData] Attempting to fetch market data for ${baseAssetsToFetch.length} key base assets: ${baseAssetsToFetch.filter(s => typeof s === 'string').join(', ')}`);
-
-    const idsToFetch = new Set();
-    const cgIdToSymbolMap = {};
-
-    baseAssetsToFetch.forEach(baseAssetSymbol => {
-        // Додаємо перевірку, чи baseAssetSymbol є рядком
-        if (typeof baseAssetSymbol !== 'string') {
-            console.warn(`[ExternalData] Encountered non-string element in baseAssetsToFetch:`, baseAssetSymbol, `- Skipping.`);
-            return; // Пропускаємо цей елемент
-        }
-
-        const baseAssetUpper = baseAssetSymbol.toUpperCase(); // Тепер безпечніше
-        const cgId = COINGECKO_IDS_MAP[baseAssetUpper];
-        if (cgId) {
-            idsToFetch.add(cgId);
-            cgIdToSymbolMap[cgId] = baseAssetUpper;
-        } else {
-            console.warn(`[ExternalData] No CoinGecko ID found for key base asset: ${baseAssetUpper} in COINGECKO_IDS_MAP.`);
-        }
-    });
-
-    if (idsToFetch.size === 0) {
-        console.log('[ExternalData] No valid CoinGecko IDs to fetch from key base assets list after filtering.');
-        return {};
-    }
-
-    const idsQueryParam = Array.from(idsToFetch).join(',');
-    const vsCurrency = 'usd';
-    const coingeckoUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${idsQueryParam}&vs_currencies=${vsCurrency}&include_24hr_change=true`;
-    console.log(`[ExternalData] CoinGecko request URL: ${coingeckoUrl}`);
-
+// --- Ініціалізація та періодичне оновлення кешу ринкових даних CoinGecko ---
+(async () => {
+    // 1. CoinGecko Cache
     try {
-        const response = await axios.get(coingeckoUrl);
-        const coingeckoData = response.data;
-        const processedData = {};
-
-        for (const cgId in coingeckoData) {
-            if (coingeckoData.hasOwnProperty(cgId) && cgIdToSymbolMap[cgId]) {
-                const baseAssetSymbol = cgIdToSymbolMap[cgId];
-                const dataForCgId = coingeckoData[cgId];
-
-                if (dataForCgId && dataForCgId[vsCurrency] !== undefined) {
-                    processedData[baseAssetSymbol] = {
-                        price: dataForCgId[vsCurrency],
-                        priceChangePercent: dataForCgId[`${vsCurrency}_24h_change`]
-                    };
-                } else {
-                    console.warn(`[ExternalData] No price data for ${vsCurrency} found for cgId: ${cgId} (mapped to ${baseAssetSymbol})`);
-                }
-            }
-        }
-        console.log(`[ExternalData] Successfully fetched and processed data for ${Object.keys(processedData).length} key base assets. Sample:`, JSON.stringify(Object.entries(processedData).slice(0,2), null, 2));
-        return processedData;
-    } catch (error) {
-        console.error('[ExternalData] Error during fetching from CoinGecko:', error.message);
-        if (error.response) {
-            console.error('[ExternalData] CoinGecko Response Status:', error.response.status);
-            // console.error('[ExternalData] CoinGecko Response Data:', JSON.stringify(error.response.data, null, 2)); // Може бути багато даних
-            if (error.response.status === 429) {
-                console.warn('[ExternalData] CoinGecko API rate limit hit. Request was for: ' + idsQueryParam);
-            }
-        } else if (error.request) {
-            console.error('[ExternalData] No response received from CoinGecko. Request was for: ' + idsQueryParam);
-        } else {
-            console.error('[ExternalData] Error setting up CoinGecko request:', error.message);
-        }
-        return {};
+        console.log('[Startup] Performing initial CoinGecko market data cache update...');
+        await ensureMarketDataCache(true);
+    } catch (initialCacheError) {
+        console.error("[Startup] Error during initial CoinGecko market data cache update:", initialCacheError);
     }
-}
 
-async function ensureMarketDataCache(forceUpdate = false) {
-    const now = Date.now();
-    if (forceUpdate || !marketDataCache.lastUpdated || (now - marketDataCache.lastUpdated > marketDataCache.cacheDuration)) {
-        console.log('[Cache] Market data cache is stale or missing. Updating...');
+    setInterval(async () => {
         try {
-            // Отримуємо всі активні пари з БД для формування запиту до CoinGecko
-            const client = await pool.connect();
-            let activePairs = [];
-            try {
-                const result = await client.query("SELECT symbol, base_asset, quote_asset FROM market_pairs WHERE is_active = TRUE");
-                activePairs = result.rows;
-            } finally {
-                client.release();
-            }
+            await ensureMarketDataCache();
+        } catch (intervalError) {
+             console.error("[IntervalCacheUpdateCG] Error during scheduled CoinGecko market data cache update:", intervalError);
+        }
+    }, marketDataCache.cacheDuration); // Для CoinGecko
 
-            if (activePairs.length > 0) {
-                const externalData = await fetchExternalMarketData(activePairs);
-                if (Object.keys(externalData).length > 0) {
-                    marketDataCache.data = externalData;
-                    marketDataCache.lastUpdated = now;
-                    console.log('[Cache] Market data cache updated successfully.');
-                } else {
-                    console.warn('[Cache] Failed to update market data cache from external source. Old data might be used.');
-                    // Не оновлюємо lastUpdated, щоб спробувати ще раз при наступному запиті
-                }
-            } else {
-                console.log('[Cache] No active market pairs found to update cache.');
-                marketDataCache.data = {}; // Очищаємо, якщо немає активних пар
-                marketDataCache.lastUpdated = now;
-            }
-        } catch (error) {
-            console.error('[Cache] Error during market data cache update process:', error);
-            // Також не оновлюємо lastUpdated
+    // 2. Binance WebSocket (якщо увімкнено)
+    if (process.env.ENABLE_BINANCE_WS === 'true') {
+        console.log('[Startup] ENABLE_BINANCE_WS is true. Initializing Binance WebSocket connection...');
+        try {
+            await connectToBinanceMarketStreams(); // Перший запуск
+            // Можна додати періодичну перевірку/оновлення списку підписок, якщо пари в БД часто змінюються
+            // setInterval(connectToBinanceMarketStreams, 60 * 60 * 1000); // Наприклад, кожну годину
+        } catch (wsError) {
+            console.error('[Startup] Error initializing Binance WebSocket:', wsError);
         }
     } else {
-        console.log('[Cache] Market data cache is fresh.');
+        console.log('[Startup] ENABLE_BINANCE_WS is not set to true. Binance WebSocket will not be started.');
     }
-}
-
-// Викликаємо оновлення кешу при старті сервера і періодично
-ensureMarketDataCache(true); // Примусове оновлення при старті
-setInterval(() => ensureMarketDataCache(), marketDataCache.cacheDuration); // Періодичне оновлення
-
+})();
 
 
 // --- Обслуговування HTML сторінок ---
@@ -919,21 +970,27 @@ htmlPages.forEach(page => {
 });
 
 // --- Запуск сервера ---
-app.listen(port, () => {
-    console.log(`YuMa Backend Server is running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => { // Слухаємо на 0.0.0.0 для Render
+    console.log(`YuMa Backend Server is running on http://localhost:${port} (externally via Render)`);
 });
 
 // --- Обробка закриття сервера ---
 async function gracefulShutdown() {
     console.log('Received signal to terminate, shutting down gracefully.');
+    // Тут можна додати закриття WebSocket з'єднань, якщо вони є
     try {
-        if (pool) await pool.end();
-        console.log('PostgreSQL pool has ended.');
+        if (pool) {
+            console.log('Attempting to end PostgreSQL pool...');
+            await pool.end();
+            console.log('PostgreSQL pool has ended.');
+        }
         process.exit(0);
     } catch (e) {
         console.error('Error during shutdown:', e.stack);
         process.exit(1);
     }
 }
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown); // Ctrl+C
+process.on('SIGTERM', gracefulShutdown); // Сигнал від Render для зупинки
+
+module.exports = app; // Для можливих тестів
