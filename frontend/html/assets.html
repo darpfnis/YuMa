@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
-    <link rel="stylesheet" href="../css/assets_custom.css">
+    <link rel="stylesheet" href="../css/assets_custom.css">  
 </head>
 <body>
     <header>
@@ -61,7 +61,6 @@
         <main class="main-content-profile">
             <section class="content-header">
                 <h2>My Assets</h2>
-                <!-- <button class="action-button primary-action">View Transaction History</button> -->
             </section>
 
             <section class="profile-card asset-overview">
@@ -119,20 +118,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentlyDisplayingAll = false;
     let binanceWebSocket = null;
     let subscribedSymbols = new Set();
-    let wsReconnectInterval = null; // For managing reconnection attempts
+    let wsReconnectInterval = null;
 
-    // --- WebSocket Connection and Management ---
     function connectBinanceWebSocket() {
         if (binanceWebSocket && (binanceWebSocket.readyState === WebSocket.OPEN || binanceWebSocket.readyState === WebSocket.CONNECTING)) {
-            // console.log('[AssetsPage] Binance WebSocket is already open or connecting.');
             return;
         }
-        
         if (wsReconnectInterval) {
             clearInterval(wsReconnectInterval);
             wsReconnectInterval = null;
         }
-
         console.log('[AssetsPage] Attempting to connect to Binance WebSocket...');
         const wsUrl = 'wss://stream.binance.com:9443/ws';
         binanceWebSocket = new WebSocket(wsUrl);
@@ -154,7 +149,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (message.e === '24hrTicker') {
                     const symbol = message.s; 
                     const price = parseFloat(message.c);
-
                     let assetUpdated = false;
                     allFetchedAssets = allFetchedAssets.map(asset => {
                         const pairSymbol = `${asset.coin_symbol.toUpperCase()}USDT`;
@@ -167,23 +161,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                         return asset;
                     });
-
                     if (assetUpdated) {
                         updateSpecificAssetRowAndTotal(symbol.replace('USDT',''), price); 
                         recalculateAndRenderTotalPortfolioValue(); 
                     }
-                } else if (message.result === null && message.id) {
-                    // console.log(`[AssetsPage] WebSocket ack ID ${message.id}`);
                 }
             } catch (error) {
                 console.error('[AssetsPage] Error processing WebSocket message:', error, event.data);
             }
         };
-
-        binanceWebSocket.onerror = (error) => {
-            console.error('[AssetsPage] Binance WebSocket error:', error);
-        };
-
+        binanceWebSocket.onerror = (error) => console.error('[AssetsPage] Binance WebSocket error:', error);
         binanceWebSocket.onclose = (event) => {
             console.log(`[AssetsPage] Binance WebSocket connection closed. Code: ${event.code}, Reason: '${event.reason}'`);
             binanceWebSocket = null;
@@ -209,9 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const asset = allFetchedAssets.find(a => a.coin_symbol.toUpperCase() === baseAssetSymbol.toUpperCase());
             if (asset) {
                 const valueCell = assetRow.querySelector('.asset-value-usd');
-                if (valueCell) {
-                    valueCell.textContent = `$${parseFloat(asset.value_usd).toFixed(2)}`;
-                }
+                if (valueCell) valueCell.textContent = `$${parseFloat(asset.value_usd).toFixed(2)}`;
             }
         }
     }
@@ -221,7 +206,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!wsReconnectInterval && token) connectBinanceWebSocket(); 
             return;
         }
-
         const newSymbolsToSubscribe = [];
         assets.forEach(asset => {
             const symbol = asset.coin_symbol.toUpperCase();
@@ -232,35 +216,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
-
         if (newSymbolsToSubscribe.length > 0) {
             const currentAssetPairs = new Set(assets.map(a => `${a.coin_symbol.toUpperCase()}USDT`));
             const symbolsToUnsubscribeImmediately = [];
             subscribedSymbols.forEach(subscribedPair => {
                 if (!currentAssetPairs.has(subscribedPair) && 
-                    !subscribedPair.endsWith('USDT') && 
-                    !subscribedPair.endsWith('USD') &&
-                    !subscribedPair.endsWith('USDC') &&
-                    !subscribedPair.endsWith('BUSD')) {
+                    !subscribedPair.endsWith('USDT') && !subscribedPair.endsWith('USD') &&
+                    !subscribedPair.endsWith('USDC') && !subscribedPair.endsWith('BUSD')) {
                     symbolsToUnsubscribeImmediately.push(`${subscribedPair.toLowerCase()}@ticker`);
                 }
             });
-
             if (symbolsToUnsubscribeImmediately.length > 0) {
-                 binanceWebSocket.send(JSON.stringify({
-                    method: "UNSUBSCRIBE",
-                    params: symbolsToUnsubscribeImmediately,
-                    id: Date.now()
-                }));
+                 binanceWebSocket.send(JSON.stringify({ method: "UNSUBSCRIBE", params: symbolsToUnsubscribeImmediately, id: Date.now() }));
                 symbolsToUnsubscribeImmediately.forEach(s => subscribedSymbols.delete(s.replace('@ticker','').toUpperCase()));
                 console.log('[AssetsPage] Unsubscribed from obsolete tickers:', symbolsToUnsubscribeImmediately);
             }
-
-            binanceWebSocket.send(JSON.stringify({
-                method: "SUBSCRIBE",
-                params: newSymbolsToSubscribe,
-                id: Date.now() + 1
-            }));
+            binanceWebSocket.send(JSON.stringify({ method: "SUBSCRIBE", params: newSymbolsToSubscribe, id: Date.now() + 1 }));
             newSymbolsToSubscribe.forEach(s => subscribedSymbols.add(s.replace('@ticker','').toUpperCase()));
             console.log('[AssetsPage] Subscribing to tickers:', newSymbolsToSubscribe);
         }
@@ -269,16 +240,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     function unsubscribeFromAllTickers(clearLocally = true) {
         if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size > 0) {
             const symbolsToUnsubscribe = Array.from(subscribedSymbols).map(s => `${s.toLowerCase()}@ticker`);
-            binanceWebSocket.send(JSON.stringify({
-                method: "UNSUBSCRIBE",
-                params: symbolsToUnsubscribe,
-                id: Date.now()
-            }));
+            binanceWebSocket.send(JSON.stringify({ method: "UNSUBSCRIBE", params: symbolsToUnsubscribe, id: Date.now() }));
             console.log('[AssetsPage] Sent unsubscribe request for tickers:', symbolsToUnsubscribe);
         }
-        if (clearLocally) {
-            subscribedSymbols.clear();
-        }
+        if (clearLocally) subscribedSymbols.clear();
     }
 
     if (token) {
@@ -287,14 +252,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(loginLink) loginLink.style.display = 'none';
         if(logoutButton) {
             logoutButton.addEventListener('click', async () => {
-                console.log('[AssetsPage] Logout clicked.');
                 if (wsReconnectInterval) { clearInterval(wsReconnectInterval); wsReconnectInterval = null;}
                 unsubscribeFromAllTickers();
                 if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
                      binanceWebSocket.close(1000, "User logged out"); 
                 }
                 binanceWebSocket = null; 
-
                 const currentToken = localStorage.getItem('authToken');
                 localStorage.removeItem('authToken');
                 try {
@@ -304,11 +267,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     } else {
-        console.warn('[AssetsPage] No token. Redirecting to login.');
-        if(logoutButton) logoutButton.style.display = 'none';
-        if(signUpLink) signUpLink.style.display = 'inline-block';
-        if(loginLink) loginLink.style.display = 'inline-block';
-        if(userGreeting) userGreeting.style.display = 'none';
         window.location.href = 'login-page.html';
         return;
     }
@@ -319,10 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = 'login-page.html';
             return Promise.reject(new Error('No token, redirecting.'));
         }
-        const defaultHeaders = {
-            'Authorization': `Bearer ${currentToken}`,
-            'Content-Type': 'application/json'
-        };
+        const defaultHeaders = { 'Authorization': `Bearer ${currentToken}`, 'Content-Type': 'application/json' };
         const fetchOptions = { ...options, headers: { ...defaultHeaders, ...options.headers } };
         try {
             const response = await fetch(url, fetchOptions);
@@ -337,28 +292,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return Promise.reject(new Error('Unauthorized or Forbidden, redirecting.'));
                 }
                 const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
-                console.error(`[fetchProtectedData] Error for ${url}:`, errorData.message || response.status);
                 return Promise.reject(errorData);
             }
             return response.json();
         } catch (error) {
-            console.error(`[fetchProtectedData] Network or other error for ${url}:`, error);
             return Promise.reject(error);
         }
     }
 
     function renderAssets(assetsToRender) {
-        const header = assetsTableContainer.querySelector('.custom-table-header');
         const existingRows = assetsTableContainer.querySelectorAll('.custom-table-row');
         existingRows.forEach(row => row.remove()); 
-
         const noDataPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
         if (noDataPlaceholder) noDataPlaceholder.remove();
 
         if (!assetsToRender || assetsToRender.length === 0) {
             const message = (searchAssetInput.value || hideZeroBalancesCheckbox.checked) ? 'No assets found matching your criteria.' : 'You have no assets yet.';
             assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${message}</div>`);
-             if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00'; 
+            if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00'; 
             return;
         }
 
@@ -369,13 +320,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             row.dataset.assetSymbol = asset.coin_symbol.toUpperCase();
 
             const valueUSD = parseFloat(asset.value_usd) || 0;
+            // Використовуємо coin_name якщо є, інакше coin_symbol
             const displayName = asset.coin_name && asset.coin_name !== asset.coin_symbol ? asset.coin_name : asset.coin_symbol;
+            // Використовуємо quantity_precision з даних активу, або 8 за замовчуванням
             const quantityPrecision = asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8;
 
-            // **РЕКОМЕНДОВАНА ЗМІНА тут: .coin-symbol-display -> .coin-symbol**
             row.innerHTML = `
                 <span class="coin-details">
-                    <span class="coin-name-full">${displayName}</span><span class="coin-symbol">(${asset.coin_symbol.toUpperCase()})</span>
+                    <span class="coin-name-full">${displayName}</span>
+                    <span class="coin-symbol">(${asset.coin_symbol.toUpperCase()})</span>
                 </span>
                 <span>${parseFloat(asset.total_balance).toFixed(quantityPrecision)}</span>
                 <span>${parseFloat(asset.available_balance).toFixed(quantityPrecision)}</span>
@@ -390,10 +343,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             fragment.appendChild(row);
         });
         assetsTableContainer.appendChild(fragment);
-
         recalculateAndRenderTotalPortfolioValue();
 
-        if (allFetchedAssets.length > initialDisplayLimit && !currentlyDisplayingAll) {
+        // Логіка для кнопки "Show All Assets"
+        const searchTerm = searchAssetInput.value.toLowerCase();
+        const hideZero = hideZeroBalancesCheckbox.checked;
+        let filteredAssetsCount = allFetchedAssets.filter(asset => {
+            const nameMatch = (asset.coin_name || asset.coin_symbol).toLowerCase().includes(searchTerm);
+            const symbolMatch = asset.coin_symbol.toLowerCase().includes(searchTerm);
+            const matchesSearch = nameMatch || symbolMatch;
+            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9; 
+            return matchesSearch && (!hideZero || nonZeroBalance);
+        }).length;
+
+        if (filteredAssetsCount > initialDisplayLimit && !currentlyDisplayingAll) {
             if (showAllContainer) showAllContainer.style.display = 'block';
         } else {
             if (showAllContainer) showAllContainer.style.display = 'none';
@@ -402,6 +365,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function recalculateAndRenderTotalPortfolioValue() {
         let calculatedTotalPortfolioValue = 0;
+        // Розраховуємо загальну вартість по всіх активах, що є у allFetchedAssets
+        // (які вже відфільтровані від YMC і мають оновлені ціни з WebSocket)
         allFetchedAssets.forEach(asset => {
             calculatedTotalPortfolioValue += parseFloat(asset.value_usd) || 0;
         });
@@ -414,25 +379,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const searchTerm = searchAssetInput.value.toLowerCase();
         const hideZero = hideZeroBalancesCheckbox.checked;
 
-        let filteredAssets = allFetchedAssets.filter(asset => {
-            const nameMatch = asset.coin_name ? asset.coin_name.toLowerCase().includes(searchTerm) : false;
+        let filteredAssets = allFetchedAssets.filter(asset => { // allFetchedAssets вже без YMC
+            const nameMatch = (asset.coin_name || asset.coin_symbol).toLowerCase().includes(searchTerm); // Шукаємо по coin_name або coin_symbol
             const symbolMatch = asset.coin_symbol.toLowerCase().includes(searchTerm);
             const matchesSearch = nameMatch || symbolMatch;
-            
             const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9; 
             return matchesSearch && (!hideZero || nonZeroBalance);
         });
 
         filteredAssets.sort((a, b) => {
-            const aBalance = parseFloat(a.total_balance);
-            const bBalance = parseFloat(b.total_balance);
             const aValue = parseFloat(a.value_usd) || 0;
             const bValue = parseFloat(b.value_usd) || 0;
-
-            if (aBalance > 1e-9 && bBalance <= 1e-9) return -1;
-            if (bBalance > 1e-9 && aBalance <= 1e-9) return 1;  
-            
-            return bValue - aValue;
+            // Якщо value_usd однакове (наприклад, для активів з нульовим балансом), сортуємо за алфавітом
+            if (bValue === aValue) {
+                return (a.coin_name || a.coin_symbol).localeCompare(b.coin_name || b.coin_symbol);
+            }
+            return bValue - aValue; // Сортування за вартістю (спадання)
         });
         
         const assetsToDisplay = currentlyDisplayingAll ? filteredAssets : filteredAssets.slice(0, initialDisplayLimit);
@@ -440,7 +402,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadAssets() {
-        console.log('[AssetsPage] Attempting to load assets data...');
         const placeholder = assetsTableContainer.querySelector('.no-data-placeholder');
         if (placeholder) placeholder.textContent = 'Loading assets...';
         else { 
@@ -456,25 +417,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const data = await fetchProtectedData('/api/assets');
             if (data.success && data.assets) {
-                allFetchedAssets = data.assets.map(asset => ({
-                    ...asset,
-                    quantity_precision: asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8,
-                    value_usd: parseFloat(asset.value_usd).toFixed(2) 
-                }));
+                // Припускаємо, що `data.assets` вже містить `coin_name`, `quantity_precision`, `value_usd`
+                allFetchedAssets = data.assets
+                    .map(asset => ({
+                        ...asset,
+                        // Переконуємось, що value_usd - це рядок з двома знаками після коми
+                        value_usd: parseFloat(asset.value_usd || 0).toFixed(2) 
+                    }))
+                    .filter(asset => asset.coin_symbol.toUpperCase() !== 'YMC'); // Фільтрація YMC
+                
                 currentlyDisplayingAll = false;
                 if (showAllAssetsButton) showAllAssetsButton.textContent = 'Show All Assets';
+                
                 filterAndPrepareAssets();
                 subscribeToAssetTickers(allFetchedAssets);
-                console.log('[AssetsPage] Assets data processed and rendered.');
             } else {
-                console.error('[AssetsPage] Failed to load assets from server:', data.message);
                 const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
                 if (currentPlaceholder) currentPlaceholder.textContent = data.message || 'Failed to load assets.';
+                if (showAllContainer) showAllContainer.style.display = 'none';
             }
         } catch (error) {
-            console.error('[AssetsPage] Error in loadAssets catcher:', error.message || error);
-             const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
+            const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
             if (currentPlaceholder) currentPlaceholder.textContent = 'Error loading assets. Please try again.';
+            if (showAllContainer) showAllContainer.style.display = 'none';
         }
     }
 
@@ -497,12 +462,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) {
-            // console.log("[AssetsPage] Page is hidden. Consider pausing WebSocket updates if necessary.");
-        } else {
-            // console.log("[AssetsPage] Page is visible. Resubscribe if needed.");
+        if (document.hidden) { /* Handle page hidden */ } 
+        else { /* Handle page visible */
             if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size === 0 && allFetchedAssets.length > 0) {
-                // subscribeToAssetTickers(allFetchedAssets); // Можна розкоментувати для автоматичного перепідключення при видимості
+                // Можна розглянути автоматичну перепідписку, якщо потрібно
+                // subscribeToAssetTickers(allFetchedAssets); 
             } else if ((!binanceWebSocket || binanceWebSocket.readyState === WebSocket.CLOSED) && token) {
                 connectBinanceWebSocket();
             }
