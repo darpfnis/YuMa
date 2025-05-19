@@ -311,14 +311,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await fetchApiData(`/api/portfolio/history?period=${period}`, { requiresAuth: true });
             console.log('[ProfilePage] Portfolio history data:', data);
 
-            if (data && data.success && data.history && data.history.length > 1) { // Потрібно хоча б 2 точки для лінії
+            if (data && data.success && data.data && data.data.length > 1) { 
                 portfolioChartCanvas.style.display = 'block';
-                const labels = data.history.map(item => {
-                    // Форматуємо дату для кращого відображення
+                // І ТУТ
+                const labels = data.data.map(item => {
                     const date = new Date(item.date);
                     return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
                 });
-                const values = data.history.map(item => parseFloat(item.value));
+                // І ТУТ
+                const values = data.data.map(item => parseFloat(item.value));
+
 
                 const chartData = {
                     labels: labels,
