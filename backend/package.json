@@ -14,7 +14,7 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.5",
     "ws":"8.18.2",
-    "node-crone": "4.0.5"
+    "node-cron": "4.0.5"
   },
   "author": "Yullia",
   "license": "ISC"
