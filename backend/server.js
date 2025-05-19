@@ -4,7 +4,9 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const axios = require('axios'); // Переконайтеся, що axios встановлено: yarn add axios або npm install axios
+const axios = require('axios'); 
+const cron = require('node-cron');
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -829,6 +831,101 @@ async function ensureMarketDataCache(forceUpdate = false) {
         console.log('[Cache] Market data cache is fresh.');
     }
 }
+async function updateAllUsersPortfolioHistoryUsingBinanceWS() {
+    console.log('[CronTask] Starting portfolio history update using Binance WS data...');
+    const client = await pool.connect(); // Використовуємо існуючий пул
+
+    try {
+        // 1. Використовуємо currentMarketData, який оновлюється вашим WebSocket клієнтом
+        //    currentMarketData виглядає приблизно так:
+        //    { 'BTCUSDT': { price: '...', priceChangePercent: '...', quoteVolume: '...' }, ... }
+
+        if (Object.keys(currentMarketData).length === 0) {
+            console.warn("[CronTask] currentMarketData is empty. Binance WebSocket might not be connected or providing data. Skipping portfolio update.");
+            // Можна додати логіку спроби перепідключення WS або очікування
+            client.release();
+            return;
+        }
+
+        // 2. Отримуємо всіх користувачів
+        const usersResult = await client.query('SELECT id FROM users');
+        const users = usersResult.rows;
+
+        console.log(`[CronTask] Found ${users.length} users to update portfolio history.`);
+
+        // 3. Для кожного користувача розраховуємо вартість портфеля та вставляємо запис
+        for (const user of users) {
+            let totalPortfolioValueUSD = 0;
+            const assetsResult = await client.query('SELECT coin_symbol, total_balance FROM assets WHERE user_id = $1', [user.id]);
+            const userAssets = assetsResult.rows;
+
+            for (const asset of userAssets) {
+                const balance = parseFloat(asset.total_balance);
+                if (balance === 0) continue;
+
+                let priceInUSD = 0;
+                const assetSymbolUpper = asset.coin_symbol.toUpperCase();
+
+                if (['USDT', 'USDC', 'BUSD', 'USD'].includes(assetSymbolUpper)) {
+                    priceInUSD = 1;
+                } else {
+                    // Шукаємо ціну в currentMarketData для пари <ASSET>USDT
+                    // Binance WebSocket зазвичай надає символи без слеша, наприклад "BTCUSDT"
+                    const binancePairSymbol = `${assetSymbolUpper}USDT`;
+
+                    if (currentMarketData[binancePairSymbol] && currentMarketData[binancePairSymbol].price) {
+                        priceInUSD = parseFloat(currentMarketData[binancePairSymbol].price);
+                    } else {
+                        // ЯКЩО НЕМАЄ В BINANCE WS:
+                        // Тут можна додати резервну логіку, наприклад, спробувати взяти ціну
+                        // з вашого marketDataCache (який оновлюється з CoinGecko), ЯКЩО ВІН Є І АКТУАЛЬНИЙ.
+                        // Або просто пропустити/залогувати.
+                        // Для чистоти прикладу з Binance WS, поки що залишимо так:
+                        console.warn(`[CronTask] Price not found in currentMarketData (Binance WS) for ${binancePairSymbol} for user ${user.id}. Asset value will be 0.`);
+                    }
+                }
+                totalPortfolioValueUSD += balance * priceInUSD;
+            }
+
+            // Визначаємо дату для запису
+            // Якщо скрипт запускається на початку дня (напр. 00:05), то фіксуємо за попередній день
+            const snapshotDateSQL = "CURRENT_DATE - INTERVAL '1 day'";
+            // Якщо хочете фіксувати на поточний момент запуску:
+            // const snapshotDateSQL = "CURRENT_DATE";
+
+            const insertSql = `
+                INSERT INTO portfolio_history (user_id, snapshot_date, total_value_usd)
+                VALUES ($1, ${snapshotDateSQL}, $2)
+                ON CONFLICT (user_id, snapshot_date) 
+                DO UPDATE SET total_value_usd = EXCLUDED.total_value_usd;
+            `;
+            await client.query(insertSql, [user.id, totalPortfolioValueUSD.toFixed(2)]);
+            // console.log(`[CronTask] Portfolio history for user ${user.id} updated. Total value: ${totalPortfolioValueUSD.toFixed(2)} USD.`);
+        }
+        console.log('[CronTask] Portfolio history update finished successfully.');
+
+    } catch (error) {
+        console.error('[CronTask] Error during portfolio history update:', error);
+    } finally {
+        client.release(); // Повертаємо клієнта в пул
+        // НЕ викликайте pool.end() тут, оскільки сервер продовжує працювати!
+    }
+}
+
+// --- Налаштування Cron Job ---
+// Запускати щодня о 00:05 UTC (або інший час/часовий пояс)
+// 'TZ' змінна середовища на вашому сервері впливатиме на те, як інтерпретується час cron
+if (process.env.NODE_ENV !== 'test') { // Не запускати cron під час тестів
+    cron.schedule('5 0 * * *', async () => { // "At 00:05."
+        console.log('[CronJob] Running scheduled task: updateAllUsersPortfolioHistoryUsingBinanceWS');
+        await updateAllUsersPortfolioHistoryUsingBinanceWS();
+    }, {
+        scheduled: true,
+        timezone: "Etc/UTC" // Рекомендується вказувати часовий пояс явно
+    });
+    console.log('[CronJob] Portfolio history update task scheduled for 00:05 UTC daily.');
+}
+
 
 // Перший запуск та періодичне оновлення
 if (process.env.NODE_ENV !== 'test') {
