@@ -1,7 +1,5 @@
 /* spot-page.css */
 
-/* Стилі для body, header, card-base, ui-panel тепер в інших файлах */
-
 /* --- СПЕЦИФІЧНИЙ ЗАГОЛОВОК СТОРІНКИ "Spot" --- */
 .page-specific-title {
   text-align: center;
@@ -24,7 +22,14 @@
   padding: 1rem;
   margin: 1.25rem auto;
   max-width: 1800px;
-  min-height: calc(100vh - 4.375rem - 3.25rem - 2.5rem);
+  /* Розрахунок min-height: приблизно 60px (header) + 52px (page-title) + 40px (margin main) = ~152px */
+  /* 10.125rem * 16px/rem = 162px. Залишаємо, як було в твоєму "попередньому", це має дати достатньо висоти */
+  min-height: calc(100vh - 10.125rem);
+  /* Якщо сторінка все одно занадто висока, спробуй: */
+  /* max-height: calc(100vh - 60px - 52px - 2rem); /* Обмежити висоту вмісту */
+  /* або фіксовану висоту, якщо потрібно, наприклад: */
+  /* height: 750px; */
+  /* overflow: hidden; /* Щоб уникнути подвійного скролу на body */
 }
 
 .panel-column {
@@ -35,33 +40,618 @@
 
 .left-panel {
   flex: 0 0 23%;
+  min-width: 280px;
+  display: flex; /* Для того, щоб .order-book-card міг використовувати flex-grow */
 }
 
 .center-content {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column; /* Важливо для .chart-card та .spot-trading-panel-card */
 }
 
 .right-panel {
   flex: 0 0 23%;
-}
-
-/* СТИЛІ ДЛЯ .ui-panel та .ui-panel .panel-title ТЕПЕР В cards.css */
-/* Тут можуть бути лише специфічні перевизначення для .order-book-card тощо, якщо вони потрібні */
-
-.chart-card {
-  flex-basis: 70%; /* Або скільки потрібно для висоти */
-  min-height: 25rem; /* Наприклад, 400px - мінімальна висота */
-  padding: 0.5rem; /* Зменшуємо padding, щоб віджет мав більше місця */
-  display: flex; /* Щоб внутрішній tradingview-widget-container розтягувався */
+  min-width: 280px;
+  display: flex; /* Для розподілу висоти між .pair-search-panel та .market-trades-card */
   flex-direction: column;
+  /* ОБМЕЖЕННЯ ВИСОТИ ПРАВОЇ ПАНЕЛІ, щоб вона не розтягувала все інше */
+  /* Це значення має бути меншим або рівним висоті .left-panel, якщо вони мають бути однаковими. */
+  /* Або фіксоване, або розраховане, щоб не перевищувати висоту вмісту .center-content */
+  /* max-height: 600px; /* Приклад. Підбери значення, яке влаштовує */
+  /* Або, якщо .left-panel має flex-grow:1 і займає всю висоту,
+     то .right-panel теж може мати flex-grow:1 в межах .spot-interface-layout,
+     але тоді вміст всередині .right-panel має керувати своєю висотою.
+     Поки що залишимо без max-height на .right-panel, а обмежимо .pair-search-panel
+  */
 }
 
-.tradingview-widget-container {
-  flex-grow: 1; /* Дозволяє віджету заповнити доступний простір в .chart-card */
+/* --- ЗАГАЛЬНІ СТИЛІ ДЛЯ UI-PANEL ТА PANEL-TITLE --- */
+.ui-panel {
+  background-color: #fff;
+  border-radius: 0.375rem; /* 6px */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.04);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ui-panel .panel-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  padding: 0.6rem 0.85rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  flex-shrink: 0;
+}
+.ui-panel .panel-title span {
+  /* Для (BTC/USDT) в заголовках */
+  font-size: 0.9em;
+  color: #6b7280;
+  margin-left: 6px;
+  font-weight: normal;
+}
+
+/* --- ЦЕНТРАЛЬНА КОЛОНКА --- */
+.chart-card {
+  flex-basis: 40%; /* Як у твоєму "попередньому CSS" */
+  min-height: 25rem; /* (400px) Як у твоєму "попередньому CSS" */
+  padding: 0; /* Заголовок і віджет будуть впритул */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Заголовок всередині chart-card */
+.chart-card .panel-title {
+  /* Успадковує стилі .ui-panel .panel-title */
+  /* Якщо потрібні специфічні зміни, додай тут */
+}
+.chart-card .tradingview-widget-container {
+  /* HTML-контейнер віджету */
+  flex-grow: 1;
+  width: 100%;
+  /* height: 100%; -- інлайн-стиль з HTML віджету має це обробити */
 }
 
 .spot-trading-panel-card {
-  /* Специфічний розмір для панелі торгівлі */
-  flex-basis: 35%;
-  min-height: 12rem;
+  flex-basis: 40%; /* Щоб сума з chart-card була 100% */
+  /* У твоєму "попередньому" було 35%, що > 100% з 70%. 
+     Якщо 70/30 не дає потрібного візуального балансу, можна 
+     повернути до 70/35 і покладатися на min-height та flex-shrink/grow.
+     Або 65/35 як було в одному з проміжних варіантів.
+  */
+  min-height: 12rem; /* (192px) Як у твоєму "попередньому CSS" */
+  display: flex;
+  flex-direction: column;
+}
+.spot-trading-panel-card .panel-title {
+  /* ... успадковує ... */
+}
+.spot-trading-panel-card > *:not(.panel-title) {
+  padding: 0.75rem;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* --- ЛІВА ПАНЕЛЬ: ORDER BOOK --- */
+.order-book-card {
+  flex-grow: 1; /* Займає всю доступну висоту в .left-panel */
+  min-height: 400px; /* Або інша бажана мінімальна висота */
+}
+.order-book-columns {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.order-book-columns span {
+  flex: 1;
+  text-align: right;
+}
+.order-book-columns span:first-child {
+  text-align: left;
+  flex-basis: 36%;
+}
+.order-book-columns span:nth-child(2) {
+  text-align: right;
+  flex-basis: 32%;
+}
+.order-book-columns span:last-child {
+  flex-basis: 32%;
+}
+.order-book-content {
+  font-size: 0.75rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+#asks-list,
+#bids-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#asks-list li,
+#bids-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2.5px 0.85rem;
+  position: relative;
+  line-height: 1.3;
+}
+#asks-list li span,
+#bids-list li span {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+#asks-list li .price,
+#bids-list li .price {
+  flex-basis: 36%;
+  text-align: left;
+}
+#asks-list li .amount,
+#bids-list li .amount {
+  color: #1f2937;
+  flex-basis: 32%;
+}
+#asks-list li .total,
+#bids-list li .total {
+  color: #6b7280;
+  flex-basis: 32%;
+}
+.ask-price {
+  color: #ef4444 !important;
+}
+.bid-price {
+  color: #10b981 !important;
+}
+.current-price-display {
+  padding: 0.5rem 0.85rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  border-top: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.price-up {
+  color: #10b981 !important;
+}
+.price-down {
+  color: #ef4444 !important;
+}
+
+/* --- ПРАВА ПАНЕЛЬ: ПОШУК ПАР ТА MARKET TRADES --- */
+.pair-search-panel {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 50%; /* Половина висоти правої колонки */
+  min-height: 280px; /* Мінімальна висота, щоб вмістився пошук і кілька пар */
+  /* ОБМЕЖЕННЯ ВИСОТИ, ЩОБ НЕ РОЗТЯГУВАЛА ВСЕ ІНШЕ */
+  max-height: 45vh; /* Наприклад, 45% висоти вікна перегляду, або фіксоване значення */
+  /* max-height: 350px; */
+  overflow: hidden; /* Важливо, щоб скрол був для #pairList */
+}
+.search-pair-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+#pairSearchInput {
+  flex-grow: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  outline: none;
+  background-color: #fff;
+}
+#pairSearchInput:focus {
+  border-color: #9ca3af;
+}
+.search-pair-wrapper .search-icon {
+  padding-left: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+.pair-categories {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 0.85rem 0.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 0.3rem;
+  flex-shrink: 0;
+}
+.category-btn {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  background-color: #e5e7eb;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #4b5563;
+  transition: background-color 0.2s, color 0.2s;
+}
+.category-btn:hover {
+  background-color: #d1d5db;
+}
+.category-btn.active {
+  background-color: #9ca3af;
+  color: #fff;
+  font-weight: 500;
+}
+#pairList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+  font-size: 0.75rem;
+}
+#pairList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f9fafb;
+  transition: background-color 0.15s;
+  line-height: 1.2;
+}
+#pairList li:hover {
+  background-color: #f3f4f6;
+}
+#pairList li > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#pairList li .pair-symbol-group {
+  flex-basis: 45%;
+  text-align: left;
+}
+#pairList li .symbol-main {
+  font-weight: 500;
+  color: #1f2937;
+}
+#pairList li .symbol-quote {
+  color: #6b7280;
+  font-size: 0.9em;
+  margin-left: 2px;
+}
+#pairList li .pair-last-price {
+  flex-basis: 25%;
+  text-align: right;
+  color: #374151;
+  font-size: 0.95em;
+}
+#pairList li .price-change {
+  flex-basis: 30%;
+  font-size: 0.9em;
+  min-width: 50px;
+  text-align: right;
+}
+.price-change.positive {
+  color: #10b981;
+}
+.price-change.negative {
+  color: #ef4444;
+}
+
+.market-trades-card {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 50%; /* Або flex-grow: 1; якщо pair-search-panel має max-height */
+  /* flex-grow: 1; */
+  min-height: 200px;
+  overflow: hidden;
+}
+.market-trades-columns {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* .market-trades-columns span успадковує від .order-book-columns span */
+#market-trades-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  line-height: 1.3;
+}
+#market-trades-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2.5px 0.85rem;
+}
+#market-trades-list li .price {
+  flex-basis: 36%;
+  text-align: left;
+}
+#market-trades-list li .amount {
+  flex-basis: 32%;
+  text-align: right;
+  color: #1f2937;
+}
+#market-trades-list li .time {
+  flex-basis: 32%;
+  text-align: right;
+  color: #6b7280;
+}
+.sell-trade {
+  color: #ef4444;
+}
+.buy-trade {
+  color: #10b981;
+}
+
+/* --- СТИЛІ ДЛЯ SPOT TRADING PANEL CARD --- */
+.spot-trading-panel-card {
+  flex-basis: 40%; /* Або те значення, яке ти встановила для висоти */
+  min-height: 350px; /* Мінімальна висота, щоб вмістити форми */
+  display: flex;
+  flex-direction: column;
+  /* padding: 0; -- Якщо .panel-title вже має відступи і фон */
+}
+
+/* Забезпечуємо, щоб вміст панелі торгівлі мав внутрішні відступи і міг скролитися */
+.spot-trading-panel-card > .trading-form-container {
+  padding: 0.5rem 0.75rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Вкладки типів ордерів (Спот, Крос...) */
+.order-type-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  /* ДОДАНО: Лінія під цим блоком вкладок */
+  border-bottom: 1px solid #eef0f2; /* Світло-сіра лінія */
+  padding-bottom: 0.4rem; /* Відступ від тексту вкладок до лінії */
+  margin-bottom: 0rem; /* Відступ від лінії до наступного блоку вкладок */
+}
+
+.order-type-tabs .type-tab,
+.execution-type-tabs .exec-tab {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border: none;
+  background-color: transparent;
+  color: #707a8a; /* Сірий для неактивних */
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+  font-weight: 500;
+}
+.order-type-tabs .type-tab:hover,
+.execution-type-tabs .exec-tab:hover {
+  color: #1e2329; /* Темніший при наведенні */
+}
+.order-type-tabs .type-tab.active,
+.execution-type-tabs .exec-tab.active {
+  color: #1e2329; /* Колір активної вкладки */
+  /* Можна додати підкреслення або фон */
+  /* background-color: #f0f2f5; */
+  /* border-bottom: 2px solid #f0b90b; /* Жовтий Binance */
+}
+
+.execution-type-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem; /* Залишаємо, якщо був */
+  /* border-bottom: 1px solid #eef0f2; -- Якщо ця лінія вже була, вона може бути тут */
+  /* Якщо її не було, а потрібна, то розкоментуй, але лінія вже додана вище */
+  padding-bottom: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.execution-type-tabs .info-icon {
+  margin-left: auto; /* Іконка інформації справа */
+  color: #707a8a;
+  cursor: help;
+}
+.stop-limit-dropdown .dropdown-toggle::after {
+  /* Стрілка для випадаючого списку */
+  content: "▼";
+  font-size: 0.7em;
+  margin-left: 0.3em;
+  display: inline-block;
+}
+
+/* Контейнер для двох форм (Купівля/Продаж) */
+.order-forms-columns {
+  display: flex;
+  gap: 1.5rem; /* Відстань між формами купівлі та продажу */
+  flex-grow: 1; /* Щоб форми займали доступну висоту */
+}
+
+.order-form {
+  flex: 1; /* Кожна форма займає половину ширини */
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem; /* Відстань між елементами всередині форми */
+}
+
+.order-form .input-group {
+  display: flex;
+  flex-direction: column;
+}
+.order-form .input-group label {
+  font-size: 0.75rem; /* 12px */
+  color: #707a8a;
+  margin-bottom: 0.25rem;
+}
+.order-form .input-with-currency {
+  display: flex;
+  align-items: center;
+  background-color: #f0f2f5; /* Світло-сірий фон поля */
+  border: 1px solid #dde0e3;
+  border-radius: 4px;
+  padding: 0 0.6rem; /* Відступи всередині поля */
+}
+.order-form .input-with-currency input[type="number"] {
+  flex-grow: 1;
+  padding: 0.5rem 0.3rem;
+  border: none;
+  background-color: transparent;
+  font-size: 0.9rem;
+  color: #1e2329;
+  outline: none;
+  text-align: left; /* Вирівнювання тексту в полі */
+  -moz-appearance: textfield;
+}
+.order-form
+  .input-with-currency
+  input[type="number"]::-webkit-outer-spin-button,
+.order-form
+  .input-with-currency
+  input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.order-form .input-with-currency .currency {
+  font-size: 0.8rem;
+  color: #474d57;
+  padding-left: 0.5rem;
+  white-space: nowrap;
+}
+.order-form input[readonly] {
+  background-color: #e9ecef; /* Трохи темніший фон для readonly полів */
+  cursor: not-allowed;
+}
+
+/* Слайдер балансу */
+.balance-slider {
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+.balance-slider .slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px; /* Висота треку слайдера */
+  background: #d1d5db; /* Колір треку */
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.15s ease-in-out;
+  border-radius: 3px;
+}
+.balance-slider .slider:hover {
+  opacity: 1;
+}
+.balance-slider .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px; /* Розмір повзунка */
+  height: 14px;
+  background: #4b5563; /* Колір повзунка */
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff; /* Біла рамка навколо повзунка */
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+.balance-slider .slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #4b5563;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+.slider-percentage-markers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #707a8a;
+  padding: 0 2px; /* Щоб мітки не вилазили за межі */
+  margin-top: 2px;
+}
+
+/* TP/SL та доступний баланс */
+.advanced-options {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.advanced-options input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+.advanced-options label {
+  font-size: 0.8rem;
+  color: #474d57;
+  cursor: pointer;
+}
+
+.available-balance {
+  font-size: 0.75rem; /* 12px */
+  color: #707a8a;
+  margin-top: 0.5rem;
+}
+.available-balance span:last-child {
+  color: #1e2329; /* Колір значення балансу */
+  font-weight: 500;
+  margin-left: 0.3rem;
+}
+
+/* Кнопки Купівлі/Продажу */
+.action-button {
+  width: 100%;
+  padding: 0.7rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.75rem;
+}
+
+.buy-button {
+  background-color: #0ecb81; /* Зелений Binance */
+  color: white;
+  transition: background-color 0.15s ease-out; /* Анімуємо фон */
+}
+.buy-button:hover {
+  background-color: #0cb570; /* Трохи темніший зелений */
+  /* opacity: 1; -- Переконайся, що opacity не змінюється */
+}
+
+.sell-button {
+  background-color: #f6465d; /* Червоний Binance */
+  color: white;
+  transition: background-color 0.15s ease-out; /* Анімуємо фон */
+}
+.sell-button:hover {
+  background-color: #de3a50; /* Трохи темніший червоний */
+  /* opacity: 1; */
 }
