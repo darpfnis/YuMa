@@ -1,17 +1,61 @@
 <!DOCTYPE html>
-<html lang="uk"> <!-- Змінено мову на українську -->
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мої Активи - YuMa</title>
-    <link rel="stylesheet" href="../css/styles.css"> <!-- Переконайтесь, що цей файл існує і містить основні стилі -->
+    <title>My Assets - YuMa</title>
+    <link rel="stylesheet" href="../css/styles.css"> <!-- Ensure this file exists and contains base styles -->
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
-    <link rel="stylesheet" href="../css/assets_custom.css"> <!-- Створимо цей файл для кастомних стилів сторінки -->
+    <link rel="stylesheet" href="../css/assets_custom.css"> <!-- Create this file for custom page styles -->
+    <style>
+        /* Basic styling for placeholders if not already in assets_custom.css */
+        .no-data-placeholder {
+            padding: 20px;
+            text-align: center;
+            color: #777;
+        }
+        .coin-details { /* Simple styling for text-based coin display */
+            display: flex;
+            align-items: center;
+        }
+        .coin-symbol-display {
+            color: #888; /* Lighter color for the symbol part */
+            margin-left: 5px;
+        }
+        /* Ensure your table styles are responsive and clear */
+        .custom-table-wrapper {
+            width: 100%;
+            overflow-x: auto; /* For smaller screens if content overflows */
+        }
+        .custom-table-header, .custom-table-row {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 2fr; /* Adjust column widths as needed */
+            gap: 10px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #333; /* Dark theme border */
+            align-items: center;
+        }
+        .custom-table-header {
+            font-weight: bold;
+            background-color: #2a2a2a; /* Darker header background */
+        }
+        .custom-table-row:hover {
+            background-color: #252525; /* Hover effect for rows */
+        }
+        .asset-actions a {
+            margin-right: 10px;
+            color: #4CAF50; /* Action link color */
+            text-decoration: none;
+        }
+        .asset-actions a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
 </head>
 <body>
     <header>
-        <!-- Ваш існуючий header. Переконайтесь, що ID для кнопки logout правильний -->
         <div class="header-left">
             <div class="logo"><a href="../../index.html">YuMa</a></div>
             <nav class="main-nav">
@@ -51,54 +95,48 @@
     <div class="page-wrapper-profile">
         <aside class="sidebar">
             <nav>
-                <a href="profile.html" class="sidebar-button">Dashboard</a> <!-- Змінено для узгодженості -->
-                <a href="assets.html" class="sidebar-button active">Активи</a>
-                <a href="order.html" class="sidebar-button">Ордери</a>
-                <a href="account.html" class="sidebar-button">Акаунт</a>
-                <a href="settings.html" class="sidebar-button">Налаштування</a>
+                <a href="profile.html" class="sidebar-button">Dashboard</a>
+                <a href="assets.html" class="sidebar-button active">Assets</a>
+                <a href="order.html" class="sidebar-button">Orders</a>
+                <a href="account.html" class="sidebar-button">Account</a>
+                <a href="settings.html" class="sidebar-button">Settings</a>
             </nav>
         </aside>
 
         <main class="main-content-profile">
             <section class="content-header">
-                <h2>Мої Активи</h2>
-                <!-- <button class="action-button primary-action">Переглянути історію транзакцій</button> -->
+                <h2>My Assets</h2>
+                <!-- <button class="action-button primary-action">View Transaction History</button> -->
             </section>
 
             <section class="profile-card asset-overview">
                 <div class="overview-item">
-                    <span class="label">Загальна вартість портфеля (USD):</span>
+                    <span class="label">Total Portfolio Value (USD):</span>
                     <span class="value total-value-dynamic" id="totalPortfolioValue">$0.00</span>
                 </div>
-                <!--  Можна додати "Доступно для виведення", якщо ця логіка є на бекенді
-                <div class="overview-item">
-                    <span class="label">Доступно для виведення (USD):</span>
-                    <span class="value available-value-dynamic" id="totalAvailableValue">$0.00</span>
-                </div>
-                -->
             </section>
 
             <section class="assets-list-section">
                 <div class="table-controls">
-                    <input type="text" id="searchAssetInput" placeholder="Пошук монети..." class="search-input">
+                    <input type="text" id="searchAssetInput" placeholder="Search coin..." class="search-input">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="hideZeroBalancesCheckbox"> Приховати нульові баланси
+                        <input type="checkbox" id="hideZeroBalancesCheckbox"> Hide zero balances
                     </label>
                 </div>
 
                 <div class="custom-table-wrapper" id="assetsTableContainer">
                     <div class="custom-table-header">
-                        <span>Монета</span>
-                        <span>Загальний баланс</span>
-                        <span>Доступно</span>
-                        <span>В ордерах</span>
-                        <span>Вартість (USD)</span>
-                        <span>Дії</span>
+                        <span>Coin</span>
+                        <span>Total Balance</span>
+                        <span>Available</span>
+                        <span>In Orders</span>
+                        <span>Value (USD)</span>
+                        <span>Actions</span>
                     </div>
-                    <div class="no-data-placeholder">Завантаження активів...</div>
+                    <div class="no-data-placeholder">Loading assets...</div>
                 </div>
                 <div class="show-all-container" style="text-align: center; margin-top: 20px; display: none;">
-                    <button id="showAllAssetsButton" class="action-button">Показати всі активи</button>
+                    <button id="showAllAssetsButton" class="action-button">Show All Assets</button>
                 </div>
             </section>
         </main>
@@ -109,15 +147,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[AssetsPage] DOMContentLoaded. Script loaded.');
     const token = localStorage.getItem('authToken');
 
-    // Елементи хедера для логіна/логаута
     const logoutButton = document.getElementById('logoutButtonAssets');
     const signUpLink = document.getElementById('signUpLinkAssets');
     const loginLink = document.getElementById('loginLinkAssets');
     const userGreeting = document.getElementById('userGreetingAssets');
 
-
     const totalPortfolioValueElement = document.getElementById('totalPortfolioValue');
-    // const totalAvailableValueElement = document.getElementById('totalAvailableValue'); // Якщо використовується
     const assetsTableContainer = document.getElementById('assetsTableContainer');
     const searchAssetInput = document.getElementById('searchAssetInput');
     const hideZeroBalancesCheckbox = document.getElementById('hideZeroBalancesCheckbox');
@@ -127,28 +162,158 @@ document.addEventListener('DOMContentLoaded', async () => {
     let allFetchedAssets = [];
     const initialDisplayLimit = 10;
     let currentlyDisplayingAll = false;
+    let binanceWebSocket = null;
+    let subscribedSymbols = new Set();
 
-    // Логіка відображення кнопок в хедері
+    // --- WebSocket Connection and Management ---
+    function connectBinanceWebSocket() {
+        // Use wss://stream.binance.com:9443/ws for general streams
+        // or wss://fstream.binance.com/ws for futures
+        // For spot tickers, it's usually wss://stream.binance.com:9443/ws/<symbol>@ticker
+        // Or use combined streams: wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker
+        
+        // We will subscribe to individual tickers dynamically when assets are loaded
+        // So, we don't need to specify streams in the initial URL here if we use individual subscriptions.
+        // However, for a large number of assets, a combined stream is more efficient.
+        // For simplicity in this example, we'll keep it general and assume we might subscribe later.
+
+        const wsUrl = 'wss://stream.binance.com:9443/ws'; // General WebSocket endpoint
+        
+        if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
+            console.log('[AssetsPage] Binance WebSocket is already open.');
+            return;
+        }
+        
+        console.log('[AssetsPage] Attempting to connect to Binance WebSocket...');
+        binanceWebSocket = new WebSocket(wsUrl);
+
+        binanceWebSocket.onopen = () => {
+            console.log('[AssetsPage] Binance WebSocket connection established.');
+            // If there are assets already loaded and we need to subscribe, do it here
+            if (allFetchedAssets.length > 0) {
+                subscribeToAssetTickers(allFetchedAssets);
+            }
+        };
+
+        binanceWebSocket.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                // console.log('[AssetsPage] WebSocket message received:', message);
+
+                if (message.e === '24hrTicker') { // Check if it's a ticker update
+                    const symbol = message.s; // e.g., BTCUSDT
+                    const price = parseFloat(message.c); // Last price
+
+                    allFetchedAssets = allFetchedAssets.map(asset => {
+                        // Asset.coin_symbol is BTC, ETH etc. We need to match with pairs like BTCUSDT
+                        const pairSymbol = `${asset.coin_symbol.toUpperCase()}USDT`; // Assuming USDT is the quote currency for valuation
+                        if (pairSymbol === symbol && asset.coin_symbol.toUpperCase() !== 'USDT') {
+                            const oldUsdValue = parseFloat(asset.value_usd);
+                            asset.value_usd = (parseFloat(asset.total_balance) * price).toFixed(2);
+                            // console.log(`[AssetsPage] Updated ${asset.coin_symbol} price via WebSocket: ${price}, new value: ${asset.value_usd}`);
+                            if (oldUsdValue !== parseFloat(asset.value_usd)) {
+                                // Only re-render if value actually changed to avoid unnecessary DOM updates
+                                // This can be further optimized to update only the specific row.
+                                filterAndPrepareAssets(); 
+                            }
+                        }
+                        return asset;
+                    });
+                    // Recalculate total portfolio value after potential updates
+                    recalculateAndRenderTotalPortfolioValue();
+                } else if (message.result === null && message.id) {
+                    // This is often a confirmation for subscription/unsubscription
+                    console.log(`[AssetsPage] WebSocket subscription/unsubscription ack ID ${message.id}`);
+                }
+
+
+            } catch (error) {
+                console.error('[AssetsPage] Error processing WebSocket message:', error, event.data);
+            }
+        };
+
+        binanceWebSocket.onerror = (error) => {
+            console.error('[AssetsPage] Binance WebSocket error:', error);
+            // Implement reconnection logic if desired
+        };
+
+        binanceWebSocket.onclose = (event) => {
+            console.log(`[AssetsPage] Binance WebSocket connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+            binanceWebSocket = null;
+            subscribedSymbols.clear();
+            // Optional: attempt to reconnect after a delay
+            // setTimeout(connectBinanceWebSocket, 5000); // Reconnect after 5 seconds
+        };
+    }
+
+    function subscribeToAssetTickers(assets) {
+        if (!binanceWebSocket || binanceWebSocket.readyState !== WebSocket.OPEN) {
+            console.warn('[AssetsPage] WebSocket not open. Cannot subscribe to tickers.');
+            if (!binanceWebSocket) connectBinanceWebSocket(); // Attempt to connect if not already trying
+            return;
+        }
+
+        const newSymbolsToSubscribe = [];
+        assets.forEach(asset => {
+            const symbol = asset.coin_symbol.toUpperCase();
+            if (symbol !== 'USDT' && symbol !== 'USD') { // Don't need ticker for stablecoins relative to themselves
+                const pair = `${symbol}USDT`; // Assuming USDT is the quote for live price
+                if (!subscribedSymbols.has(pair)) {
+                    newSymbolsToSubscribe.push(`${pair.toLowerCase()}@ticker`);
+                    subscribedSymbols.add(pair);
+                }
+            }
+        });
+
+        if (newSymbolsToSubscribe.length > 0) {
+            const subscriptionMessage = {
+                method: "SUBSCRIBE",
+                params: newSymbolsToSubscribe,
+                id: Date.now() // Unique ID for the request
+            };
+            console.log('[AssetsPage] Subscribing to tickers:', newSymbolsToSubscribe);
+            binanceWebSocket.send(JSON.stringify(subscriptionMessage));
+        }
+    }
+    
+    function unsubscribeFromAllTickers() {
+        if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size > 0) {
+            const symbolsToUnsubscribe = Array.from(subscribedSymbols).map(s => `${s.toLowerCase()}@ticker`);
+            const unsubscriptionMessage = {
+                method: "UNSUBSCRIBE",
+                params: symbolsToUnsubscribe,
+                id: Date.now() + 1 
+            };
+            console.log('[AssetsPage] Unsubscribing from tickers:', symbolsToUnsubscribe);
+            binanceWebSocket.send(JSON.stringify(unsubscriptionMessage));
+            subscribedSymbols.clear();
+        }
+    }
+
+
+    // --- Auth and Header Logic ---
     if (token) {
         if(logoutButton) logoutButton.style.display = 'inline-block';
         if(signUpLink) signUpLink.style.display = 'none';
         if(loginLink) loginLink.style.display = 'none';
         if(userGreeting) {
-            // Можна додати логіку для отримання імені користувача з токена або /api/profile
-            // const decodedToken = JSON.parse(atob(token.split('.')[1])); // Простий decode, НЕБЕЗПЕЧНО якщо токен містить сенситивну інфо
-            // userGreeting.textContent = `Вітаю, ${decodedToken.username || 'User'}!`;
+            // Fetch username or use a placeholder
+            // For simplicity, let's assume username is not critical here or fetched elsewhere
+            // userGreeting.textContent = `Hello, User!`; 
             // userGreeting.style.display = 'inline-block';
         }
         if(logoutButton) {
             logoutButton.addEventListener('click', async () => {
                 console.log('[AssetsPage] Logout clicked.');
-                const currentToken = localStorage.getItem('authToken'); // Повторно отримуємо, якщо потрібно
+                unsubscribeFromAllTickers(); // Unsubscribe before logging out
+                if (binanceWebSocket) binanceWebSocket.close();
+
+                const currentToken = localStorage.getItem('authToken');
                 localStorage.removeItem('authToken');
                 try {
-                    // Повідомляємо бекенд про логаут (опціонально, залежить від вашої логіки сесій)
                     await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
                 } catch(e) { console.error('Logout API error', e); }
-                window.location.href = 'login-page.html'; // Або на головну
+                window.location.href = 'login-page.html';
             });
         }
     } else {
@@ -158,13 +323,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(loginLink) loginLink.style.display = 'inline-block';
         if(userGreeting) userGreeting.style.display = 'none';
         window.location.href = 'login-page.html';
-        return; // Важливо, щоб скрипт не продовжував виконання без токена
+        return;
     }
 
-
+    // --- Data Fetching and Rendering ---
     async function fetchProtectedData(url, options = {}) {
-        // Ця функція вже була в попередньому прикладі, залишаємо її
-        const currentToken = localStorage.getItem('authToken'); // Перевірка токена перед кожним запитом
+        const currentToken = localStorage.getItem('authToken');
         if (!currentToken) {
             window.location.href = 'login-page.html';
             return Promise.reject(new Error('No token, redirecting.'));
@@ -193,65 +357,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function getCoinIconPlaceholder(symbol) {
-        // Простий плейсхолдер з першою літерою символу
-        return `<span class="coin-icon-placeholder">${symbol.charAt(0).toUpperCase()}</span>`;
-    }
-
     function renderAssets(assetsToRender) {
         const header = assetsTableContainer.querySelector('.custom-table-header');
-        assetsTableContainer.innerHTML = '';
-        if (header) assetsTableContainer.appendChild(header);
+        assetsTableContainer.innerHTML = ''; // Clear previous content
+        if (header) assetsTableContainer.appendChild(header); // Re-add header
 
         if (!assetsToRender || assetsToRender.length === 0) {
-            const message = (searchAssetInput.value || hideZeroBalancesCheckbox.checked) ? 'Активи не знайдено за вашим запитом.' : 'У вас поки немає активів.';
+            const message = (searchAssetInput.value || hideZeroBalancesCheckbox.checked) ? 'No assets found matching your criteria.' : 'You have no assets yet.';
             assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${message}</div>`);
             if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00';
             return;
         }
 
-        let calculatedTotalPortfolioValue = 0;
-
         assetsToRender.forEach(asset => {
             const row = document.createElement('div');
             row.classList.add('custom-table-row', 'asset-row');
-            const valueUSD = parseFloat(asset.value_usd) || 0;
-            calculatedTotalPortfolioValue += valueUSD;
+            row.dataset.assetSymbol = asset.coin_symbol.toUpperCase(); // For easier targeting if needed
 
-            // Використовуємо coin_name з бекенда, якщо є, інакше coin_symbol
+            const valueUSD = parseFloat(asset.value_usd) || 0;
             const displayName = asset.coin_name && asset.coin_name !== asset.coin_symbol ? asset.coin_name : asset.coin_symbol;
+            const quantityPrecision = asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8;
 
             row.innerHTML = `
                 <span class="coin-details">
-                    ${getCoinIconPlaceholder(asset.coin_symbol)}
                     <span class="coin-name-full">${displayName} <span class="coin-symbol-display">(${asset.coin_symbol.toUpperCase()})</span></span>
                 </span>
-                <span>${parseFloat(asset.total_balance).toFixed(asset.quantity_precision || 8)}</span>
-                <span>${parseFloat(asset.available_balance).toFixed(asset.quantity_precision || 8)}</span>
-                <span>${parseFloat(asset.in_order_balance).toFixed(asset.quantity_precision || 8)}</span>
-                <span>$${valueUSD.toFixed(2)}</span>
+                <span>${parseFloat(asset.total_balance).toFixed(quantityPrecision)}</span>
+                <span>${parseFloat(asset.available_balance).toFixed(quantityPrecision)}</span>
+                <span>${parseFloat(asset.in_order_balance).toFixed(quantityPrecision)}</span>
+                <span class="asset-value-usd">$${valueUSD.toFixed(2)}</span>
                 <span class="asset-actions">
-                    <a href="deposit-page.html?coin=${asset.coin_symbol}" class="action-link">Депозит</a>
-                    <a href="withdraw-page.html?coin=${asset.coin_symbol}" class="action-link">Вивести</a>
-                    <a href="spot-page.html?pair=${asset.coin_symbol.toUpperCase()}USDT" class="action-link">Торгувати</a>
+                    <a href="buy_crypto-page.html?coin=${asset.coin_symbol}" class="action-link">Deposit</a>
+                    <a href="markets.html?coin=${asset.coin_symbol}" class="action-link">Withdraw</a>
+                    <a href="spot-page.html?pair=${asset.coin_symbol.toUpperCase()}USDT" class="action-link">Trade</a>
                 </span>
             `;
-            // Примітка: quantity_precision має надходити з бекенда разом з іншими даними активу,
-            // або ви можете мати мапу точностей на фронтенді. Поки що використовується 8 за замовчуванням.
             assetsTableContainer.appendChild(row);
         });
 
-        if (totalPortfolioValueElement) {
-            totalPortfolioValueElement.textContent = `$${calculatedTotalPortfolioValue.toFixed(2)}`;
-        }
+        recalculateAndRenderTotalPortfolioValue();
 
-        // Логіка для кнопки "Показати всі"
         if (allFetchedAssets.length > initialDisplayLimit && !currentlyDisplayingAll) {
             if (showAllContainer) showAllContainer.style.display = 'block';
         } else {
             if (showAllContainer) showAllContainer.style.display = 'none';
         }
     }
+    
+    function recalculateAndRenderTotalPortfolioValue() {
+        let calculatedTotalPortfolioValue = 0;
+        allFetchedAssets.forEach(asset => {
+            calculatedTotalPortfolioValue += parseFloat(asset.value_usd) || 0;
+        });
+        if (totalPortfolioValueElement) {
+            totalPortfolioValueElement.textContent = `$${calculatedTotalPortfolioValue.toFixed(2)}`;
+        }
+    }
+
 
     function filterAndPrepareAssets() {
         const searchTerm = searchAssetInput.value.toLowerCase();
@@ -262,21 +424,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const symbolMatch = asset.coin_symbol.toLowerCase().includes(searchTerm);
             const matchesSearch = nameMatch || symbolMatch;
             
-            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9; // Вважаємо нульовим, якщо дуже мало
+            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9; // Consider zero if very small
             return matchesSearch && (!hideZero || nonZeroBalance);
         });
 
-        // Сортування: спочатку активи з ненульовим балансом, потім за вартістю в USD спаданням
         filteredAssets.sort((a, b) => {
             const aBalance = parseFloat(a.total_balance);
             const bBalance = parseFloat(b.total_balance);
             const aValue = parseFloat(a.value_usd) || 0;
             const bValue = parseFloat(b.value_usd) || 0;
 
-            if (aBalance > 1e-9 && bBalance <= 1e-9) return -1; // a вище
-            if (bBalance > 1e-9 && aBalance <= 1e-9) return 1;  // b вище
+            if (aBalance > 1e-9 && bBalance <= 1e-9) return -1;
+            if (bBalance > 1e-9 && aBalance <= 1e-9) return 1;  
             
-            return bValue - aValue; // Сортування за вартістю
+            return bValue - aValue; // Sort by value
         });
         
         const assetsToDisplay = currentlyDisplayingAll ? filteredAssets : filteredAssets.slice(0, initialDisplayLimit);
@@ -285,9 +446,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function loadAssets() {
         console.log('[AssetsPage] Attempting to load assets data...');
-        // Очистити плейсхолдер перед завантаженням
         const placeholder = assetsTableContainer.querySelector('.no-data-placeholder');
-        if (placeholder) placeholder.textContent = 'Завантаження активів...';
+        if (placeholder) placeholder.textContent = 'Loading assets...';
 
         try {
             const data = await fetchProtectedData('/api/assets');
@@ -295,38 +455,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (data.success && data.assets) {
                 allFetchedAssets = data.assets.map(asset => ({
                     ...asset,
-                    // Додаємо quantity_precision, якщо воно є, інакше за замовчуванням
-                    // Це поле має надходити з /api/assets, яке бере його з market_pairs
                     quantity_precision: asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8 
                 }));
-                currentlyDisplayingAll = false; // При кожному завантаженні скидаємо на початковий вигляд
-                if (showAllAssetsButton) showAllAssetsButton.textContent = 'Показати всі активи';
-                filterAndPrepareAssets();
+                currentlyDisplayingAll = false;
+                if (showAllAssetsButton) showAllAssetsButton.textContent = 'Show All Assets';
+                filterAndPrepareAssets(); // This will also call renderAssets
+                subscribeToAssetTickers(allFetchedAssets); // Subscribe after assets are loaded
                 console.log('[AssetsPage] Assets data processed and rendered.');
             } else {
                 console.error('[AssetsPage] Failed to load assets from server:', data.message);
-                if (placeholder) placeholder.textContent = data.message || 'Не вдалося завантажити активи.';
-                else assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Не вдалося завантажити активи.'}</div>`);
+                if (placeholder) placeholder.textContent = data.message || 'Failed to load assets.';
+                else assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Failed to load assets.'}</div>`);
             }
         } catch (error) {
             console.error('[AssetsPage] Error in loadAssets catcher:', error.message || error);
-            if (placeholder) placeholder.textContent = 'Помилка завантаження активів. Будь ласка, спробуйте знову.';
-            else assetsTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Помилка завантаження активів. Будь ласка, спробуйте знову.</div>');
+            if (placeholder) placeholder.textContent = 'Error loading assets. Please try again.';
+            else assetsTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading assets. Please try again.</div>');
         }
     }
 
-    // Обробники подій для фільтрів
+    // --- Event Handlers ---
     if(searchAssetInput) searchAssetInput.addEventListener('input', filterAndPrepareAssets);
     if(hideZeroBalancesCheckbox) hideZeroBalancesCheckbox.addEventListener('change', filterAndPrepareAssets);
     if(showAllAssetsButton) {
         showAllAssetsButton.addEventListener('click', () => {
             currentlyDisplayingAll = !currentlyDisplayingAll;
-            showAllAssetsButton.textContent = currentlyDisplayingAll ? 'Показати менше' : 'Показати всі активи';
+            showAllAssetsButton.textContent = currentlyDisplayingAll ? 'Show Less' : 'Show All Assets';
             filterAndPrepareAssets();
         });
     }
+    
+    // Clean up WebSocket on page unload
+    window.addEventListener('beforeunload', () => {
+        unsubscribeFromAllTickers();
+        if (binanceWebSocket) {
+            binanceWebSocket.close();
+        }
+    });
 
-    loadAssets();
+    // --- Initial Load ---
+    loadAssets(); // Load assets from API
+    connectBinanceWebSocket(); // Establish WebSocket connection
 });
 </script>
 </body>
