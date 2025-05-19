@@ -1,123 +1,727 @@
-/* futures-page.css */
-
-/* Стилі для body, header, card-base, ui-panel тепер в інших файлах */
+/* futures-page.css (версія, яку ти надала, до моїх останніх змін) */
 
 /* --- СПЕЦИФІЧНИЙ ЗАГОЛОВОК СТОРІНКИ "Futures" --- */
 .page-specific-title {
   text-align: center;
-  padding: 1rem 0 0.75rem 0;
+  padding: 0.8rem 0;
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
 }
-
 .page-specific-title h1 {
-  font-size: 1.5em;
+  font-size: 1.3em;
   margin: 0;
   font-weight: 600;
   color: #1e2329;
 }
 
-/* --- СІРА ПАНЕЛЬ ПІД ЗАГОЛОВКОМ --- */
-.secondary-header-panel {
-  /* ... стилі для сірої панелі ... */
-  background-color: #4a4a4a;
-  padding: 0.5rem 1.5rem;
+/* --- ВЕРХНЯ ІНФОРМАЦІЙНА ПАНЕЛЬ --- */
+.futures-top-info-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #e0e0e0;
+  padding: 0.75rem 1rem;
+  background-color: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.8rem;
 }
-/* ... (решта стилів для .secondary-header-panel) ... */
-.panel-left .pair-selector {
-  font-weight: 500;
-  font-size: 1em;
-}
-.panel-center {
-  display: flex;
-  gap: 0.75rem;
-}
-.panel-nav-button {
-  background-color: #5a5a5a;
-  color: #e0e0e0;
-  padding: 0.3rem 0.6rem;
-  text-decoration: none;
-  border-radius: 0.25rem;
-  font-size: 0.85em;
-  border: none;
-  transition: background-color 0.2s;
-}
-.panel-nav-button:hover {
-  background-color: #6a6a6a;
-}
-.panel-right {
+.futures-top-info-bar .pair-selection-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1.5rem;
 }
-.panel-icons span {
-  display: inline-block;
-  width: 1.1rem;
-  height: 1.1rem;
-  background-color: #5a5a5a;
-  border-radius: 0.1875rem;
+.futures-top-info-bar .current-pair {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #1e2329;
+}
+.futures-top-info-bar .current-pair .quote-asset {
+  font-weight: normal;
+  font-size: 0.8em;
+  color: #6b7280;
+}
+.futures-top-info-bar .market-stats {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.futures-top-info-bar .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.futures-top-info-bar .stat-item .label {
+  color: #6b7280;
+  font-size: 0.9em;
+}
+.futures-top-info-bar .stat-item .value {
+  color: #374151;
+  font-weight: 500;
+}
+.futures-top-info-bar .stat-item .value.positive {
+  color: #10b981;
+}
+.futures-top-info-bar .stat-item .value.negative {
+  color: #ef4444;
+}
+.futures-top-info-bar .bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.futures-top-info-bar .bar-actions a,
+.futures-top-info-bar .bar-actions button {
+  color: #4b5563;
+  text-decoration: none;
+  font-size: 0.9em;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.futures-top-info-bar .bar-actions a:hover,
+.futures-top-info-bar .bar-actions button:hover {
+  color: #1e2329;
 }
 
 /* --- МАКЕТ ОСНОВНОГО КОНТЕНТУ --- */
 .futures-interface-layout {
-  display: flex;
+  display: flex; /* ВИКОРИСТОВУВАВСЯ FLEX */
   gap: 1rem;
   padding: 1rem;
   margin: 1.25rem auto;
   max-width: 1800px;
-  min-height: calc(100vh - 4.375rem - 2.75rem - 2.7rem - 2.5rem);
+  /* min-height розраховувався приблизно */
+  min-height: calc(
+    100vh - 60px - 52px - 45px - 2.5rem
+  ); /* 2.5rem для margin (1.25rem + 1.25rem) */
 }
 
 .panel-column {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1rem; /* Був більший gap */
 }
 
-.main-chart-area {
-  flex: 1;
+/* Ліва (основна) колонка тепер .main-content-area */
+.main-content-area {
+  /* Раніше .main-chart-area */
+  flex: 1; /* Займає основний простір */
 }
 
-.right-sidebar {
-  flex: 0 0 28%;
-  min-width: 18rem;
+/* Права бічна колонка тепер .trading-sidebar */
+.trading-sidebar {
+  /* Раніше .right-sidebar */
+  flex: 0 0 28%; /* Була відносна ширина */
+  min-width: 35rem; /* Було 18rem */
 }
 
-/* СТИЛІ ДЛЯ .ui-panel та .ui-panel .panel-title ТЕПЕР В cards.css */
-
-/* Специфічні стилі для розмірів карток на цій сторінці */
-.main-chart-area .chart-card {
-  flex-basis: 60%;
-  min-height: 25rem;
-}
-
-.main-chart-area .positions-history-card {
-  flex-basis: 40%;
-  min-height: 15rem;
-}
-
-.right-sidebar .order-book-card {
-  flex-basis: 50%;
-  min-height: 18rem;
-}
-
-.right-sidebar .trading-panel-card {
-  flex-basis: 50%;
-  min-height: 18rem;
-}
-
-.chart-card {
-  flex-basis: 70%; /* Або скільки потрібно для висоти */
-  min-height: 25rem; /* Наприклад, 400px - мінімальна висота */
-  padding: 0.5rem; /* Зменшуємо padding, щоб віджет мав більше місця */
-  display: flex; /* Щоб внутрішній tradingview-widget-container розтягувався */
+/* СТИЛІ ДЛЯ .ui-panel та .ui-panel .panel-title УСПАДКОВУЮТЬСЯ АБО ВИЗНАЧЕНІ ГЛОБАЛЬНО/В CARDS.CSS */
+/* Загальні стилі для панелей UI (картки), які могли бути в cards.css або global.css */
+.ui-panel {
+  background-color: #fff;
+  border-radius: 0.5rem; /* Стандартне заокруглення */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Стандартна тінь */
+  padding: 0.75rem; /* Стандартний padding */
+  display: flex;
   flex-direction: column;
 }
+.ui-panel .panel-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #474d57;
+  margin: -0.75rem -0.75rem 0.75rem -0.75rem; /* Компенсація padding для фону на всю ширину */
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #eef0f2;
+  background-color: #f9fafb;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ui-panel .panel-title span {
+  /* Для тексту типу (BTCUSDTPERP) */
+  font-size: 0.9em;
+  color: #707a8a;
+  font-weight: normal;
+}
 
-.tradingview-widget-container {
-  flex-grow: 1; /* Дозволяє віджету заповнити доступний простір в .chart-card */
+/* Розміри карток */
+.main-content-area .chart-card {
+  flex-basis: 5%; /* Було 60% для ф'ючерсів */
+  min-height: 25rem; /* Було 25rem */
+  padding: 0.5rem;
+  /* display: flex; flex-direction: column; -- це вже є від .ui-panel */
+}
+.chart-card .tradingview-widget-container {
+  flex-grow: 1;
+}
+
+.main-content-area .positions-history-card {
+  flex-basis: 40%; /* Було 40% */
+  min-height: 15rem; /* Було 15rem */
+}
+
+.trading-sidebar .order-book-card {
+  /* Раніше .right-sidebar .order-book-card */
+  flex-basis: 50%; /* Було 50% */
+  min-height: 18rem; /* Було 18rem */
+  /* display: flex; flex-direction: column; -- вже є від .ui-panel */
+}
+
+.trading-sidebar .market-trades-card-futures {
+  /* Стилі для цієї картки могли бути відсутні або загальні */
+  /* Додамо базові, щоб вона займала місце */
+  flex-basis: auto; /* Визначається вмістом або іншими обмеженнями */
+  min-height: 150px; /* Приклад */
+  display: flex;
+  flex-direction: column;
+}
+.trading-sidebar #futures-market-trades-list {
+  overflow-y: auto;
+  flex-grow: 1;
+  font-size: 0.75rem; /* Дрібніший шрифт для угод */
+  line-height: 1.3;
+}
+.trading-sidebar #futures-market-trades-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5px 0.6rem;
+}
+.trading-sidebar #futures-market-trades-list .price {
+  flex-basis: 35%;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trading-sidebar #futures-market-trades-list .amount {
+  flex-basis: 35%;
+  text-align: right;
+  color: #1f2937;
+}
+.trading-sidebar #futures-market-trades-list .time {
+  flex-basis: 30%;
+  text-align: right;
+  color: #6b7280;
+}
+.trading-sidebar .sell-trade {
+  color: #ef4444;
+}
+.trading-sidebar .buy-trade {
+  color: #10b981;
+}
+
+.trading-sidebar .trading-panel-card {
+  /* Раніше .right-sidebar .trading-panel-card */
+  flex-basis: 50%; /* Було 50% */
+  min-height: 18rem; /* Було 18rem */
+}
+
+/* Стилі для вкладок в positions-history-card */
+.positions-history-card .tab-navigation {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 0.85rem;
+  background-color: #f9fafb;
+  flex-shrink: 0;
+}
+.positions-history-card .tab-button {
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.8rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s, border-bottom-color 0.2s;
+  white-space: nowrap;
+}
+.positions-history-card .tab-button:hover {
+  color: #374151;
+}
+.positions-history-card .tab-button.active {
+  color: #1e2329;
+  border-bottom-color: #f065f7;
+  font-weight: 500;
+}
+.positions-history-card .tab-content-area {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-top: 0.5rem;
+} /* Додано padding-top */
+.positions-history-card .tab-pane {
+  display: none;
+  padding: 0.75rem;
+}
+.positions-history-card .tab-pane.active {
+  display: block;
+}
+
+/* Стилі для Order Book картки */
+.order-book-card .order-book-columns {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.order-book-card .order-book-columns span {
+  flex: 1;
+  text-align: right;
+}
+.order-book-card .order-book-columns span:first-child {
+  text-align: left;
+  flex-basis: 36%;
+}
+.order-book-card .order-book-columns span:nth-child(2) {
+  text-align: right;
+  flex-basis: 32%;
+}
+.order-book-card .order-book-columns span:last-child {
+  flex-basis: 32%;
+}
+.order-book-card .order-book-content {
+  font-size: 0.75rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.order-book-card #futures-asks-list,
+.order-book-card #futures-bids-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.order-book-card #futures-asks-list li,
+.order-book-card #futures-bids-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2.5px 0.85rem;
+  position: relative;
+  line-height: 1.3;
+}
+.order-book-card #futures-asks-list li span,
+.order-book-card #futures-bids-list li span {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+  /* overflow: hidden; text-overflow: ellipsis; -- можна додати, якщо текст не вміщається */
+}
+.order-book-card .price {
+  flex-basis: 36%;
+  text-align: left;
+}
+.order-book-card .amount {
+  color: #1f2937;
+  flex-basis: 32%;
+}
+.order-book-card .total {
+  color: #6b7280;
+  flex-basis: 32%;
+}
+.order-book-card .ask-price {
+  color: #ef4444 !important;
+}
+.order-book-card .bid-price {
+  color: #10b981 !important;
+}
+.order-book-card .current-price-display {
+  padding: 0.5rem 0.85rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  border-top: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.order-book-card .price-up {
+  color: #10b981 !important;
+}
+.order-book-card .price-down {
+  color: #ef4444 !important;
+}
+
+/* Стилі для Market Trades на ф'ючерсах (з твоєї попередньої версії HTML) */
+.market-trades-card-futures .panel-title span {
+  font-size: 0.8em;
+  color: #707a8a;
+  margin-left: 5px;
+  font-weight: normal;
+}
+.market-trades-card-futures .market-trades-columns-futures {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.market-trades-card-futures .market-trades-columns-futures span {
+  flex: 1;
+  text-align: right;
+}
+.market-trades-card-futures .market-trades-columns-futures span:first-child {
+  text-align: left;
+  flex-basis: 35%;
+}
+.market-trades-card-futures .market-trades-columns-futures span:nth-child(2) {
+  flex-basis: 35%;
+}
+.market-trades-card-futures #futures-market-trades-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  line-height: 1.4;
+}
+.market-trades-card-futures #futures-market-trades-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0.85rem;
+}
+.market-trades-card-futures #futures-market-trades-list .price {
+  flex-basis: 35%;
+  text-align: left;
+}
+.market-trades-card-futures #futures-market-trades-list .amount {
+  flex-basis: 35%;
+  text-align: right;
+  color: #1f2937;
+}
+.market-trades-card-futures #futures-market-trades-list .time {
+  flex-basis: 30%;
+  text-align: right;
+  color: #6b7280;
+}
+.market-trades-card-futures .sell-trade {
+  color: #ef4444;
+}
+.market-trades-card-futures .buy-trade {
+  color: #10b981;
+}
+
+/* --- СТИЛІ ДЛЯ FUTURES TRADING PANEL CARD --- */
+.trading-panel-card .trading-form-container {
+  padding: 0.5rem 0.75rem; /* Внутрішні відступи для вмісту форми */
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem; /* Зменшено gap */
+}
+
+/* Вкладки Крос/Ізольована та Плече */
+.leverage-cross-isolated-tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #eef0f2; /* Тонша лінія */
+}
+.margin-type-tabs {
+  display: flex;
+  background-color: #eef0f2; /* Фон для групи кнопок */
+  border-radius: 4px;
+  padding: 2px;
+}
+.leverage-cross-isolated-tabs .type-tab {
+  /* Використовуємо .type-tab зі споту */
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem; /* Менший шрифт */
+  border: none;
+  background-color: transparent;
+  color: #707a8a;
+  cursor: pointer;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.leverage-cross-isolated-tabs .type-tab.active {
+  background-color: #fff; /* Білий фон для активної */
+  color: #1e2329;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.leverage-selector .leverage-btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  background-color: #eef0f2;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #1e2329;
+  font-weight: 500;
+  cursor: pointer;
+}
+.leverage-selector .leverage-btn:hover {
+  border-color: #d1d5db;
+}
+
+/* Вкладки типів виконання ордерів (Ліміт, Маркет...) */
+.execution-type-tabs {
+  /* Стилі зі споту, можливо, трохи адаптувати */
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eef0f2;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.execution-type-tabs .exec-tab {
+  /* Стилі зі споту */
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem; /* Трохи менше */
+  border: none;
+  background-color: transparent;
+  color: #707a8a;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+  font-weight: 500;
+}
+.execution-type-tabs .exec-tab:hover {
+  color: #1e2329;
+}
+.execution-type-tabs .exec-tab.active {
+  color: #1e2329;
+} /* Можна додати фон або підкреслення */
+.execution-type-tabs .info-icon {
+  margin-left: auto;
+  color: #707a8a;
+  cursor: help;
+}
+.stop-limit-dropdown .dropdown-toggle::after {
+  content: "▼";
+  font-size: 0.7em;
+  margin-left: 0.3em;
+  display: inline-block;
+}
+
+/* Контейнер для двох форм (Купівля/Продаж) */
+.order-forms-columns {
+  /* Стилі зі споту */
+  display: flex;
+  gap: 1rem; /* Зменшено gap */
+  flex-grow: 1;
+}
+
+.order-form {
+  /* Стилі зі споту, але з новими класами buy-long-form / sell-short-form */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Зменшено gap */
+}
+.order-form .available-balance.top {
+  /* Баланс зверху */
+  font-size: 0.7rem;
+  color: #707a8a;
+  margin-bottom: 0.3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.order-form .available-balance.top .refresh-icon {
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.order-form .available-balance.top span:nth-child(2) {
+  /* Значення балансу */
+  color: #1e2329;
+  font-weight: 500;
+}
+
+.order-form .input-group {
+  /* Стилі зі споту */
+  display: flex;
+  flex-direction: column;
+}
+.order-form .input-group label {
+  font-size: 0.7rem; /* Менші мітки */
+  color: #707a8a;
+  margin-bottom: 0.2rem;
+}
+.order-form .input-with-currency {
+  /* Стилі зі споту */
+  display: flex;
+  align-items: center;
+  background-color: #f0f2f5;
+  border: 1px solid #dde0e3;
+  border-radius: 4px;
+  padding: 0 0.5rem; /* Зменшено padding */
+}
+.order-form .input-with-currency input[type="number"] {
+  flex-grow: 1;
+  padding: 0.4rem 0.2rem; /* Зменшено padding */
+  border: none;
+  background-color: transparent;
+  font-size: 0.85rem; /* Менший шрифт в інпуті */
+  color: #1e2329;
+  outline: none;
+  text-align: left;
+  -moz-appearance: textfield;
+}
+.order-form
+  .input-with-currency
+  input[type="number"]::-webkit-outer-spin-button,
+.order-form
+  .input-with-currency
+  input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.order-form .input-with-currency .currency {
+  /* Стилі зі споту */
+  font-size: 0.75rem;
+  color: #474d57;
+  padding-left: 0.4rem;
+  white-space: nowrap;
+}
+
+/* Слайдер балансу - стилі зі споту */
+.balance-slider {
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+.balance-slider .slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  background: #d1d5db;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.15s ease-in-out;
+  border-radius: 3px;
+}
+.balance-slider .slider:hover {
+  opacity: 1;
+}
+.balance-slider .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #4b5563;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.balance-slider .slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #4b5563;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.slider-percentage-markers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: #707a8a;
+  padding: 0 1px;
+  margin-top: 1px;
+}
+
+/* TP/SL та Advanced для ф'ючерсів */
+.advanced-options-futures {
+  display: flex;
+  justify-content: space-between; /* Розміщуємо TP/SL та Advanced по краях */
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+.advanced-options-futures input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+  margin-right: 0.2rem;
+}
+.advanced-options-futures label {
+  color: #474d57;
+  cursor: pointer;
+}
+.advanced-options-futures .advanced-link {
+  color: #f0b90b; /* Жовтий Binance */
+  text-decoration: none;
+  font-weight: 500;
+}
+.advanced-options-futures .advanced-link:hover {
+  text-decoration: underline;
+}
+
+/* Інформація про вартість ордера */
+.order-cost-info {
+  font-size: 0.7rem;
+  color: #707a8a;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column; /* Кожен рядок окремо */
+  gap: 0.2rem;
+}
+.order-cost-info div {
+  display: flex;
+  justify-content: space-between;
+}
+.order-cost-info span:last-child {
+  /* Значення вартості/макс. кількості */
+  color: #1e2329;
+  font-weight: 500;
+}
+
+/* Кнопки Buy/Long та Sell/Short */
+.action-button {
+  /* Стилі зі споту, але з новими класами */
+  width: 100%;
+  padding: 0.6rem 0; /* Зменшено padding */
+  font-size: 0.85rem; /* Менший шрифт */
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: opacity 0.2s; /* Плавна зміна прозорості */
+}
+.action-button:hover {
+  opacity: 0.85;
+}
+
+.buy-long-button {
+  /* Клас для кнопки Buy/Long */
+  background-color: #0ecb81;
+  color: white;
+}
+
+.sell-short-button {
+  /* Клас для кнопки Sell/Short */
+  background-color: #f6465d;
+  color: white;
+}
+
+.auth-prompt {
+  /* Стилі зі споту */
+  display: none;
+  text-align: center;
+  padding: 1rem 0 0;
+  color: #777;
+  font-size: 0.8rem;
+}
+.auth-prompt a {
+  color: #f0b90b;
+  text-decoration: underline;
 }
