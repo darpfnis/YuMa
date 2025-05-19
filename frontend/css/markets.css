@@ -124,3 +124,55 @@
   padding: 1.875rem; /* 30px */
   text-align: center;
 }
+body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f6f8; color: #333; font-size: 1rem; line-height:1.5; }
+        .market-page-layout { padding: 2rem; max-width: 1400px; margin: 2rem auto; }
+        .asset-selector-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .asset-button {
+            padding: 0.8rem 1.5rem; border: 1px solid #d1d5db; border-radius: 2rem;
+            background-color: #fff; cursor: pointer; font-size: 1.4rem;
+            white-space: nowrap; transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+            color: #374151; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .asset-button:hover { background-color: #f0f0f0; border-color: #9ca3af; box-shadow: 0 2px 4px rgba(0,0,0,0.07);}
+        .asset-button.active { background-color: #1a1a2e; color: white; border-color: #1a1a2e; font-weight: 500; }
+
+        .popular-pairs-section, .filtered-pairs-section { margin-bottom: 3rem; }
+        .section-title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #e0e0e0; padding-bottom: 1rem;}
+        .section-title { font-size: 2.2rem; color: #1a1a2e; margin: 0; }
+        .search-input-container { }
+        .search-input {
+            padding: 1rem 1.2rem; border: 1px solid #d1d5db; border-radius: 0.6rem;
+            font-size: 1.4rem; width: 100%; max-width: 300px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus { border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.2); outline: none;}
+
+        .custom-table-wrapper { margin-top: 1rem; background-color: #fff; border-radius: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow-x: auto;}
+        .custom-table-header, .custom-table-row { display: flex; align-items: center; padding: 1.2rem 1rem; min-width: 700px;}
+        .custom-table-row { border-top: 1px solid #f3f4f6; transition: background-color 0.15s; }
+        .custom-table-header { font-weight: 600; color: #4b5563; font-size: 1.3rem; background-color: #f9fafb; text-transform: uppercase; letter-spacing: 0.05em;}
+        .custom-table-header span, .custom-table-row span { flex: 1; padding: 0 0.8rem; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .custom-table-header span.col-fav, .custom-table-row span.col-fav { flex-basis: 5rem; flex-grow: 0; text-align: center;}
+        .custom-table-header span.col-pair, .custom-table-row span.col-pair { flex-grow: 1.2; min-width: 100px; font-weight: 500;}
+        .custom-table-header span.col-name, .custom-table-row span.col-name { flex-grow: 2; min-width: 180px; color: #6b7280;}
+        .custom-table-header span.col-price, .custom-table-row span.col-price { flex-grow: 1; text-align: right; min-width: 100px;}
+        .custom-table-header span.col-change, .custom-table-row span.col-change { flex-grow: 1; text-align: right; min-width: 90px;}
+        .custom-table-header span.col-action, .custom-table-row span.col-action { flex-grow: 0.8; text-align: center; min-width: 80px;}
+
+        .custom-table-row:hover { background-color: #f0f4f8; }
+        .no-data-placeholder { text-align: center; padding: 3rem 2rem; color: #6b7280; font-style: italic; font-size: 1.5rem; }
+        .favourite-btn { cursor: pointer; font-size: 2rem; color: #d1d5db; border: none; background: none; padding: 0.2rem 0.5rem; transition: color 0.2s, transform 0.2s; }
+        .favourite-btn:hover { transform: scale(1.1); }
+        .favourite-btn.is-favourite { color: #f59e0b; }
+        .positive-change { color: #10b981; }
+        .negative-change { color: #ef4444; }
+        .action-link { color: #3b82f6; text-decoration: none; font-size: 1.4rem; font-weight: 500; }
+        .action-link:hover { text-decoration: underline; color: #2563eb; }
