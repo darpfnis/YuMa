@@ -46,6 +46,7 @@
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
             <!-- Елементи для залогіненого користувача (будуть показані через JS) -->
             <span id="userGreetingMarkets" style="display: none; margin-right: 15px; color: #e0e0e0;"></span>
+            <a href="profile.html" id="profileLinkMarkets" class="nav-button-user" style="display: none;" title="My Profile">Profile</a>
             <button id="logoutButtonMarkets" class="nav-button" style="display: none; background-color: #444; border: 1px solid #555; padding: 0.5rem 1rem;">Log out</button>
             <!-- Можна додати іконки профілю та інше сюди, якщо вони є в user-nav на інших сторінках -->
         </nav>
@@ -103,70 +104,80 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filteredPairsTable = document.getElementById('filteredPairsTable');
     const filteredPairsTitle = document.getElementById('filteredPairsTitle');
     
-    // Оновлення для нових ID елементів хедера
+    // Оновлення для елементів хедера
     const logoutButton = document.getElementById('logoutButtonMarkets');
     const signUpLink = document.getElementById('signUpLinkMarkets');
     const loginLink = document.getElementById('loginLinkMarkets');
     const userGreeting = document.getElementById('userGreetingMarkets');
+    const profileLink = document.getElementById('profileLinkMarkets'); // Додано
 
     const searchInput = document.getElementById('searchMarketInput');
 
-    let allMarketsDataCache = []; // Кеш для всіх ринків
+    let allMarketsDataCache = [];
 
     // Оновлена логіка відображення кнопок в хедері
     if (token) {
         if(logoutButton) logoutButton.style.display = 'inline-block';
         if(signUpLink) signUpLink.style.display = 'none';
         if(loginLink) loginLink.style.display = 'none';
+        if(profileLink) profileLink.style.display = 'inline-block'; // Показуємо посилання на профіль
         if(userGreeting) {
-            // Можна додати логіку для отримання імені користувача, якщо є
-            // userGreeting.textContent = `Hello, User!`; 
-            // userGreeting.style.display = 'inline-block';
+            // Спробуємо отримати дані профілю для привітання
+            try {
+                const profileData = await fetchApiData('/api/profile', { requiresAuth: true });
+                if (profileData.success && profileData.profile) {
+                    userGreeting.textContent = `Hi, ${profileData.profile.username || 'User'}!`;
+                    userGreeting.style.display = 'inline-block';
+                } else {
+                    // userGreeting.textContent = 'Hello!'; // Запасний варіант
+                    // userGreeting.style.display = 'inline-block';
+                }
+            } catch (e) {
+                console.error("Error fetching profile for greeting:", e);
+                // userGreeting.textContent = 'Hello!';
+                // userGreeting.style.display = 'inline-block';
+            }
         }
         if(logoutButton) {
             logoutButton.addEventListener('click', async () => {
                 console.log('[MarketsPage] Logout clicked.');
                 const currentToken = localStorage.getItem('authToken');
                 localStorage.removeItem('authToken');
-                // Очищаємо кеш, щоб при наступному логіні завантажились актуальні "isFavourite"
                 allMarketsDataCache = [];
                 try {
                     await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
                 } catch(e) { console.error('Logout API error', e); }
-                window.location.href = 'login-page.html'; // Або на головну, або на markets знову
+                window.location.href = 'login-page.html';
             });
         }
     } else {
         if(logoutButton) logoutButton.style.display = 'none';
         if(signUpLink) signUpLink.style.display = 'inline-block';
         if(loginLink) loginLink.style.display = 'inline-block';
+        if(profileLink) profileLink.style.display = 'none'; // Ховаємо посилання на профіль
         if(userGreeting) userGreeting.style.display = 'none';
     }
 
     async function fetchApiData(url, options = {}) {
+        // ... (решта функції fetchApiData залишається без змін) ...
         const currentToken = localStorage.getItem('authToken');
-        // Змінюємо логіку requiresAuth, щоб вона залежала від наявності токена для деяких запитів
-        const requiresAuth = options.requiresAuth === undefined ? (url.includes('/api/favourites') || url.includes('/api/markets?popularOnly=true') || url === '/api/markets') : options.requiresAuth;
-
+        const requiresAuth = options.requiresAuth === undefined ? (url.includes('/api/favourites') || url.includes('/api/markets?popularOnly=true') || url === '/api/markets' || url === '/api/profile') : options.requiresAuth;
 
         const headers = { 'Content-Type': 'application/json' };
         if (requiresAuth && currentToken) {
             headers['Authorization'] = `Bearer ${currentToken}`;
-        } else if (requiresAuth && !currentToken && url.includes('/api/favourites')) { 
+        } else if (requiresAuth && !currentToken && (url.includes('/api/favourites') || url === '/api/profile')) { 
              console.warn(`[fetchApiData] Auth required for ${url} but no token. Redirecting to login.`);
              window.location.href = 'login-page.html';
              return Promise.reject({ success: false, message: 'Authentication required.', shouldRedirect: true });
         }
-        // Для /api/markets та /api/markets?popularOnly=true дозволяємо запит без токена,
-        // але isFavourite не буде встановлено або буде false.
-        // Для /api/assets/base токен не потрібен.
-
+        
         const fetchOptions = { ...options, headers: { ...headers, ...options.headers } };
 
         try {
             const response = await fetch(url, fetchOptions);
             if (!response.ok) {
-                if ((response.status === 401 || response.status === 403) && requiresAuth && url.includes('/api/favourites')) {
+                if ((response.status === 401 || response.status === 403) && requiresAuth && (url.includes('/api/favourites') || url === '/api/profile')) {
                     localStorage.removeItem('authToken');
                     window.location.href = 'login-page.html';
                     return Promise.reject({ success: false, message: `Unauthorized or Forbidden for ${url}. Redirecting.`, shouldRedirect: true });
@@ -190,14 +201,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function attachFavouriteButtonListeners(containerElement) {
-        if (!token) return; // Не прикріплюємо, якщо немає токена
+        // ... (без змін) ...
+        if (!token) return; 
         containerElement.querySelectorAll('.favourite-btn').forEach(button => {
-            button.removeEventListener('click', toggleFavourite); // Запобігаємо дублюванню
+            button.removeEventListener('click', toggleFavourite); 
             button.addEventListener('click', toggleFavourite);
         });
     }
 
     function renderMarketTable(containerElement, markets, titleForFiltered) {
+        // ... (початок функції без змін) ...
         const header = containerElement.querySelector('.custom-table-header');
         let placeholder = containerElement.querySelector('.no-data-placeholder');
         if (placeholder) placeholder.remove();
@@ -215,15 +228,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+
         markets.forEach(market => {
             const row = document.createElement('div');
             row.classList.add('custom-table-row');
             row.dataset.marketId = market.id;
 
-            // market.isFavourite буде true/false якщо користувач залогінений і сервер це повернув,
-            // інакше буде undefined або false, і кнопка буде неактивною або не буде кнопки.
-            const isFav = market.isFavourite === true; 
-            const price = market.currentPrice ? `$${parseFloat(market.currentPrice).toFixed(2)}` : 'N/A';
+            const isFav = market.isFavourite === true;
+            
+            // --- ЗМІНА ДЛЯ ТОЧНОСТІ ЦІНИ ---
+            // Використовуємо market.price_precision (з бекенду) або 8 за замовчуванням, якщо не вказано
+            const pricePrecision = typeof market.price_precision === 'number' ? market.price_precision : 8;
+            const price = market.currentPrice ? `$${parseFloat(market.currentPrice).toFixed(pricePrecision)}` : 'N/A';
+            // --- КІНЕЦЬ ЗМІНИ ---
+
             const change = market.change24hPercent ? parseFloat(market.change24hPercent).toFixed(2) + '%' : 'N/A';
             const changeClass = market.change24hPercent ? (parseFloat(market.change24hPercent) >= 0 ? 'positive-change' : 'negative-change') : '';
 
@@ -235,17 +253,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span class="col-name">${market.name || `${market.base_asset}/${market.quote_asset}`}</span>
                 <span class="col-price">${price}</span>
                 <span class="col-change ${changeClass}">${change}</span>
-                <span class="col-action"><a href="buy_crypto-page.html?pair=${market.symbol.replace('/', '_')}" class="action-link">Trade</a></span>
+                <span class="col-action"><a href="trading-page.html?pair=${market.symbol}" class="action-link">Trade</a></span> <!-- Змінив на trading-page.html та символ без заміни / -->
             `;
             containerElement.appendChild(row);
         });
         
-        if(token) { // Прикріплюємо слухачі тільки якщо є токен
+        if(token) {
             attachFavouriteButtonListeners(containerElement);
         }
     }
 
     async function toggleFavourite(event) {
+        // ... (без змін) ...
         if (!token) { alert('Please log in to manage your favourites.'); window.location.href = 'login-page.html'; return; }
         const button = event.currentTarget;
         const marketId = button.dataset.marketId;
@@ -254,7 +273,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const url = isCurrentlyFavourite ? `/api/favourites/${marketId}` : '/api/favourites';
 
         try {
-            const fetchOptions = { method: method, requiresAuth: true }; // requiresAuth тут завжди true
+            const fetchOptions = { method: method, requiresAuth: true }; 
             if (method === 'POST') {
                 fetchOptions.body = JSON.stringify({ marketPairId: parseInt(marketId) });
             }
@@ -273,12 +292,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (correspondingButton) {
                     correspondingButton.classList.toggle('is-favourite', !isCurrentlyFavourite);
                     correspondingButton.innerHTML = !isCurrentlyFavourite ? '★' : '☆';
+                    correspondingButton.title = !isCurrentlyFavourite ? 'Remove from Favourites' : 'Add to Favourites'; // Додав оновлення title
                 }
             } else {
                 alert(data.message || 'Failed to update favourites.');
             }
         } catch (error) {
-            // Якщо помилка через перенаправлення, не показуємо alert
             if (!error.shouldRedirect) {
                 alert(error.message || 'An error occurred while updating favourites.');
             }
@@ -286,6 +305,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     function filterAndRenderSpotMarkets() {
+        // ... (без змін) ...
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
         const activeAssetButton = assetSelectorBar.querySelector('.asset-button.active');
         const selectedBaseAsset = (activeAssetButton && activeAssetButton.dataset.asset) ? activeAssetButton.dataset.asset : null;
@@ -303,55 +323,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         const title = selectedBaseAsset ? `Markets for ${selectedBaseAsset}` : (searchTerm ? 'Search Results' : 'All Markets');
         renderMarketTable(filteredPairsTable, filtered, title);
     }
+    const popularPairsSection = document.getElementById('popularPairsSection');
 
     async function loadBaseAssets() {
-        console.log('[MarketsPage] Loading base assets...');
-        let placeholder = assetSelectorBar.querySelector('.no-data-placeholder');
-        try {
-            // Цей запит не вимагає авторизації
-            const data = await fetchApiData('/api/assets/base', { requiresAuth: false }); 
-            if (placeholder) placeholder.remove();
-            if (data.success && data.baseAssets) {
-                assetSelectorBar.innerHTML = '';
-                const allMarketsButton = document.createElement('button');
-                allMarketsButton.classList.add('asset-button', 'active');
-                allMarketsButton.textContent = 'All';
-                allMarketsButton.addEventListener('click', () => {
-                    document.querySelectorAll('.asset-button.active').forEach(b => b.classList.remove('active'));
-                    allMarketsButton.classList.add('active');
-                    if(searchInput) searchInput.value = '';
-                    filterAndRenderSpotMarkets();
-                });
-                assetSelectorBar.appendChild(allMarketsButton);
+    console.log('[MarketsPage] Loading base assets...');
+    let placeholder = assetSelectorBar.querySelector('.no-data-placeholder');
+    const popularPairsSection = document.getElementById('popularPairsSection'); // Отримуємо секцію
 
-                data.baseAssets.forEach(asset => {
-                    const button = document.createElement('button');
-                    button.classList.add('asset-button');
-                    button.textContent = asset;
-                    button.dataset.asset = asset;
-                    button.addEventListener('click', () => {
-                        document.querySelectorAll('.asset-button.active').forEach(b => b.classList.remove('active'));
-                        button.classList.add('active');
-                        if(searchInput) searchInput.value = '';
-                        filterAndRenderSpotMarkets();
-                    });
-                    assetSelectorBar.appendChild(button);
+    try {
+        const data = await fetchApiData('/api/assets/base', { requiresAuth: false }); 
+        if (placeholder) placeholder.remove();
+        if (data.success && data.baseAssets) {
+            assetSelectorBar.innerHTML = ''; // Очищаємо перед додаванням нових кнопок
+
+            // Кнопка "All"
+            const allMarketsButton = document.createElement('button');
+            allMarketsButton.classList.add('asset-button', 'active'); // "All" активна за замовчуванням
+            allMarketsButton.textContent = 'All';
+            allMarketsButton.addEventListener('click', () => {
+                document.querySelectorAll('.asset-button.active').forEach(b => b.classList.remove('active'));
+                allMarketsButton.classList.add('active');
+                if(searchInput) searchInput.value = '';
+                
+                // --- ЗМІНА: Показуємо популярні пари ---
+                if (popularPairsSection) popularPairsSection.style.display = 'block'; 
+                
+                filterAndRenderSpotMarkets(); // Фільтрує та рендерить "All Markets"
+            });
+            assetSelectorBar.appendChild(allMarketsButton);
+
+            // Кнопки для кожного базового активу
+            data.baseAssets.forEach(asset => {
+                const button = document.createElement('button');
+                button.classList.add('asset-button');
+                button.textContent = asset;
+                button.dataset.asset = asset;
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.asset-button.active').forEach(b => b.classList.remove('active'));
+                    button.classList.add('active');
+                    if(searchInput) searchInput.value = '';
+
+                    // --- ЗМІНА: Приховуємо популярні пари ---
+                    if (popularPairsSection) popularPairsSection.style.display = 'none'; 
+
+                    filterAndRenderSpotMarkets(); // Фільтрує та рендерить для обраного ассету
                 });
-            } else {
-                throw new Error(data.message || 'Failed to load base assets');
-            }
-        } catch (error) {
-            console.error('[MarketsPage] Error loading base assets:', error);
-            if(placeholder) placeholder.textContent = error.message || 'Failed to load assets.';
-            else assetSelectorBar.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Failed to load assets.'}</div>`);
+                assetSelectorBar.appendChild(button);
+            });
+
+            // За замовчуванням популярні пари видимі, якщо "All" активна
+            if (popularPairsSection) popularPairsSection.style.display = 'block';
+
+        } else {
+            throw new Error(data.message || 'Failed to load base assets');
         }
+    } catch (error) {
+        // ... (ваша обробка помилок) ...
+        console.error('[MarketsPage] Error loading base assets:', error);
+        if(placeholder) placeholder.textContent = error.message || 'Failed to load assets.';
+        else assetSelectorBar.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Failed to load assets.'}</div>`);
     }
+}
 
     async function loadPopularPairs() {
+        // ... (без змін) ...
         console.log('[MarketsPage] Loading popular pairs...');
         let placeholder = popularPairsTable.querySelector('.no-data-placeholder');
         try {
-            // Якщо токен є, запит піде з ним, якщо немає - без (requiresAuth: !!token)
             const data = await fetchApiData('/api/markets?popularOnly=true', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
             if (data.success && data.markets) {
@@ -361,13 +399,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('[MarketsPage] Error loading popular pairs:', error);
-             if (error.shouldRedirect) return; // Не показуємо помилку, якщо було перенаправлення
+             if (error.shouldRedirect) return;
             if(placeholder) placeholder.textContent = error.message || 'Error loading popular pairs.';
             else popularPairsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Error loading popular pairs.'}</div>`);
         }
     }
 
     async function loadInitialAllMarkets() {
+        // ... (без змін) ...
         console.log('[MarketsPage] Loading initial set of all markets for cache...');
         let placeholder = filteredPairsTable.querySelector('.no-data-placeholder');
         if (placeholder) placeholder.textContent = 'Loading all markets...';
@@ -380,18 +419,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            // Якщо токен є, запит піде з ним, якщо немає - без (requiresAuth: !!token)
             const data = await fetchApiData('/api/markets', { requiresAuth: !!token });
             if (placeholder) placeholder.remove();
             if (data.success && data.markets) {
                 allMarketsDataCache = data.markets;
-                filterAndRenderSpotMarkets();
+                filterAndRenderSpotMarkets(); // Це відрендерить початковий список "All Markets"
             } else {
                 throw new Error(data.message || 'Failed to load all markets');
             }
         } catch (error) {
             console.error('[MarketsPage] Error loading initial all markets:', error);
-            if (error.shouldRedirect) return; // Не показуємо помилку, якщо було перенаправлення
+            if (error.shouldRedirect) return;
             if(placeholder) placeholder.textContent = error.message || 'Error loading all markets.';
             else filteredPairsTable.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${error.message || 'Error loading all markets.'}</div>`);
         }
@@ -401,7 +439,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Послідовне завантаження
     await loadBaseAssets(); 
-    // Ці запити можуть залежати від статусу логіну, тому виконуємо їх після перевірки токена
     await loadPopularPairs();
     await loadInitialAllMarkets(); 
     console.log('[MarketsPage] Initial data loading complete.');
