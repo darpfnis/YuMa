@@ -675,6 +675,10 @@ let marketDataCache = { // Простий in-memory кеш
     lastUpdated: 0,
     cacheDuration: 5 * 60 * 1000 // 5 хвилин в мілісекундах
 };
+const KEY_BASE_ASSETS_FOR_COINGECKO = [
+    'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'USDT',
+    'AVAX', 'DOT', 'MATIC', 'LINK', 'TRX', 'SHIB', 'LTC', 'ATOM' // Додайте ще важливі
+];
 
 const COINGECKO_IDS_MAP = { // Мапінг ваших символів на CoinGecko IDs
     'BTC': 'bitcoin',
@@ -765,49 +769,57 @@ const COINGECKO_IDS_MAP = { // Мапінг ваших символів на Coi
 };
 
 // Функція для отримання даних з CoinGecko для списку пар
-async function fetchExternalMarketData(baseAssetsToFetch) { // baseAssetsToFetch - це масив типу ['BTC', 'ETH', ...]
-    console.log(`[ExternalData] Attempting to fetch market data for ${baseAssetsToFetch.length} key base assets: ${baseAssetsToFetch.join(', ')}`);
+async function fetchExternalMarketData(baseAssetsToFetch) {
+    if (!Array.isArray(baseAssetsToFetch)) {
+        console.error('[ExternalData] FATAL: baseAssetsToFetch is not an array!', baseAssetsToFetch);
+        return {};
+    }
+    console.log(`[ExternalData] Attempting to fetch market data for ${baseAssetsToFetch.length} key base assets: ${baseAssetsToFetch.filter(s => typeof s === 'string').join(', ')}`);
+
     const idsToFetch = new Set();
-    const cgIdToSymbolMap = {}; // Ключ - coingecko_id ('bitcoin'), значення - наш символ ('BTC')
+    const cgIdToSymbolMap = {};
 
     baseAssetsToFetch.forEach(baseAssetSymbol => {
-        const baseAssetUpper = baseAssetSymbol.toUpperCase();
+        // Додаємо перевірку, чи baseAssetSymbol є рядком
+        if (typeof baseAssetSymbol !== 'string') {
+            console.warn(`[ExternalData] Encountered non-string element in baseAssetsToFetch:`, baseAssetSymbol, `- Skipping.`);
+            return; // Пропускаємо цей елемент
+        }
+
+        const baseAssetUpper = baseAssetSymbol.toUpperCase(); // Тепер безпечніше
         const cgId = COINGECKO_IDS_MAP[baseAssetUpper];
         if (cgId) {
             idsToFetch.add(cgId);
-            cgIdToSymbolMap[cgId] = baseAssetUpper; // Наприклад, cgIdToSymbolMap['bitcoin'] = 'BTC'
+            cgIdToSymbolMap[cgId] = baseAssetUpper;
         } else {
             console.warn(`[ExternalData] No CoinGecko ID found for key base asset: ${baseAssetUpper} in COINGECKO_IDS_MAP.`);
         }
     });
 
     if (idsToFetch.size === 0) {
-        console.log('[ExternalData] No valid CoinGecko IDs to fetch from key base assets list.');
+        console.log('[ExternalData] No valid CoinGecko IDs to fetch from key base assets list after filtering.');
         return {};
     }
 
     const idsQueryParam = Array.from(idsToFetch).join(',');
-    const vsCurrency = 'usd'; // Завжди запитуємо ціни відносно USD
+    const vsCurrency = 'usd';
     const coingeckoUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${idsQueryParam}&vs_currencies=${vsCurrency}&include_24hr_change=true`;
     console.log(`[ExternalData] CoinGecko request URL: ${coingeckoUrl}`);
 
     try {
         const response = await axios.get(coingeckoUrl);
         const coingeckoData = response.data;
-        const processedData = {}; // Ключ - символ базового активу ('BTC', 'ETH'), значення - { price, change }
+        const processedData = {};
 
         for (const cgId in coingeckoData) {
             if (coingeckoData.hasOwnProperty(cgId) && cgIdToSymbolMap[cgId]) {
-                const baseAssetSymbol = cgIdToSymbolMap[cgId]; // Отримуємо наш символ, наприклад 'BTC'
+                const baseAssetSymbol = cgIdToSymbolMap[cgId];
                 const dataForCgId = coingeckoData[cgId];
 
                 if (dataForCgId && dataForCgId[vsCurrency] !== undefined) {
-                    // Тепер ми записуємо дані для базового активу (наприклад, 'BTC')
-                    // в processedData. Ключем буде сам символ базового активу.
                     processedData[baseAssetSymbol] = {
                         price: dataForCgId[vsCurrency],
                         priceChangePercent: dataForCgId[`${vsCurrency}_24h_change`]
-                        // Можна додати інші поля, якщо API їх повертає і вони потрібні
                     };
                 } else {
                     console.warn(`[ExternalData] No price data for ${vsCurrency} found for cgId: ${cgId} (mapped to ${baseAssetSymbol})`);
@@ -817,11 +829,10 @@ async function fetchExternalMarketData(baseAssetsToFetch) { // baseAssetsToFetch
         console.log(`[ExternalData] Successfully fetched and processed data for ${Object.keys(processedData).length} key base assets. Sample:`, JSON.stringify(Object.entries(processedData).slice(0,2), null, 2));
         return processedData;
     } catch (error) {
-        // Лог помилки тепер тут, щоб бачити, що саме викликало проблему
         console.error('[ExternalData] Error during fetching from CoinGecko:', error.message);
         if (error.response) {
             console.error('[ExternalData] CoinGecko Response Status:', error.response.status);
-            console.error('[ExternalData] CoinGecko Response Data:', JSON.stringify(error.response.data, null, 2));
+            // console.error('[ExternalData] CoinGecko Response Data:', JSON.stringify(error.response.data, null, 2)); // Може бути багато даних
             if (error.response.status === 429) {
                 console.warn('[ExternalData] CoinGecko API rate limit hit. Request was for: ' + idsQueryParam);
             }
@@ -830,10 +841,9 @@ async function fetchExternalMarketData(baseAssetsToFetch) { // baseAssetsToFetch
         } else {
             console.error('[ExternalData] Error setting up CoinGecko request:', error.message);
         }
-        return {}; // Повертаємо порожній об'єкт у разі помилки
+        return {};
     }
 }
-
 
 async function ensureMarketDataCache(forceUpdate = false) {
     const now = Date.now();
