@@ -1,23 +1,18 @@
 .profile-card.asset-overview {
     background-color: #ffffff; /* White card */
-    /* Зменшуємо верхній та нижній padding для самої картки */
-    padding: 10px 20px;      /* Наприклад, 10px зверху/знизу, 20px збоку/справа */
+    padding: 12px 20px;      /* Трохи збільшимо вертикальний padding для більшого шрифту */
     border-radius: 6px;
     margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.07); /* Softer shadow */
-    /* Перевизначаємо або скасовуємо min-height з styles.css */
     min-height: auto;        /* Дозволяє секції бути такою високою, як її вміст */
-    /* Або встановіть конкретне менше значення, якщо потрібно, наприклад: */
-    /* min-height: 60px; */
 }
 
 .overview-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* Зменшуємо верхній та нижній padding для елемента всередині картки */
-    padding: 8px 0;          /* Наприклад, 8px зверху/знизу */
-    font-size: 0.95rem;
+    padding: 10px 0;          /* Збільшимо padding для більшого шрифту */
+    /* font-size: 0.95rem;  Видаляємо або закоментовуємо, оскільки будемо встановлювати для label/value окремо */
 }
 .overview-item:not(:last-child) {
     border-bottom: 1px solid #f0f0f0; /* Very light dashed border */
@@ -25,12 +20,12 @@
 
 .overview-item .label {
     color: #555;
-    font-size: 0.9rem; /* Можна також трохи зменшити шрифт для компактності */
+    font-size: 1.4rem; /* Збільшено з 0.9rem (було ~9px, стало ~14px) */
 }
 .overview-item .value {
     font-weight: 600;
     color: #333;
-    font-size: 1rem;   /* Можна також трохи зменшити шрифт для компактності */
+    font-size: 1.6rem;   /* Збільшено з 1rem (було ~10px, стало ~16px) */
 }
 .total-value-dynamic { /* Specific styling for total portfolio value */
     color: #007bff; /* Or your primary accent color */
