@@ -13,8 +13,12 @@ const app = express();
 const port = process.env.PORT || 3000; // Render надає PORT
 
 // --- Налаштування JWT ---
-const JWT_SECRET = process.env.JWT_SECRET || 'a3b8c1d7e5f2a1b6c0d4e9f7a2b5c8d1e6f0a0b3c6d0e4f1a7b2c5d8e3f6a4b9c2d5e8f3a6b1c4d7e0f9';
-if (JWT_SECRET === 'a3b8c1d7e5f2a1b6c0d4e9f7a2b5c8d1e6f0a0b3c6d0e4f1a7b2c5d8e3f6a4b9c2d5e8f3a6b1c4d7e0f9' && process.env.NODE_ENV === 'production') {
+const JWT_SECRET = process.env.JWT_SECRET || 
+                   // 2. Якщо змінна середовища не встановлена, використовуємо ЦЕЙ резервний ключ
+                   'super-secret-jwt'; 
+
+if (JWT_SECRET === 'super-secret-jwt' && 
+    process.env.NODE_ENV === 'production') {
     console.warn('CRITICAL WARNING: JWT_SECRET is using a default insecure value in production! Please set a strong JWT_SECRET environment variable on Render.');
 }
 
@@ -263,7 +267,7 @@ async function connectToBinanceMarketStreams() {
 let marketDataCache = { // Кеш для даних, розрахованих з CoinGecko
     data: {},
     lastUpdated: 0,
-    cacheDuration: 5 * 60 * 1000 // 5 хвилин
+    cacheDuration: 15 * 60 * 1000 // 5 хвилин
 };
 
 async function fetchIndividualAssetDataFromCoinGecko(coinGeckoIdsToFetch, cgIdToAssetSymbolMap) {
