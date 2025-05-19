@@ -53,48 +53,64 @@ const projectRootPath = path.join(__dirname, '..');
 app.use('/frontend', express.static(frontendPath));
 
 
-// --- Middleware для перевірки JWT (обов'язковий для захищених маршрутів) ---
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    // console.log('[AuthMiddleware] Path:', req.path, 'Auth Header:', authHeader);
+const DEV_MODE_SKIP_AUTH = false; // Встановіть в true для вимкнення автентифікації, false для увімкнення
+const DEV_MODE_TEST_USER = { // Тестовий користувач, якщо автентифікація вимкнена
+    userId: 1, // ID існуючого тестового користувача у вашій БД
+    email: 'testuser@example.com',
+    username: 'testuser',
+    uid: 'TESTUID123'
+};
 
-    if (token == null) {
-        // console.log('[AuthMiddleware] Token missing for path:', req.path);
-        return res.status(401).json({ success: false, message: 'Access token is missing.' });
+const authenticateToken = (req, res, next) => {
+    if (DEV_MODE_SKIP_AUTH) {
+        console.warn('[AuthMiddleware - DEV MODE] Authentication SKIPPED. Using test user.');
+        req.user = DEV_MODE_TEST_USER; 
+        return next();
     }
 
+    // Ваша існуюча логіка перевірки токена
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null) return res.status(401).json({ success: false, message: 'Token missing.' });
     jwt.verify(token, JWT_SECRET, (err, userPayload) => {
-        if (err) {
-            console.error('[AuthMiddleware] JWT verification error for path:', req.path, err.name, '-', err.message);
-            return res.status(403).json({ success: false, message: 'Token invalid or expired.', errorType: err.name });
-        }
-        req.user = userPayload; // payload з токена
-        // console.log('[AuthMiddleware] Token verified. User:', req.user, 'for path:', req.path);
+        if (err) return res.status(403).json({ success: false, message: 'Token invalid or expired.', errorType: err.name });
+        req.user = userPayload;
         next();
     });
 };
 
-// --- Middleware для опціональної автентифікації ---
 const tryAuthenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    // console.log('[TryAuthMiddleware] Path:', req.path, 'Auth Header:', authHeader);
-
-    if (token == null) {
-        req.user = null; // Користувача немає
-        // console.log('[TryAuthMiddleware] No token, proceeding as anonymous for path:', req.path);
-        return next();
+    if (DEV_MODE_SKIP_AUTH) {
+        console.warn('[TryAuthMiddleware - DEV MODE] Authentication SKIPPED. Using test user if no real token, else anonymous.');
+        // Якщо ви хочете, щоб tryAuth завжди встановлював тестового користувача в DEV_MODE,
+        // навіть якщо токена немає (для тестів, де req.user очікується):
+        // req.user = DEV_MODE_TEST_USER;
+        // Або, якщо ви хочете імітувати ситуацію, коли користувач може бути анонімним:
+        const authHeader = req.headers['authorization']; // Перевіряємо, чи клієнт все ж надіслав токен
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token) { // Якщо токен є, спробуємо його верифікувати
+            jwt.verify(token, JWT_SECRET, (err, userPayload) => {
+                req.user = err ? null : userPayload; // Якщо токен невалідний, то req.user = null
+                if(req.user) console.log('[TryAuthMiddleware - DEV MODE] Dev token verified (or real token passed). User:', req.user);
+                else console.log('[TryAuthMiddleware - DEV MODE] Dev token invalid or no token, proceeding as anonymous.');
+                next();
+            });
+        } else { // Якщо токена взагалі немає
+            req.user = null; // Або req.user = DEV_MODE_TEST_USER; залежно від потреби
+            console.log('[TryAuthMiddleware - DEV MODE] No token, proceeding as anonymous (or test user).');
+            next();
+        }
+        return; // Виходимо, щоб не виконувалася стандартна логіка
     }
 
+    // Ваша існуюча логіка tryAuthenticateToken
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null) {
+        req.user = null; return next();
+    }
     jwt.verify(token, JWT_SECRET, (err, userPayload) => {
-        if (err) {
-            // console.warn('[TryAuthMiddleware] Invalid token received, proceeding as anonymous for path:', req.path, err.message);
-            req.user = null;
-        } else {
-            req.user = userPayload;
-            // console.log('[TryAuthMiddleware] Token verified. User:', req.user, 'for path:', req.path);
-        }
+        req.user = err ? null : userPayload;
         next();
     });
 };
