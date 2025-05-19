@@ -294,44 +294,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             else favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading favourite markets.</div>');
         }
     }
-     async function loadAndRenderPortfolioChart(period = '7d') {
+        async function loadAndRenderPortfolioChart(period = '7d') {
         if (!portfolioChartCanvas) return;
         console.log(`[ProfilePage] Attempting to load portfolio history for period: ${period}...`);
         
-        // Скидаємо попередній графік, якщо він був
         if (userPortfolioChart) {
             userPortfolioChart.destroy();
             userPortfolioChart = null;
         }
-        portfolioChartCanvas.style.display = 'none'; // Ховаємо canvas поки завантажуються дані
+        portfolioChartCanvas.style.display = 'none';
         if (portfolioChartNoData) portfolioChartNoData.style.display = 'none';
-
 
         try {
             const data = await fetchApiData(`/api/portfolio/history?period=${period}`, { requiresAuth: true });
-            console.log('[ProfilePage] Portfolio history data:', data);
+            // Ви можете залишити цей лог, щоб бачити повний об'єкт
+            console.log('[ProfilePage] Portfolio history data (raw object):', JSON.parse(JSON.stringify(data)));
 
-            if (data && data.success && data.data && data.data.length > 1) { 
+
+            // ----- ОСНОВНІ ЗМІНИ ТУТ -----
+            if (data && data.success && data.history && data.history.length > 1) { 
                 portfolioChartCanvas.style.display = 'block';
-                // І ТУТ
-                const labels = data.data.map(item => {
+                
+                const labels = data.history.map(item => { // ЗМІНЕНО
                     const date = new Date(item.date);
+                    // Перевірка на валідність дати, якщо потрібно
+                    if (isNaN(date.getTime())) {
+                        console.warn("Invalid date encountered in portfolio history:", item.date);
+                        return "Invalid Date";
+                    }
                     return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
                 });
-                // І ТУТ
-                const values = data.data.map(item => parseFloat(item.value));
-
+                
+                const values = data.history.map(item => parseFloat(item.value)); // ЗМІНЕНО
 
                 const chartData = {
                     labels: labels,
                     datasets: [{
                         label: 'Portfolio Value (USD)',
                         data: values,
-                        fill: true, // Заливка під лінією
+                        fill: true,
                         borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)', // Колір заливки
-                        tension: 0.1, // Плавність лінії
-                        pointRadius: 3, // Розмір точок
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        pointRadius: 3,
                         pointBackgroundColor: 'rgb(75, 192, 192)'
                     }]
                 };
@@ -341,10 +346,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     data: chartData,
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false, // Дозволяє керувати висотою через CSS або контейнер
+                        maintainAspectRatio: false,
                         scales: {
                             y: {
-                                beginAtZero: false, // Починати не обов'язково з нуля
+                                beginAtZero: false,
                                 ticks: {
                                     callback: function(value, index, values) {
                                         return '$' + value.toLocaleString();
@@ -354,7 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         },
                         plugins: {
                             legend: {
-                                display: false // Можна приховати легенду, якщо назва вказана в <p>
+                                display: false
                             },
                             tooltip: {
                                  callbacks: {
@@ -376,7 +381,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 userPortfolioChart = new Chart(portfolioChartCanvas, config);
 
             } else {
-                console.warn('[ProfilePage] Not enough data for portfolio chart or failed to load.');
+                let reason = "Unknown reason.";
+                if (!data) reason = "Data object is null/undefined.";
+                else if (!data.success) reason = "data.success is false.";
+                else if (!data.history) reason = "data.history is null/undefined.";
+                else if (data.history.length <= 1) reason = `data.history has ${data.history.length} items (needs > 1).`;
+                
+                console.warn(`[ProfilePage] Not enough data for portfolio chart or failed to load. Reason: ${reason}`);
                 if (portfolioChartNoData) portfolioChartNoData.style.display = 'block';
                 portfolioChartCanvas.style.display = 'none';
             }
