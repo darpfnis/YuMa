@@ -342,7 +342,27 @@ html {
     justify-content: center;
     border: 1px solid #e0e0e0;
   }
-  
+  .profile-card.card-chart {
+    position: relative; /* Потрібно для правильного позиціонування canvas, якщо він буде position: absolute */
+    width: 100%;      /* Займає всю доступну ширину в секції .dashboard-cards */
+    /* Можна задати максимальну ширину, якщо потрібно */
+    /* max-width: 600px;  Приклад */
+    height: 300px;    /* Задайте бажану висоту. Chart.js спробує її використати. */
+                      /* АБО можна використовувати співвідношення сторін (див. нижче) */
+    padding: 15px;    /* Додайте внутрішні відступи, якщо потрібно */
+    box-sizing: border-box; /* Щоб padding не збільшував загальний розмір */
+    display: flex; /* Якщо ви хочете, щоб canvas був по центру, якщо він менший */
+    flex-direction: column;
+    align-items: center; /* Центрування по горизонталі, якщо canvas менший */
+    justify-content: center; /* Центрування по вертикалі, якщо canvas менший */
+}
+
+/* Стилі для самого canvas (якщо батьківський контейнер керує розміром) */
+#portfolioChartCanvas {
+    max-width: 100%;
+    max-height: 100%; /* Дозволяє canvas зменшуватися, якщо контейнер менший */
+    /* display: block;  Зазвичай Chart.js робить це сам */
+}
   .profile-card p {
     color: #555;
     font-size: 1.8rem; /* Було 1.1em, роблю 18px */
