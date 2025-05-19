@@ -367,6 +367,14 @@ app.get('/api/assets/base', tryAuthenticateToken, async (req, res) => {
 app.get('/api/markets', tryAuthenticateToken, async (req, res) => {
     const userId = req.user ? req.user.userId : null;
     const { baseAsset, popularOnly } = req.query;
+
+    // Переконуємося, що кеш актуальний перед тим, як його використовувати
+    // Це може затримати перший запит, якщо кеш оновлюється, але забезпечить свіжі дані
+    // Для кращої продуктивності, ensureMarketDataCache може працювати у фоні,
+    // а тут ми просто читаємо поточний стан кешу.
+    // Поки що зробимо так для простоти.
+    await ensureMarketDataCache(); // Чекаємо, якщо кеш оновлюється
+
     try {
         let queryParams = [];
         let paramIndex = 1;
@@ -375,18 +383,53 @@ app.get('/api/markets', tryAuthenticateToken, async (req, res) => {
             selectIsFavourite = `EXISTS (SELECT 1 FROM user_favourite_markets ufm WHERE ufm.user_id = $${paramIndex++} AND ufm.market_pair_id = mp.id) as "isFavourite"`;
             queryParams.push(userId);
         }
-        const baseSelect = `SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name, mp.is_popular, ${selectIsFavourite} FROM market_pairs mp`;
+        // Додаємо binance_symbol, якщо він у вас є і використовується для currentMarketData з Binance WS
+        const baseSelect = `
+            SELECT mp.id, mp.symbol, mp.base_asset, mp.quote_asset, mp.name, 
+                   mp.is_popular, ${selectIsFavourite}, 
+                   COALESCE(mp.binance_symbol, mp.symbol) as effective_symbol_for_live_data
+            FROM market_pairs mp
+        `;
         let conditions = ["mp.is_active = TRUE"];
         if (popularOnly === 'true') conditions.push("mp.is_popular = TRUE");
         else if (baseAsset) {
             conditions.push(`mp.base_asset = $${paramIndex++}`);
             queryParams.push(baseAsset);
         }
-        const sql = `${baseSelect} WHERE ${conditions.join(' AND ')} ORDER BY mp.symbol;`;
-        const result = await pool.query(sql, queryParams);
+        const sql = `${baseSelect} WHERE ${conditions.join(' AND ')} ORDER BY mp.display_order, mp.symbol;`; // Додав display_order для сортування
+        
+        const client = await pool.connect();
+        let result;
+        try {
+            result = await client.query(sql, queryParams);
+        } finally {
+            client.release();
+        }
+        
         const marketsWithLiveData = result.rows.map(pair => {
-            const liveData = currentMarketData[pair.symbol] || currentMarketData[pair.binance_symbol] || {};
-            return { ...pair, currentPrice: liveData.price, change24hPercent: liveData.priceChangePercent, volume24h: liveData.quoteVolume };
+            // Спочатку спробуємо дані з вашого `currentMarketData` (якщо це WebSocket від Binance)
+            // Потім з нашого нового `marketDataCache` (який отримує дані, наприклад, з CoinGecko)
+            const binanceLiveData = currentMarketData[pair.effective_symbol_for_live_data];
+            const cachedExternalData = marketDataCache.data[pair.symbol]; // Ключ в кеші - це ваш mp.symbol
+
+            let livePrice, liveChange, liveVolume;
+
+            if (binanceLiveData && binanceLiveData.price !== undefined) {
+                livePrice = binanceLiveData.price;
+                liveChange = binanceLiveData.priceChangePercent;
+                liveVolume = binanceLiveData.quoteVolume;
+            } else if (cachedExternalData && cachedExternalData.price !== undefined) {
+                livePrice = cachedExternalData.price;
+                liveChange = cachedExternalData.priceChangePercent;
+                // Об'єм може бути недоступний або мати іншу назву в CoinGecko
+            }
+
+            return { 
+                ...pair, 
+                currentPrice: livePrice !== undefined ? parseFloat(livePrice).toFixed(pair.price_precision || 2) : null, // Додав price_precision
+                change24hPercent: liveChange !== undefined ? parseFloat(liveChange).toFixed(2) : null,
+                volume24h: liveVolume !== undefined ? parseFloat(liveVolume).toFixed(2) : null
+            };
         });
         res.json({ success: true, markets: marketsWithLiveData });
     } catch (error) {
@@ -397,10 +440,12 @@ app.get('/api/markets', tryAuthenticateToken, async (req, res) => {
 
 // --- Ендпоінти для Улюблених Ринкових Пар ---
 
-// ОТРИМАННЯ УЛЮБЛЕНИХ РИНКІВ КОРИСТУВАЧА
 app.get('/api/markets/favourites', authenticateToken, async (req, res) => {
-    const userId = req.user.userId; // Отримуємо з payload токена після authenticateToken
+    const userId = req.user.userId;
     console.log(`[API GET /api/markets/favourites] Request for user ID: ${userId}`);
+    
+    await ensureMarketDataCache(); // Переконуємося, що кеш актуальний
+
     try {
         const sql = `
             SELECT 
@@ -408,23 +453,42 @@ app.get('/api/markets/favourites', authenticateToken, async (req, res) => {
                 mp.symbol, 
                 mp.base_asset, 
                 mp.quote_asset, 
-                mp.name
+                mp.name,
+                COALESCE(mp.binance_symbol, mp.symbol) as effective_symbol_for_live_data,
+                mp.price_precision -- Додаємо точність ціни
                 -- Можна додати інші поля з market_pairs, якщо потрібно
             FROM market_pairs mp
             JOIN user_favourite_markets ufm ON mp.id = ufm.market_pair_id
             WHERE ufm.user_id = $1 AND mp.is_active = TRUE
             ORDER BY mp.symbol;
         `;
-        const result = await pool.query(sql, [userId]);
+        
+        const client = await pool.connect();
+        let result;
+        try {
+            result = await client.query(sql, [userId]);
+        } finally {
+            client.release();
+        }
 
-        // Додаємо "живі" дані, якщо вони є в currentMarketData
         const marketsWithLiveData = result.rows.map(pair => {
-            const liveData = currentMarketData[pair.symbol] || currentMarketData[pair.binance_symbol] || {};
+            const binanceLiveData = currentMarketData[pair.effective_symbol_for_live_data];
+            const cachedExternalData = marketDataCache.data[pair.symbol];
+            let livePrice, liveChange;
+
+            if (binanceLiveData && binanceLiveData.price !== undefined) {
+                livePrice = binanceLiveData.price;
+                liveChange = binanceLiveData.priceChangePercent;
+            } else if (cachedExternalData && cachedExternalData.price !== undefined) {
+                livePrice = cachedExternalData.price;
+                liveChange = cachedExternalData.priceChangePercent;
+            }
+
             return {
                 ...pair,
-                currentPrice: liveData.price !== undefined ? parseFloat(liveData.price).toFixed(2) : null,
-                change24hPercent: liveData.priceChangePercent !== undefined ? parseFloat(liveData.priceChangePercent).toFixed(2) : null,
-                // Можете додати volume24h, якщо потрібно
+                isFavourite: true, // Всі пари тут є улюбленими
+                currentPrice: livePrice !== undefined ? parseFloat(livePrice).toFixed(pair.price_precision || 2) : null,
+                change24hPercent: liveChange !== undefined ? parseFloat(liveChange).toFixed(2) : null,
             };
         });
 
@@ -602,6 +666,131 @@ app.get('/api/orders/history', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching order history.' });
     }
 });
+
+const axios = require('axios'); // Популярна бібліотека для HTTP запитів
+
+// --- Глобальні змінні та кеш ---
+let marketDataCache = { // Простий in-memory кеш
+    data: {},           // Тут будуть дані { 'BTC/USDT': { price: ..., change24h: ... }, ... }
+    lastUpdated: 0,
+    cacheDuration: 5 * 60 * 1000 // 5 хвилин в мілісекундах
+};
+
+const COINGECKO_IDS_MAP = { // Мапінг ваших символів на CoinGecko IDs
+    'BTC': 'bitcoin',
+    'ETH': 'ethereum',
+    'USDT': 'tether', // Для USDT як базового ID
+    'BNB': 'binancecoin',
+    'SOL': 'solana',
+    'XRP': 'ripple',
+    'ADA': 'cardano',
+    'DOGE': 'dogecoin',
+    'YMC': 'your-custom-coin-id-on-coingecko' // Якщо ваша монета є на CoinGecko
+    // Додайте всі активи, які є у вас в market_pairs.base_asset
+};
+
+// Функція для отримання даних з CoinGecko для списку пар
+async function fetchExternalMarketData(marketPairs) { // marketPairs - масив об'єктів з вашої БД
+    console.log('[ExternalData] Attempting to fetch external market data...');
+    const idsToFetch = new Set();
+    const pairSymbolMap = {}; // Щоб потім зіставити відповіді з вашими символами
+
+    marketPairs.forEach(pair => {
+        const baseId = COINGECKO_IDS_MAP[pair.base_asset.toUpperCase()];
+        // const quoteId = COINGECKO_IDS_MAP[pair.quote_asset.toUpperCase()] || pair.quote_asset.toLowerCase();
+        // Для CoinGecko 'simple/price' ми зазвичай використовуємо quote_asset як vs_currency
+        if (baseId) {
+            idsToFetch.add(baseId);
+            // Ми будемо отримувати ціни відносно USDT (або іншої популярної стабільної монети)
+            // і потім, якщо потрібно, розраховувати крос-курси.
+            // Поки що спростимо і будемо вважати, що всі котирування в USDT.
+            pairSymbolMap[baseId] = pair.symbol; // Зберігаємо оригінальний символ пари
+        }
+    });
+
+    if (idsToFetch.size === 0) {
+        console.log('[ExternalData] No valid CoinGecko IDs to fetch.');
+        return {};
+    }
+
+    const idsQueryParam = Array.from(idsToFetch).join(',');
+    // Для прикладу, будемо отримувати ціни відносно USDT
+    const vsCurrency = 'usd'; // CoinGecko використовує 'usd' для USDT в simple/price
+    const coingeckoUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${idsQueryParam}&vs_currencies=${vsCurrency}&include_24hr_change=true`;
+
+    try {
+        const response = await axios.get(coingeckoUrl);
+        const coingeckoData = response.data;
+        const processedData = {};
+
+        for (const cgId in coingeckoData) {
+            if (coingeckoData.hasOwnProperty(cgId) && pairSymbolMap[cgId]) {
+                const originalPairSymbol = pairSymbolMap[cgId];
+                const pairData = coingeckoData[cgId];
+                if (pairData && pairData[vsCurrency] !== undefined) {
+                    processedData[originalPairSymbol] = {
+                        price: pairData[vsCurrency],
+                        priceChangePercent: pairData[`${vsCurrency}_24h_change`]
+                        // Можна додати об'єм, якщо API його повертає в цьому запиті
+                    };
+                }
+            }
+        }
+        console.log('[ExternalData] Successfully fetched and processed external data.');
+        return processedData;
+    } catch (error) {
+        if (error.response && error.response.status === 429) {
+            console.warn('[ExternalData] CoinGecko API rate limit hit.');
+        } else {
+            console.error('[ExternalData] Error fetching from CoinGecko:', error.message);
+        }
+        return {}; // Повертаємо порожній об'єкт у разі помилки, щоб не зламати кеш
+    }
+}
+
+async function ensureMarketDataCache(forceUpdate = false) {
+    const now = Date.now();
+    if (forceUpdate || !marketDataCache.lastUpdated || (now - marketDataCache.lastUpdated > marketDataCache.cacheDuration)) {
+        console.log('[Cache] Market data cache is stale or missing. Updating...');
+        try {
+            // Отримуємо всі активні пари з БД для формування запиту до CoinGecko
+            const client = await pool.connect();
+            let activePairs = [];
+            try {
+                const result = await client.query("SELECT symbol, base_asset, quote_asset FROM market_pairs WHERE is_active = TRUE");
+                activePairs = result.rows;
+            } finally {
+                client.release();
+            }
+
+            if (activePairs.length > 0) {
+                const externalData = await fetchExternalMarketData(activePairs);
+                if (Object.keys(externalData).length > 0) {
+                    marketDataCache.data = externalData;
+                    marketDataCache.lastUpdated = now;
+                    console.log('[Cache] Market data cache updated successfully.');
+                } else {
+                    console.warn('[Cache] Failed to update market data cache from external source. Old data might be used.');
+                    // Не оновлюємо lastUpdated, щоб спробувати ще раз при наступному запиті
+                }
+            } else {
+                console.log('[Cache] No active market pairs found to update cache.');
+                marketDataCache.data = {}; // Очищаємо, якщо немає активних пар
+                marketDataCache.lastUpdated = now;
+            }
+        } catch (error) {
+            console.error('[Cache] Error during market data cache update process:', error);
+            // Також не оновлюємо lastUpdated
+        }
+    } else {
+        console.log('[Cache] Market data cache is fresh.');
+    }
+}
+
+// Викликаємо оновлення кешу при старті сервера і періодично
+ensureMarketDataCache(true); // Примусове оновлення при старті
+setInterval(() => ensureMarketDataCache(), marketDataCache.cacheDuration); // Періодичне оновлення
+
 
 
 // --- Обслуговування HTML сторінок ---
