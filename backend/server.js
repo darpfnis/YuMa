@@ -150,7 +150,7 @@ async function getBinanceSymbolsToSubscribe() {
              FROM market_pairs 
              WHERE is_active = TRUE AND NULLIF(TRIM(COALESCE(NULLIF(TRIM(binance_symbol), ''), symbol)), '') IS NOT NULL`
         );
-        return result.rows.map(row => `${row.stream_symbol.toLowerCase()}@miniTicker`); // наприклад, btcusdt@miniTicker
+        return ['btcusdt@miniTicker', 'ethusdt@miniTicker'];
     } catch (error) {
         console.error('[BinanceWS][DB] Error fetching symbols for WebSocket subscription:', error);
         return []; // Повертаємо порожній масив у разі помилки
@@ -267,7 +267,7 @@ async function connectToBinanceMarketStreams() {
 let marketDataCache = { // Кеш для даних, розрахованих з CoinGecko
     data: {},
     lastUpdated: 0,
-    cacheDuration: 15 * 60 * 1000 // 5 хвилин
+    cacheDuration: 30 * 60 * 1000 // 30 хвилин
 };
 
 async function fetchIndividualAssetDataFromCoinGecko(coinGeckoIdsToFetch, cgIdToAssetSymbolMap) {
