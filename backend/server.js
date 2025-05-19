@@ -656,7 +656,7 @@ app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
         
         const result = await pool.query(sql, queryParams);
         
-        res.json({ success: true, data: result.rows });
+        res.json({ success: true, history: result.rows }); // Стало
 
     } catch (error) {
         console.error(`[API GET /api/portfolio/history] Error for user ${userId}, period ${period}:`, error.message);
