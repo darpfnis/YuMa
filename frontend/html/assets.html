@@ -4,55 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Assets - YuMa</title>
-    <link rel="stylesheet" href="../css/styles.css"> <!-- Ensure this file exists and contains base styles -->
+    <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
-    <link rel="stylesheet" href="../css/assets_custom.css"> <!-- Create this file for custom page styles -->
-    <style>
-        /* Basic styling for placeholders if not already in assets_custom.css */
-        .no-data-placeholder {
-            padding: 20px;
-            text-align: center;
-            color: #777;
-        }
-        .coin-details { /* Simple styling for text-based coin display */
-            display: flex;
-            align-items: center;
-        }
-        .coin-symbol-display {
-            color: #888; /* Lighter color for the symbol part */
-            margin-left: 5px;
-        }
-        /* Ensure your table styles are responsive and clear */
-        .custom-table-wrapper {
-            width: 100%;
-            overflow-x: auto; /* For smaller screens if content overflows */
-        }
-        .custom-table-header, .custom-table-row {
-            display: grid;
-            grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 2fr; /* Adjust column widths as needed */
-            gap: 10px;
-            padding: 10px 15px;
-            border-bottom: 1px solid #333; /* Dark theme border */
-            align-items: center;
-        }
-        .custom-table-header {
-            font-weight: bold;
-            background-color: #2a2a2a; /* Darker header background */
-        }
-        .custom-table-row:hover {
-            background-color: #252525; /* Hover effect for rows */
-        }
-        .asset-actions a {
-            margin-right: 10px;
-            color: #4CAF50; /* Action link color */
-            text-decoration: none;
-        }
-        .asset-actions a:hover {
-            text-decoration: underline;
-        }
-
-    </style>
+    <link rel="stylesheet" href="../css/assets_custom.css"> <!-- This will now apply the new light theme -->
 </head>
 <body>
     <header>
@@ -160,36 +115,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     const showAllContainer = document.querySelector('.show-all-container');
 
     let allFetchedAssets = [];
-    const initialDisplayLimit = 10;
+    const initialDisplayLimit = 10; // Show 10 assets initially
     let currentlyDisplayingAll = false;
     let binanceWebSocket = null;
     let subscribedSymbols = new Set();
+    let wsReconnectInterval = null; // For managing reconnection attempts
 
     // --- WebSocket Connection and Management ---
     function connectBinanceWebSocket() {
-        // Use wss://stream.binance.com:9443/ws for general streams
-        // or wss://fstream.binance.com/ws for futures
-        // For spot tickers, it's usually wss://stream.binance.com:9443/ws/<symbol>@ticker
-        // Or use combined streams: wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker
-        
-        // We will subscribe to individual tickers dynamically when assets are loaded
-        // So, we don't need to specify streams in the initial URL here if we use individual subscriptions.
-        // However, for a large number of assets, a combined stream is more efficient.
-        // For simplicity in this example, we'll keep it general and assume we might subscribe later.
-
-        const wsUrl = 'wss://stream.binance.com:9443/ws'; // General WebSocket endpoint
-        
-        if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
-            console.log('[AssetsPage] Binance WebSocket is already open.');
+        if (binanceWebSocket && (binanceWebSocket.readyState === WebSocket.OPEN || binanceWebSocket.readyState === WebSocket.CONNECTING)) {
+            // console.log('[AssetsPage] Binance WebSocket is already open or connecting.');
             return;
         }
         
+        // Clear any existing reconnect interval
+        if (wsReconnectInterval) {
+            clearInterval(wsReconnectInterval);
+            wsReconnectInterval = null;
+        }
+
         console.log('[AssetsPage] Attempting to connect to Binance WebSocket...');
+        const wsUrl = 'wss://stream.binance.com:9443/ws';
         binanceWebSocket = new WebSocket(wsUrl);
 
         binanceWebSocket.onopen = () => {
             console.log('[AssetsPage] Binance WebSocket connection established.');
-            // If there are assets already loaded and we need to subscribe, do it here
+            if (wsReconnectInterval) { // Clear interval on successful connection
+                clearInterval(wsReconnectInterval);
+                wsReconnectInterval = null;
+            }
             if (allFetchedAssets.length > 0) {
                 subscribeToAssetTickers(allFetchedAssets);
             }
@@ -198,35 +152,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         binanceWebSocket.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
-                // console.log('[AssetsPage] WebSocket message received:', message);
-
-                if (message.e === '24hrTicker') { // Check if it's a ticker update
+                if (message.e === '24hrTicker') {
                     const symbol = message.s; // e.g., BTCUSDT
-                    const price = parseFloat(message.c); // Last price
+                    const price = parseFloat(message.c);
 
+                    let assetUpdated = false;
                     allFetchedAssets = allFetchedAssets.map(asset => {
-                        // Asset.coin_symbol is BTC, ETH etc. We need to match with pairs like BTCUSDT
-                        const pairSymbol = `${asset.coin_symbol.toUpperCase()}USDT`; // Assuming USDT is the quote currency for valuation
+                        const pairSymbol = `${asset.coin_symbol.toUpperCase()}USDT`;
                         if (pairSymbol === symbol && asset.coin_symbol.toUpperCase() !== 'USDT') {
-                            const oldUsdValue = parseFloat(asset.value_usd);
-                            asset.value_usd = (parseFloat(asset.total_balance) * price).toFixed(2);
-                            // console.log(`[AssetsPage] Updated ${asset.coin_symbol} price via WebSocket: ${price}, new value: ${asset.value_usd}`);
-                            if (oldUsdValue !== parseFloat(asset.value_usd)) {
-                                // Only re-render if value actually changed to avoid unnecessary DOM updates
-                                // This can be further optimized to update only the specific row.
-                                filterAndPrepareAssets(); 
+                            const newUsdValue = (parseFloat(asset.total_balance) * price);
+                            // Check for significant change to avoid too many re-renders
+                            if (Math.abs(parseFloat(asset.value_usd) - newUsdValue) > 0.001) {
+                                asset.value_usd = newUsdValue.toFixed(2); // Keep consistent toFixed
+                                assetUpdated = true;
                             }
                         }
                         return asset;
                     });
-                    // Recalculate total portfolio value after potential updates
-                    recalculateAndRenderTotalPortfolioValue();
+
+                    if (assetUpdated) {
+                        // Optimized update: only update specific row value and total portfolio
+                        updateSpecificAssetRowAndTotal(symbol.replace('USDT',''), price); // Pass base symbol
+                        recalculateAndRenderTotalPortfolioValue(); // This is efficient now
+                    }
                 } else if (message.result === null && message.id) {
-                    // This is often a confirmation for subscription/unsubscription
-                    console.log(`[AssetsPage] WebSocket subscription/unsubscription ack ID ${message.id}`);
+                    // console.log(`[AssetsPage] WebSocket ack ID ${message.id}`);
                 }
-
-
             } catch (error) {
                 console.error('[AssetsPage] Error processing WebSocket message:', error, event.data);
             }
@@ -234,79 +185,126 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         binanceWebSocket.onerror = (error) => {
             console.error('[AssetsPage] Binance WebSocket error:', error);
-            // Implement reconnection logic if desired
+            // Don't attempt to reconnect here, onclose will handle it.
         };
 
         binanceWebSocket.onclose = (event) => {
-            console.log(`[AssetsPage] Binance WebSocket connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+            console.log(`[AssetsPage] Binance WebSocket connection closed. Code: ${event.code}, Reason: '${event.reason}'`);
             binanceWebSocket = null;
             subscribedSymbols.clear();
-            // Optional: attempt to reconnect after a delay
-            // setTimeout(connectBinanceWebSocket, 5000); // Reconnect after 5 seconds
+            if (!wsReconnectInterval && token) { // Only try to reconnect if logged in
+                console.log('[AssetsPage] Attempting to reconnect WebSocket in 5 seconds...');
+                wsReconnectInterval = setInterval(() => {
+                    if (!binanceWebSocket || binanceWebSocket.readyState === WebSocket.CLOSED) {
+                         console.log('[AssetsPage] Retrying WebSocket connection...');
+                         connectBinanceWebSocket();
+                    } else if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
+                        clearInterval(wsReconnectInterval); // Stop retrying if connected
+                        wsReconnectInterval = null;
+                    }
+                }, 5000); // Attempt to reconnect every 5 seconds
+            }
         };
     }
+    
+    // Optimized update for a single asset's display in the table
+    function updateSpecificAssetRowAndTotal(baseAssetSymbol, newPrice) {
+        const assetRow = assetsTableContainer.querySelector(`.custom-table-row[data-asset-symbol="${baseAssetSymbol.toUpperCase()}"]`);
+        if (assetRow) {
+            const asset = allFetchedAssets.find(a => a.coin_symbol.toUpperCase() === baseAssetSymbol.toUpperCase());
+            if (asset) {
+                const valueCell = assetRow.querySelector('.asset-value-usd');
+                if (valueCell) {
+                    valueCell.textContent = `$${parseFloat(asset.value_usd).toFixed(2)}`;
+                }
+            }
+        }
+        // recalculateAndRenderTotalPortfolioValue will be called by the onmessage handler if an asset was updated
+    }
+
 
     function subscribeToAssetTickers(assets) {
         if (!binanceWebSocket || binanceWebSocket.readyState !== WebSocket.OPEN) {
-            console.warn('[AssetsPage] WebSocket not open. Cannot subscribe to tickers.');
-            if (!binanceWebSocket) connectBinanceWebSocket(); // Attempt to connect if not already trying
+            // console.warn('[AssetsPage] WebSocket not open. Cannot subscribe.');
+            if (!wsReconnectInterval && token) connectBinanceWebSocket(); // Try to connect if not already trying and logged in
             return;
         }
 
         const newSymbolsToSubscribe = [];
         assets.forEach(asset => {
             const symbol = asset.coin_symbol.toUpperCase();
-            if (symbol !== 'USDT' && symbol !== 'USD') { // Don't need ticker for stablecoins relative to themselves
-                const pair = `${symbol}USDT`; // Assuming USDT is the quote for live price
+            if (symbol !== 'USDT' && symbol !== 'USD' && symbol !== 'USDC' && symbol !== 'BUSD') { // Common stablecoins
+                const pair = `${symbol}USDT`;
                 if (!subscribedSymbols.has(pair)) {
                     newSymbolsToSubscribe.push(`${pair.toLowerCase()}@ticker`);
-                    subscribedSymbols.add(pair);
                 }
             }
         });
 
         if (newSymbolsToSubscribe.length > 0) {
-            const subscriptionMessage = {
+            // Unsubscribe from old symbols no longer in the current asset list (if any)
+            const currentAssetPairs = new Set(assets.map(a => `${a.coin_symbol.toUpperCase()}USDT`));
+            const symbolsToUnsubscribeImmediately = [];
+            subscribedSymbols.forEach(subscribedPair => {
+                if (!currentAssetPairs.has(subscribedPair) && 
+                    !subscribedPair.endsWith('USDT') && // Avoid unsubscribing USDT itself
+                    !subscribedPair.endsWith('USD') &&
+                    !subscribedPair.endsWith('USDC') &&
+                    !subscribedPair.endsWith('BUSD')) {
+                    symbolsToUnsubscribeImmediately.push(`${subscribedPair.toLowerCase()}@ticker`);
+                }
+            });
+
+            if (symbolsToUnsubscribeImmediately.length > 0) {
+                 binanceWebSocket.send(JSON.stringify({
+                    method: "UNSUBSCRIBE",
+                    params: symbolsToUnsubscribeImmediately,
+                    id: Date.now()
+                }));
+                symbolsToUnsubscribeImmediately.forEach(s => subscribedSymbols.delete(s.replace('@ticker','').toUpperCase()));
+                console.log('[AssetsPage] Unsubscribed from obsolete tickers:', symbolsToUnsubscribeImmediately);
+            }
+
+
+            // Subscribe to new symbols
+            binanceWebSocket.send(JSON.stringify({
                 method: "SUBSCRIBE",
                 params: newSymbolsToSubscribe,
-                id: Date.now() // Unique ID for the request
-            };
+                id: Date.now() + 1
+            }));
+            newSymbolsToSubscribe.forEach(s => subscribedSymbols.add(s.replace('@ticker','').toUpperCase()));
             console.log('[AssetsPage] Subscribing to tickers:', newSymbolsToSubscribe);
-            binanceWebSocket.send(JSON.stringify(subscriptionMessage));
         }
     }
     
-    function unsubscribeFromAllTickers() {
+    function unsubscribeFromAllTickers(clearLocally = true) {
         if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size > 0) {
             const symbolsToUnsubscribe = Array.from(subscribedSymbols).map(s => `${s.toLowerCase()}@ticker`);
-            const unsubscriptionMessage = {
+            binanceWebSocket.send(JSON.stringify({
                 method: "UNSUBSCRIBE",
                 params: symbolsToUnsubscribe,
-                id: Date.now() + 1 
-            };
-            console.log('[AssetsPage] Unsubscribing from tickers:', symbolsToUnsubscribe);
-            binanceWebSocket.send(JSON.stringify(unsubscriptionMessage));
+                id: Date.now()
+            }));
+            console.log('[AssetsPage] Sent unsubscribe request for tickers:', symbolsToUnsubscribe);
+        }
+        if (clearLocally) {
             subscribedSymbols.clear();
         }
     }
 
-
-    // --- Auth and Header Logic ---
     if (token) {
         if(logoutButton) logoutButton.style.display = 'inline-block';
         if(signUpLink) signUpLink.style.display = 'none';
         if(loginLink) loginLink.style.display = 'none';
-        if(userGreeting) {
-            // Fetch username or use a placeholder
-            // For simplicity, let's assume username is not critical here or fetched elsewhere
-            // userGreeting.textContent = `Hello, User!`; 
-            // userGreeting.style.display = 'inline-block';
-        }
         if(logoutButton) {
             logoutButton.addEventListener('click', async () => {
                 console.log('[AssetsPage] Logout clicked.');
-                unsubscribeFromAllTickers(); // Unsubscribe before logging out
-                if (binanceWebSocket) binanceWebSocket.close();
+                if (wsReconnectInterval) { clearInterval(wsReconnectInterval); wsReconnectInterval = null;}
+                unsubscribeFromAllTickers();
+                if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
+                     binanceWebSocket.close(1000, "User logged out"); // Graceful close
+                }
+                binanceWebSocket = null; // Ensure it's nullified
 
                 const currentToken = localStorage.getItem('authToken');
                 localStorage.removeItem('authToken');
@@ -326,7 +324,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // --- Data Fetching and Rendering ---
     async function fetchProtectedData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
         if (!currentToken) {
@@ -342,6 +339,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch(url, fetchOptions);
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
+                    if (wsReconnectInterval) { clearInterval(wsReconnectInterval); wsReconnectInterval = null; }
+                    unsubscribeFromAllTickers();
+                    if (binanceWebSocket) binanceWebSocket.close(1000, "Unauthorized");
+                    binanceWebSocket = null;
                     localStorage.removeItem('authToken');
                     window.location.href = 'login-page.html';
                     return Promise.reject(new Error('Unauthorized or Forbidden, redirecting.'));
@@ -359,20 +360,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderAssets(assetsToRender) {
         const header = assetsTableContainer.querySelector('.custom-table-header');
-        assetsTableContainer.innerHTML = ''; // Clear previous content
-        if (header) assetsTableContainer.appendChild(header); // Re-add header
+        const existingRows = assetsTableContainer.querySelectorAll('.custom-table-row');
+        existingRows.forEach(row => row.remove()); // Clear only asset rows
+
+        const noDataPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
+        if (noDataPlaceholder) noDataPlaceholder.remove();
+
 
         if (!assetsToRender || assetsToRender.length === 0) {
             const message = (searchAssetInput.value || hideZeroBalancesCheckbox.checked) ? 'No assets found matching your criteria.' : 'You have no assets yet.';
             assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${message}</div>`);
-            if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00';
+             if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00'; // Ensure total is zeroed
             return;
         }
 
+        const fragment = document.createDocumentFragment();
         assetsToRender.forEach(asset => {
             const row = document.createElement('div');
             row.classList.add('custom-table-row', 'asset-row');
-            row.dataset.assetSymbol = asset.coin_symbol.toUpperCase(); // For easier targeting if needed
+            row.dataset.assetSymbol = asset.coin_symbol.toUpperCase();
 
             const valueUSD = parseFloat(asset.value_usd) || 0;
             const displayName = asset.coin_name && asset.coin_name !== asset.coin_symbol ? asset.coin_name : asset.coin_symbol;
@@ -380,20 +386,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             row.innerHTML = `
                 <span class="coin-details">
-                    <span class="coin-name-full">${displayName} <span class="coin-symbol-display">(${asset.coin_symbol.toUpperCase()})</span></span>
+                    <span class="coin-name-full">${displayName}</span><span class="coin-symbol-display">(${asset.coin_symbol.toUpperCase()})</span>
                 </span>
                 <span>${parseFloat(asset.total_balance).toFixed(quantityPrecision)}</span>
                 <span>${parseFloat(asset.available_balance).toFixed(quantityPrecision)}</span>
                 <span>${parseFloat(asset.in_order_balance).toFixed(quantityPrecision)}</span>
                 <span class="asset-value-usd">$${valueUSD.toFixed(2)}</span>
                 <span class="asset-actions">
-                    <a href="buy_crypto-page.html?coin=${asset.coin_symbol}" class="action-link">Deposit</a>
-                    <a href="markets.html?coin=${asset.coin_symbol}" class="action-link">Withdraw</a>
+                    <a href="deposit-page.html?coin=${asset.coin_symbol.toLowerCase()}" class="action-link">Deposit</a>
+                    <a href="withdraw-page.html?coin=${asset.coin_symbol.toLowerCase()}" class="action-link">Withdraw</a>
                     <a href="spot-page.html?pair=${asset.coin_symbol.toUpperCase()}USDT" class="action-link">Trade</a>
                 </span>
             `;
-            assetsTableContainer.appendChild(row);
+            fragment.appendChild(row);
         });
+        assetsTableContainer.appendChild(fragment);
 
         recalculateAndRenderTotalPortfolioValue();
 
@@ -413,7 +420,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             totalPortfolioValueElement.textContent = `$${calculatedTotalPortfolioValue.toFixed(2)}`;
         }
     }
-
 
     function filterAndPrepareAssets() {
         const searchTerm = searchAssetInput.value.toLowerCase();
@@ -437,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (aBalance > 1e-9 && bBalance <= 1e-9) return -1;
             if (bBalance > 1e-9 && aBalance <= 1e-9) return 1;  
             
-            return bValue - aValue; // Sort by value
+            return bValue - aValue;
         });
         
         const assetsToDisplay = currentlyDisplayingAll ? filteredAssets : filteredAssets.slice(0, initialDisplayLimit);
@@ -448,33 +454,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[AssetsPage] Attempting to load assets data...');
         const placeholder = assetsTableContainer.querySelector('.no-data-placeholder');
         if (placeholder) placeholder.textContent = 'Loading assets...';
+        else { // If header is the only child, append placeholder after it
+             const header = assetsTableContainer.querySelector('.custom-table-header');
+             if (header && header.nextSibling === null) {
+                const newPlaceholder = document.createElement('div');
+                newPlaceholder.className = 'no-data-placeholder';
+                newPlaceholder.textContent = 'Loading assets...';
+                assetsTableContainer.appendChild(newPlaceholder);
+             }
+        }
+
 
         try {
             const data = await fetchProtectedData('/api/assets');
-            console.log('[AssetsPage] Assets data received from server:', data);
+            // console.log('[AssetsPage] Assets data received from server:', data);
             if (data.success && data.assets) {
                 allFetchedAssets = data.assets.map(asset => ({
                     ...asset,
-                    quantity_precision: asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8 
+                    quantity_precision: asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8,
+                    value_usd: parseFloat(asset.value_usd).toFixed(2) // Ensure value_usd is a formatted string
                 }));
                 currentlyDisplayingAll = false;
                 if (showAllAssetsButton) showAllAssetsButton.textContent = 'Show All Assets';
-                filterAndPrepareAssets(); // This will also call renderAssets
-                subscribeToAssetTickers(allFetchedAssets); // Subscribe after assets are loaded
+                filterAndPrepareAssets();
+                subscribeToAssetTickers(allFetchedAssets);
                 console.log('[AssetsPage] Assets data processed and rendered.');
             } else {
                 console.error('[AssetsPage] Failed to load assets from server:', data.message);
-                if (placeholder) placeholder.textContent = data.message || 'Failed to load assets.';
-                else assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${data.message || 'Failed to load assets.'}</div>`);
+                const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
+                if (currentPlaceholder) currentPlaceholder.textContent = data.message || 'Failed to load assets.';
             }
         } catch (error) {
             console.error('[AssetsPage] Error in loadAssets catcher:', error.message || error);
-            if (placeholder) placeholder.textContent = 'Error loading assets. Please try again.';
-            else assetsTableContainer.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading assets. Please try again.</div>');
+             const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
+            if (currentPlaceholder) currentPlaceholder.textContent = 'Error loading assets. Please try again.';
         }
     }
 
-    // --- Event Handlers ---
     if(searchAssetInput) searchAssetInput.addEventListener('input', filterAndPrepareAssets);
     if(hideZeroBalancesCheckbox) hideZeroBalancesCheckbox.addEventListener('change', filterAndPrepareAssets);
     if(showAllAssetsButton) {
@@ -485,17 +501,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Clean up WebSocket on page unload
     window.addEventListener('beforeunload', () => {
-        unsubscribeFromAllTickers();
-        if (binanceWebSocket) {
-            binanceWebSocket.close();
+        if (wsReconnectInterval) { clearInterval(wsReconnectInterval); }
+        unsubscribeFromAllTickers(false); // Don't clear locally, let onclose handle it if socket closes
+        if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
+            binanceWebSocket.close(1000, "Page unloading");
         }
     });
 
-    // --- Initial Load ---
-    loadAssets(); // Load assets from API
-    connectBinanceWebSocket(); // Establish WebSocket connection
+    // Visibility change listener to potentially pause/resume WebSocket or reduce updates
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            // console.log("[AssetsPage] Page is hidden. Consider pausing WebSocket updates if necessary.");
+            // Example: unsubscribeFromAllTickers(false); // Keep local list for resubscribe
+        } else {
+            // console.log("[AssetsPage] Page is visible. Resubscribe if needed.");
+            if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size === 0 && allFetchedAssets.length > 0) {
+                // If WS is open but no symbols (e.g., after being hidden and unsubscribed)
+                // subscribeToAssetTickers(allFetchedAssets);
+            } else if ((!binanceWebSocket || binanceWebSocket.readyState === WebSocket.CLOSED) && token) {
+                // If WS is closed and user is logged in, try to reconnect
+                connectBinanceWebSocket();
+            }
+        }
+    });
+
+
+    loadAssets();
+    if (token) { // Only connect WebSocket if user is logged in
+        connectBinanceWebSocket();
+    }
 });
 </script>
 </body>
