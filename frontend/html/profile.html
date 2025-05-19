@@ -26,6 +26,19 @@
         .coin-symbol-small { color: #777; font-size: 0.85em; margin-left: 0.3em; }
         .no-data-placeholder a { color: #007bff; text-decoration: underline; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ... ваші стилі ... */
+        .card-chart { /* Можливо, знадобиться для кращого розміщення */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #portfolioChartCanvas { /* Стиль для самого canvas */
+            max-width: 100%;
+            height: auto !important; /* Важливо для Chart.js, щоб він міг керувати висотою */
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -66,15 +79,19 @@
             </section>
 
             <section class="dashboard-cards">
-                <div class="profile-card card-balance">
-                    <p>Estimated Balance</p>
-                    <h3 id="estimatedBalance">$0.00</h3>
-                </div>
-                <div class="profile-card card-chart">
-                    <p>Portfolio Chart</p>
-                    <div id="portfolioChartPlaceholder" style="width:100%; height:150px; background:#f0f0f0; display:flex; align-items:center; justify-content:center;">Chart Area</div>
-                </div>
-            </section>
+    <div class="profile-card card-balance">
+        <p>Estimated Balance</p>
+        <h3 id="estimatedBalance">$0.00</h3>
+    </div>
+    <div class="profile-card card-chart">
+        <p>Portfolio Value (Last 7 Days)</p> 
+        <!-- Змінили p і додали canvas -->
+        <canvas id="portfolioChartCanvas"></canvas> 
+        <div id="portfolioChartNoData" style="display:none; color: #6c757d; margin-top: 20px;">
+            Not enough data to display chart.
+        </div>
+    </div>
+</section>
 
             <section class="markets-section">
                 <h3>My Favourite Markets</h3>
@@ -104,7 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userDashboardAvatarElement = document.getElementById('userDashboardAvatar');
     const estimatedBalanceElement = document.getElementById('estimatedBalance');
     const favouriteMarketsTable = document.getElementById('favouriteMarketsTable');
-    const logoutButton = document.getElementById('logoutButtonProfile'); // Унікальний ID для кнопки виходу на цій сторінці
+    const logoutButton = document.getElementById('logoutButtonProfile'); 
+    const portfolioChartCanvas = document.getElementById('portfolioChartCanvas');
+    const portfolioChartNoData = document.getElementById('portfolioChartNoData');
+    let userPortfolioChart = null;
 
     if (!token) {
         console.warn('[ProfilePage] No token. Redirecting to login.');
@@ -274,12 +294,103 @@ document.addEventListener('DOMContentLoaded', async () => {
             else favouriteMarketsTable.insertAdjacentHTML('beforeend', '<div class="no-data-placeholder">Error loading favourite markets.</div>');
         }
     }
+     async function loadAndRenderPortfolioChart(period = '7d') {
+        if (!portfolioChartCanvas) return;
+        console.log(`[ProfilePage] Attempting to load portfolio history for period: ${period}...`);
+        
+        // Скидаємо попередній графік, якщо він був
+        if (userPortfolioChart) {
+            userPortfolioChart.destroy();
+            userPortfolioChart = null;
+        }
+        portfolioChartCanvas.style.display = 'none'; // Ховаємо canvas поки завантажуються дані
+        if (portfolioChartNoData) portfolioChartNoData.style.display = 'none';
+
+
+        try {
+            const data = await fetchApiData(`/api/portfolio/history?period=${period}`, { requiresAuth: true });
+            console.log('[ProfilePage] Portfolio history data:', data);
+
+            if (data && data.success && data.history && data.history.length > 1) { // Потрібно хоча б 2 точки для лінії
+                portfolioChartCanvas.style.display = 'block';
+                const labels = data.history.map(item => {
+                    // Форматуємо дату для кращого відображення
+                    const date = new Date(item.date);
+                    return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                });
+                const values = data.history.map(item => parseFloat(item.value));
+
+                const chartData = {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio Value (USD)',
+                        data: values,
+                        fill: true, // Заливка під лінією
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)', // Колір заливки
+                        tension: 0.1, // Плавність лінії
+                        pointRadius: 3, // Розмір точок
+                        pointBackgroundColor: 'rgb(75, 192, 192)'
+                    }]
+                };
+
+                const config = {
+                    type: 'line',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // Дозволяє керувати висотою через CSS або контейнер
+                        scales: {
+                            y: {
+                                beginAtZero: false, // Починати не обов'язково з нуля
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // Можна приховати легенду, якщо назва вказана в <p>
+                            },
+                            tooltip: {
+                                 callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += '$' + context.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                userPortfolioChart = new Chart(portfolioChartCanvas, config);
+
+            } else {
+                console.warn('[ProfilePage] Not enough data for portfolio chart or failed to load.');
+                if (portfolioChartNoData) portfolioChartNoData.style.display = 'block';
+                portfolioChartCanvas.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('[ProfilePage] Error loading portfolio history:', error);
+            if (portfolioChartNoData && (!error.shouldRedirect) ) portfolioChartNoData.style.display = 'block';
+            portfolioChartCanvas.style.display = 'none';
+        }
+    }
 
     // Послідовне завантаження даних
     if (token) {
         await loadProfileData();
         await loadBalance();
-        await loadAndRenderFavouriteMarkets(); // Переконайтеся, що ця функція повністю реалізована
+        await loadAndRenderFavouriteMarkets(); 
+        await loadAndRenderPortfolioChart();
     }
     console.log('[ProfilePage] Initial data load sequence finished.');
 });
