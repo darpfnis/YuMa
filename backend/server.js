@@ -676,8 +676,24 @@ let marketDataCache = { // Простий in-memory кеш
     cacheDuration: 5 * 60 * 1000 // 5 хвилин в мілісекундах
 };
 const KEY_BASE_ASSETS_FOR_COINGECKO = [
-    'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'USDT',
-    'AVAX', 'DOT', 'MATIC', 'LINK', 'TRX', 'SHIB', 'LTC', 'ATOM' // Додайте ще важливі
+    'BTC',
+    'ETH',
+    'BNB',
+    'SOL',
+    'XRP',
+    'ADA',
+    'DOGE',
+    'USDT', // USDT важливий, якщо ви хочете знати його ціну до USD (буде ~1) для розрахунків
+    'AVAX',
+    'DOT',
+    'MATIC',
+    'LINK',
+    'TRX',
+    'SHIB', // Хоча SHIB - мемкоін, його ціна може бути цікава
+    'LTC',
+    'ATOM',
+    'NEAR',
+    'FTM'
 ];
 
 const COINGECKO_IDS_MAP = { // Мапінг ваших символів на CoinGecko IDs
