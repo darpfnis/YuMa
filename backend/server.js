@@ -13,8 +13,8 @@ const app = express();
 const port = process.env.PORT || 3000; // Render надає PORT
 
 // --- Налаштування JWT ---
-const JWT_SECRET = process.env.JWT_SECRET || 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-final-CHANGE-ME';
-if (JWT_SECRET === 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-final-CHANGE-ME' && process.env.NODE_ENV === 'production') {
+const JWT_SECRET = process.env.JWT_SECRET || 'a3b8c1d7e5f2a1b6c0d4e9f7a2b5c8d1e6f0a0b3c6d0e4f1a7b2c5d8e3f6a4b9c2d5e8f3a6b1c4d7e0f9';
+if (JWT_SECRET === 'a3b8c1d7e5f2a1b6c0d4e9f7a2b5c8d1e6f0a0b3c6d0e4f1a7b2c5d8e3f6a4b9c2d5e8f3a6b1c4d7e0f9' && process.env.NODE_ENV === 'production') {
     console.warn('CRITICAL WARNING: JWT_SECRET is using a default insecure value in production! Please set a strong JWT_SECRET environment variable on Render.');
 }
 
