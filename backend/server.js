@@ -256,7 +256,7 @@ async function connectToBinanceMarketStreams() {
         }
         subscribedStreams.clear();
     }
-}s
+}
 
 
 // --- РОЗДІЛ ДЛЯ РИНКОВИХ ДАНИХ CoinGecko (інтегровано) ---
