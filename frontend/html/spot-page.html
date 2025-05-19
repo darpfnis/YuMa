@@ -50,45 +50,823 @@
     </div>
 
     <main class="spot-interface-layout">
-        <aside class="left-panel panel-column">
-            <div class="ui-panel order-book-card"> <!-- Змінено клас -->
-                <div class="panel-title">Order book</div>
+    <aside class="left-panel panel-column">
+        <div class="ui-panel order-book-card">
+            <div class="panel-title">Order Book <span id="orderBookSymbol">(BTC/USDT)</span></div>
+            <div class="order-book-columns">
+                <span>Price (USDT)</span>
+                <span>Amount (BTC)</span>
+                <span>Total (USDT)</span>
             </div>
-        </aside>
-    
-        <section class="center-content panel-column">
-            <div class="ui-panel chart-card"> <!-- Змінено клас -->
-                <!-- TradingView Widget BEGIN -->
+            <div class="order-book-content">
+                <div class="asks-container">
+                    <ul id="asks-list">
+                        <!-- Заявки на продаж (asks) будуть тут -->
+                    </ul>
+                </div>
+                <div class="current-price-display">
+                    <span id="currentMarketPrice">0.00</span> <!-- Для відображення поточної ціни між asks/bids -->
+                    <!-- Можна додати % зміни, якщо потрібно -->
+                </div>
+                <div class="bids-container">
+                    <ul id="bids-list">
+                        <!-- Заявки на купівлю (bids) будуть тут -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- НОВИЙ БЛОК ДЛЯ ІСТОРІЇ ОРДЕРІВ -->
+        <div class="ui-panel order-history-placeholder"> <!-- Або твій реальний клас -->
+            <div class="panel-title">Open Orders / Order History</div>
+            <div style="padding:1rem; text-align:center; color:#777; flex-grow:1;">
+                (Content for open orders, order history, trade history will be here with tabs)
+            </div>
+        </div>
+    </aside>
+
+    <section class="center-content panel-column">
+        <div class="ui-panel chart-card">
+           <!-- TradingView Widget BEGIN -->
 <div class="tradingview-widget-container" style="height:100%;width:100%">
-    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-    {
-    "autosize": true,
-    "symbol": "BINANCE:BTCUSDT",
-    "interval": "D",
-    "timezone": "Etc/UTC",
-    "theme": "light",
-    "style": "1",
-    "locale": "en",
-    "allow_symbol_change": true,
-    "support_host": "https://www.tradingview.com"
-  }
-    </script>
-  </div>
-  <!-- TradingView Widget END -->
-                
+  <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+  {
+  "autosize": true,
+  "symbol": "BINANCE:BTCUSDT",
+  "interval": "D",
+  "timezone": "Etc/UTC",
+  "theme": "light",
+  "style": "1",
+  "locale": "en",
+  "allow_symbol_change": true,
+  "support_host": "https://www.tradingview.com"
+}
+  </script>
+</div>
+<!-- TradingView Widget END -->
+        </div>
+        <div class="ui-panel spot-trading-panel-card">
+            <div class="panel-title">Spot Trading</div>
+            <!-- НОВИЙ ВМІСТ ПАНЕЛІ ТОРГІВЛІ -->
+            <div class="trading-form-container">
+                <div class="order-type-tabs">
+                    <!-- Основні типи торгівлі, поки що тільки "Спот" активний -->
+                    <button class="type-tab active" data-type="spot">Спот</button>
+                    <button class="type-tab" data-type="cross">Крос</button>
+                    <button class="type-tab" data-type="isolated">Ізольований</button>
+                    <button class="type-tab" data-type="grid">Grid</button>
+                </div>
+
+                <div class="execution-type-tabs">
+                    <!-- Типи виконання ордерів -->
+                    <button class="exec-tab active" data-exec="limit">Ліміт</button>
+                    <button class="exec-tab" data-exec="market">Маркет</button>
+                    <div class="dropdown-container stop-limit-dropdown">
+                         <button class="exec-tab dropdown-toggle" data-exec="stop-limit">Стоп-ліміт</button>
+                         <!-- Можна додати випадаюче меню для варіантів стоп-ліміту -->
+                    </div>
+                    <span class="info-icon">ⓘ</span>
+                </div>
+
+                <div class="order-forms-columns">
+                    <!-- Колонка для Купівлі (Buy) -->
+                    <div class="order-form buy-form">
+                        <div class="input-group">
+                            <label for="buy-price">Ціна</label>
+                            <div class="input-with-currency">
+                                <input type="number" id="buy-price" placeholder="0.00">
+                                <span class="currency" id="buyPriceQuoteCurrency">USDT</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="buy-amount">Сума</label>
+                            <div class="input-with-currency">
+                                <input type="number" id="buy-amount" placeholder="0.0000">
+                                <span class="currency" id="buyAmountBaseCurrency">BTC</span>
+                            </div>
+                        </div>
+                        <div class="balance-slider">
+                            <input type="range" min="0" max="100" value="0" class="slider" id="buySlider">
+                            <div class="slider-percentage-markers">
+                                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="buy-total">Всього</label>
+                            <div class="input-with-currency">
+                                <input type="number" id="buy-total" placeholder="0.00" readonly>
+                                <span class="currency" id="buyTotalQuoteCurrency">USDT</span>
+                            </div>
+                        </div>
+                         <div class="advanced-options">
+                            <input type="checkbox" id="buy-tp-sl" name="buy-tp-sl">
+                            <label for="buy-tp-sl">TP/SL</label>
+                        </div>
+                        <div class="available-balance">
+                            <span>Доступно:</span>
+                            <span id="buyAvailableQuote">-- USDT</span>
+                        </div>
+                        <button class="action-button buy-button">Увійти (Купити <span id="buyButtonBase">BTC</span>)</button>
+                    </div>
+
+                    <!-- Колонка для Продажу (Sell) -->
+                    <div class="order-form sell-form">
+                        <div class="input-group">
+                            <label for="sell-price">Ціна</label>
+                            <div class="input-with-currency">
+                                <input type="number" id="sell-price" placeholder="0.00">
+                                <span class="currency" id="sellPriceQuoteCurrency">USDT</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="sell-amount">Сума</label>
+                            <div class="input-with-currency">
+                                <input type="number" id="sell-amount" placeholder="0.0000">
+                                <span class="currency" id="sellAmountBaseCurrency">BTC</span>
+                            </div>
+                        </div>
+                        <div class="balance-slider">
+                            <input type="range" min="0" max="100" value="0" class="slider" id="sellSlider">
+                             <div class="slider-percentage-markers">
+                                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                            </div>
+                        </div>
+                         <div class="input-group">
+                            <label for="sell-total">Всього</label>
+                            <div class="input-with-currency">
+                                <input type="number" id="sell-total" placeholder="0.00" readonly>
+                                <span class="currency" id="sellTotalQuoteCurrency">USDT</span>
+                            </div>
+                        </div>
+                        <div class="advanced-options">
+                            <input type="checkbox" id="sell-tp-sl" name="sell-tp-sl">
+                            <label for="sell-tp-sl">TP/SL</label>
+                        </div>
+                        <div class="available-balance">
+                            <span>Доступно:</span>
+                            <span id="sellAvailableBase">-- BTC</span>
+                        </div>
+                        <button class="action-button sell-button">Увійти (Продати <span id="sellButtonBase">BTC</span>)</button>
+                    </div>
+                </div>
+                <div class="auth-prompt" style="display: none; text-align: center; padding: 1rem; color: #777;">
+                    Увійдіть або зареєструйтеся, щоб торгувати
+                </div>
             </div>
-            <div class="ui-panel spot-trading-panel-card"> <!-- Змінено клас -->
-                <div class="panel-title">Spot trading panel</div>
+            <!-- КІНЕЦЬ ВМІСТУ ПАНЕЛІ ТОРГІВЛІ -->
+        </div>
+    </section>
+
+     <aside class="right-panel panel-column">
+        <!-- НОВИЙ БЛОК: Пошук та список пар -->
+        <div class="ui-panel pair-search-panel">
+            <div class="panel-title">Pairs</div>
+            <div class="search-pair-wrapper">
+                <input type="text" id="pairSearchInput" placeholder="Search pair, e.g. ETH">
+                <span class="search-icon">🔍</span> <!-- Можна замінити на SVG або Font Awesome -->
             </div>
-        </section>
+            <div class="pair-categories">
+                <!-- Можна додати кнопки для фільтрації за котирувальною валютою: USDT, BTC, ETH тощо. -->
+                <button class="category-btn active" data-quote="USDT">USDT</button>
+                <button class="category-btn" data-quote="BTC">BTC</button>
+                <button class="category-btn" data-quote="ETH">ETH</button>
+                <!-- ... інші ... -->
+            </div>
+            <ul id="pairList" class="pair-list-scrollable">
+                <!-- Сюди будуть завантажуватися торгові пари -->
+                <!-- Приклад елемента списку:
+                <li data-symbol="ETHUSDT">
+                    <span class="symbol-main">ETH</span><span class="symbol-quote">/USDT</span>
+                    <span class="price-change positive">+1.25%</span>
+                </li>
+                -->
+            </ul>
+        </div>
+
+        <!-- ІСНУЮЧИЙ БЛОК: Market Trades, тепер нижче -->
+        <div class="ui-panel market-trades-card">
+            <div class="panel-title">Market Trades <span id="marketTradesSymbol">(BTC/USDT)</span></div>
+            <div class="market-trades-columns">
+                <span>Price (USDT)</span>
+                <span>Amount (BTC)</span>
+                <span>Time</span>
+            </div>
+            <ul id="market-trades-list">
+                <!-- Останні угоди будуть тут -->
+            </ul>
+        </div>
+    </aside>
+</main>
+
+<script>
+<!-- Додамо скрипт в кінці body -->
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("DOM fully loaded and parsed. Initializing Spot Page...");
+
+    let currentSymbol = 'BTCUSDT'; // Початковий символ
+
+    // Елементи DOM
+    const asksListEl = document.getElementById('asks-list');
+    const bidsListEl = document.getElementById('bids-list');
+    const currentMarketPriceEl = document.getElementById('currentMarketPrice');
+    const marketTradesListEl = document.getElementById('market-trades-list');
+    const orderBookSymbolEl = document.getElementById('orderBookSymbol');
+    const marketTradesSymbolEl = document.getElementById('marketTradesSymbol');
+    const pairSearchInputEl = document.getElementById('pairSearchInput');
+    const pairListEl = document.getElementById('pairList');
+    const categoryButtonsContainer = document.querySelector('.pair-categories');
+    const tradingViewWidgetTargetDivIdFromHTML = 'tradingview_widget_target_div'; // ID з HTML віджету
+
+    // Елементи форм торгівлі
+    const buyFormEl = document.querySelector('.buy-form');
+    const sellFormEl = document.querySelector('.sell-form');
+    // Купівля
+    const buyPriceInput = document.getElementById('buy-price');
+    const buyMarketPriceLabelEl = buyFormEl.querySelector('.price-input-group .market-price-label');
+    const buyPriceQuoteCurrencyEl = document.getElementById('buyPriceQuoteCurrency');
+    const buyAmountLabelEl = document.getElementById('buyAmountLabel');
+    const buyAmountInput = document.getElementById('buy-amount');
+    const buyAmountCurrencyEl = document.getElementById('buyAmountCurrency');
+    const buyTotalInputGroup = buyFormEl.querySelector('.total-input-group');
+    // Продаж
+    const sellPriceInput = document.getElementById('sell-price');
+    const sellMarketPriceLabelEl = sellFormEl.querySelector('.price-input-group .market-price-label');
+    const sellPriceQuoteCurrencyEl = document.getElementById('sellPriceQuoteCurrency');
+    const sellAmountLabelEl = document.getElementById('sellAmountLabel');
+    const sellAmountInput = document.getElementById('sell-amount');
+    const sellAmountBaseCurrencyEl = document.getElementById('sellAmountBaseCurrency');
+    const sellTotalInputGroup = sellFormEl.querySelector('.total-input-group');
     
-        <aside class="right-panel panel-column">
-            <div class="ui-panel market-card"> <!-- Змінено клас -->
-                <div class="panel-title">Market</div>
-            </div>
-        </aside>
-    </main>
+    // Кнопки Купити/Продати
+    const buyButton = document.querySelector('.buy-button');
+    const sellButton = document.querySelector('.sell-button');
+    // Spans для назви валюти в кнопках (якщо вони є в HTML кнопок)
+    // Якщо їх немає, updateActionButtonsState буде просто змінювати textContent кнопки
+    // const buyButtonBaseSpan = document.getElementById('buyButtonBase'); 
+    // const sellButtonBaseSpan = document.getElementById('sellButtonBase');
+
+
+    let allMarketPairsCache = [];
+    let orderBookSocket = null;
+    let tradesSocket = null;
+    let tradingWidgetInstance = null; 
+
+    const MAX_OB_LEVELS = 15;
+    const MAX_TRADES_HISTORY = 25;
+
+    // --- ВЗАЄМОДІЯ З ІСНУЮЧИМ TRADINGVIEW WIDGET ---
+    function getTradingViewWidgetInstanceWhenReady(callback) {
+        let attempts = 0;
+        const maxAttempts = 35; // Приблизно 10.5 секунд
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (typeof TradingView !== 'undefined' &&
+                TradingView.widgets &&
+                TradingView.widgets[tradingViewWidgetTargetDivIdFromHTML]) {
+                
+                clearInterval(checkInterval);
+                tradingWidgetInstance = TradingView.widgets[tradingViewWidgetTargetDivIdFromHTML];
+                console.log("%cTradingView widget instance obtained successfully!", "color: green; font-weight: bold;", tradingWidgetInstance);
+                if (callback && typeof callback === 'function') {
+                    callback(tradingWidgetInstance);
+                }
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.error("Timeout or failure: TradingView widget instance (id:", tradingViewWidgetTargetDivIdFromHTML, ") could not be obtained. Ensure tv.js is loaded and widget HTML/container_id is correct.");
+            }
+        }, 300);
+    }
+    
+    // --- ФУНКЦІЇ ФОРМАТУВАННЯ ---
+    function formatPrice(price, symbolQuoteOrFullSymbol) {
+        let quote = '';
+        if (symbolQuoteOrFullSymbol) {
+            const parts = splitSymbol(symbolQuoteOrFullSymbol); 
+            quote = parts[1];
+        }
+
+        if (price === undefined || price === null) return 'N/A';
+        const priceNum = parseFloat(price);
+        if (isNaN(priceNum)) return 'N/A';
+
+        if (['USDT', 'FDUSD', 'BUSD', 'USDC', 'DAI', 'TUSD'].includes(quote)) {
+            if (priceNum === 0) return "0.00"; 
+            if (priceNum >= 100) return priceNum.toFixed(2);
+            if (priceNum >= 1) return priceNum.toFixed(3);
+            if (priceNum >= 0.001) return priceNum.toFixed(4); 
+            if (priceNum >= 0.00001) return priceNum.toFixed(5);
+            return priceNum.toFixed(6);
+        } else if (['BTC', 'ETH', 'BNB'].includes(quote)) {
+            return priceNum.toFixed(8);
+        }
+        if (priceNum >= 1) return priceNum.toFixed(4);
+        return priceNum.toFixed(8);
+    }
+
+    function formatAmount(amount) {
+        if (amount === undefined || amount === null) return 'N/A';
+        const amountNum = parseFloat(amount);
+        if (isNaN(amountNum)) return 'N/A';
+        if (amountNum === 0) return "0.0000";
+        if (amountNum < 0.0001 && amountNum > 0) return amountNum.toPrecision(2); 
+        if (amountNum < 1) return amountNum.toFixed(6);
+        return amountNum.toFixed(4);
+    }
+
+    // --- ФУНКЦІЇ ОНОВЛЕННЯ UI (OrderBook, MarketTrades) ---
+    function renderOrderBook(bidsData, asksData) {
+        if (!asksListEl || !bidsListEl) { console.error("Order book list elements not found!"); return; }
+        const [, quoteAsset] = splitSymbol(currentSymbol); // Використовуємо глобальний currentSymbol
+
+        asksListEl.innerHTML = '';
+        bidsListEl.innerHTML = '';
+
+        const asksToShow = (asksData || []).slice(0, MAX_OB_LEVELS).reverse();
+        asksToShow.forEach(ask => {
+            const [price, quantity] = ask;
+            const li = document.createElement('li');
+            const priceFormatted = formatPrice(price, quoteAsset);
+            const amountFormatted = formatAmount(quantity);
+            const total = formatPrice((parseFloat(price) * parseFloat(quantity)), quoteAsset);
+            li.innerHTML = `
+                <span class="price ask-price">${priceFormatted}</span>
+                <span class="amount">${amountFormatted}</span>
+                <span class="total">${total}</span>`;
+            const totalAsksQuantity = (asksData || []).reduce((sum, item) => sum + parseFloat(item[1] || 0), 0);
+            const depthPercentage = (parseFloat(quantity || 0) / (totalAsksQuantity || 1)) * 200;
+            li.style.background = `linear-gradient(to left, rgba(239, 68, 68, 0.15) ${Math.min(depthPercentage,100)}%, transparent ${Math.min(depthPercentage,100)}%)`;
+            asksListEl.appendChild(li);
+        });
+
+        const bidsToShow = (bidsData || []).slice(0, MAX_OB_LEVELS);
+        bidsToShow.forEach(bid => {
+            const [price, quantity] = bid;
+            const li = document.createElement('li');
+            const priceFormatted = formatPrice(price, quoteAsset);
+            const amountFormatted = formatAmount(quantity);
+            const total = formatPrice((parseFloat(price) * parseFloat(quantity)), quoteAsset);
+            li.innerHTML = `
+                <span class="price bid-price">${priceFormatted}</span>
+                <span class="amount">${amountFormatted}</span>
+                <span class="total">${total}</span>`;
+            const totalBidsQuantity = (bidsData || []).reduce((sum, item) => sum + parseFloat(item[1] || 0), 0);
+            const depthPercentage = (parseFloat(quantity || 0) / (totalBidsQuantity || 1)) * 200;
+            li.style.background = `linear-gradient(to right, rgba(16, 185, 129, 0.15) ${Math.min(depthPercentage,100)}%, transparent ${Math.min(depthPercentage,100)}%)`;
+            bidsListEl.appendChild(li);
+        });
+
+        if (currentMarketPriceEl && bidsData && bidsData.length > 0 && asksData && asksData.length > 0) {
+            const bestBid = parseFloat(bidsData[0][0]);
+            const bestAsk = parseFloat(asksData[0][0]);
+            const midPrice = (bestBid + bestAsk) / 2;
+            currentMarketPriceEl.textContent = formatPrice(midPrice, quoteAsset);
+            currentMarketPriceEl.classList.remove('price-up', 'price-down');
+            const lastPrice = parseFloat(currentMarketPriceEl.dataset.lastPrice);
+            if (!isNaN(lastPrice)) {
+                if (lastPrice < midPrice ) currentMarketPriceEl.classList.add('price-up');
+                else if (lastPrice > midPrice ) currentMarketPriceEl.classList.add('price-down');
+            }
+            currentMarketPriceEl.dataset.lastPrice = midPrice.toString();
+        }
+    }
+
+    function renderMarketTrade(trade) {
+        if (!marketTradesListEl) return;
+        const [, quoteAsset] = splitSymbol(currentSymbol); // Використовуємо глобальний currentSymbol
+        const li = document.createElement('li');
+        const priceFormatted = formatPrice(trade.p, quoteAsset);
+        const amountFormatted = formatAmount(trade.q);
+        const tradeTime = new Date(trade.T).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        const priceClass = trade.m ? 'sell-trade' : 'buy-trade';
+        li.innerHTML = `
+            <span class="price ${priceClass}">${priceFormatted}</span>
+            <span class="amount">${amountFormatted}</span>
+            <span class="time">${tradeTime}</span>`;
+        marketTradesListEl.prepend(li);
+        if (marketTradesListEl.children.length > MAX_TRADES_HISTORY) {
+            marketTradesListEl.removeChild(marketTradesListEl.lastChild);
+        }
+    }
+
+    // --- ФУНКЦІЇ ДЛЯ WEBSOCKET ---
+    function setupWebSocket(socketUrl, onOpenMsg, onMessageCallback, onErrorMsg, onCloseMsg) {
+        console.log(`Attempting to connect to WebSocket: ${socketUrl}`);
+        const socket = new WebSocket(socketUrl);
+        socket.onopen = () => console.log(onOpenMsg);
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                onMessageCallback(data);
+            } catch (e) {
+                console.error(`Error parsing message from ${socketUrl}:`, e, event.data);
+            }
+        };
+        socket.onerror = (error) => console.error(`${onErrorMsg}: `, error);
+        socket.onclose = (event) => console.log(`${onCloseMsg}. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
+        return socket;
+    }
+    
+    function connectOrderBookWebSocket(symbolPair) {
+        if (orderBookSocket && orderBookSocket.readyState < WebSocket.CLOSING) { 
+            orderBookSocket.close(1000, "Changing symbol - Order Book");
+        }
+        const wsSym = symbolPair.toLowerCase();
+        const url = `wss://stream.binance.com:9443/ws/${wsSym}@depth20@1000ms`;
+        orderBookSocket = setupWebSocket(url, `Order Book WS opened for ${symbolPair}.`,
+            (data) => {
+                if (data.bids && data.asks) { 
+                    renderOrderBook(data.bids, data.asks);
+                } else if (data.b && data.a) { 
+                     renderOrderBook(data.b, data.a);
+                } else if (data.e === 'depthUpdate') {
+                    console.warn("[OrderBook WS]: Received differential 'depthUpdate'. Full snapshot logic preferred.");
+                }
+            },
+            `Order Book WS Error for ${symbolPair}`, `Order Book WS closed for ${symbolPair}`
+        );
+    }
+
+    function connectTradesWebSocket(symbolPair) {
+        if (tradesSocket && tradesSocket.readyState < WebSocket.CLOSING) {
+            tradesSocket.close(1000, "Changing symbol - Market Trades");
+        }
+        const wsSym = symbolPair.toLowerCase();
+        const url = `wss://stream.binance.com:9443/ws/${wsSym}@trade`;
+        tradesSocket = setupWebSocket(url, `Market Trades WS opened for ${symbolPair}.`,
+            renderMarketTrade,
+            `Market Trades WS Error for ${symbolPair}`, `Market Trades WS closed for ${symbolPair}`
+        );
+    }
+    
+    // --- ФУНКЦІЇ ДЛЯ РОБОТИ З ПАРАМИ ---
+    function updateSymbolDisplay(symbolPair) {
+        const [base, quote] = splitSymbol(symbolPair);
+        if (orderBookSymbolEl) orderBookSymbolEl.textContent = `(${base}/${quote})`;
+        if (marketTradesSymbolEl) marketTradesSymbolEl.textContent = `(${base}/${quote})`;
+        
+        const obPriceCol = document.querySelector('.order-book-columns span:first-child');
+        const obAmountCol = document.querySelector('.order-book-columns span:nth-child(2)');
+        const obTotalCol = document.querySelector('.order-book-columns span:last-child');
+        const mtPriceCol = document.querySelector('.market-trades-columns span:first-child');
+        const mtAmountCol = document.querySelector('.market-trades-columns span:nth-child(2)');
+
+        if(obPriceCol) obPriceCol.textContent = `Price (${quote})`;
+        if(obAmountCol) obAmountCol.textContent = `Amount (${base})`;
+        if(obTotalCol) obTotalCol.textContent = `Total (${quote})`;
+        if(mtPriceCol) mtPriceCol.textContent = `Price (${quote})`;
+        if(mtAmountCol) mtAmountCol.textContent = `Amount (${base})`;
+    }
+
+    function splitSymbol(symbolPair) {
+        if (!symbolPair || typeof symbolPair !== 'string') return ["ERR", "ERR"];
+        const commonQuotes = ["USDT", "FDUSD", "BUSD", "USDC", "DAI", "TUSD", "BTC", "ETH", "BNB", "TRY", "EUR", "GBP", "UAH", "PLN"];
+        for (const quote of commonQuotes) {
+            if (symbolPair.endsWith(quote) && symbolPair.length > quote.length) {
+                const base = symbolPair.substring(0, symbolPair.length - quote.length);
+                return [base, quote];
+            }
+        }
+        if (symbolPair.length > 4) return [symbolPair.substring(0,symbolPair.length-4), symbolPair.substring(symbolPair.length-4)];
+        if (symbolPair.length > 3) return [symbolPair.substring(0,symbolPair.length-3), symbolPair.substring(symbolPair.length-3)];
+        return [symbolPair, ""];
+    }
+
+    async function changeTradingPair(newSymbol) {
+        if (currentSymbol === newSymbol && tradingWidgetInstance) { // Додав перевірку на tradingWidgetInstance
+             // Якщо символ той самий і віджет вже є, нічого не робимо,
+             // або можна примусово оновити дані, якщо це потрібно.
+            console.log(`Symbol ${newSymbol} is already active and widget exists.`);
+            return;
+        }
+        console.log(`Changing trading pair to: ${newSymbol}`);
+        
+        // Закриваємо старі сокети, якщо вони відкриті
+        if (orderBookSocket && orderBookSocket.readyState === WebSocket.OPEN) orderBookSocket.close(1000, "Symbol changed - OB");
+        if (tradesSocket && tradesSocket.readyState === WebSocket.OPEN) tradesSocket.close(1000, "Symbol changed - MT");
+        
+        currentSymbol = newSymbol; // Оновлюємо currentSymbol ТІЛЬКИ ПІСЛЯ перевірки
+        
+        // Очищення перед завантаженням нових даних
+        if(asksListEl) asksListEl.innerHTML = '<li style="text-align:center;color:#777;padding:10px;">Loading...</li>';
+        if(bidsListEl) bidsListEl.innerHTML = '';
+        if(currentMarketPriceEl) currentMarketPriceEl.textContent = '0.00';
+        if(marketTradesListEl) marketTradesListEl.innerHTML = '<li style="text-align:center;color:#777;padding:10px;">Loading...</li>';
+        
+        updateSymbolDisplay(newSymbol);
+        const [base, quote] = splitSymbol(newSymbol);
+        updateTradingFormCurrencies(base, quote); // Оновлюємо валюти в торгових формах
+        updateActionButtonsState(); // Оновлюємо текст кнопок купівлі/продажу
+
+        if (tradingWidgetInstance && typeof tradingWidgetInstance.setSymbol === 'function') {
+            const currentInterval = (tradingWidgetInstance.options && tradingWidgetInstance.options.interval) ? tradingWidgetInstance.options.interval : "60";
+            console.log(`Attempting to set symbol on widget: BINANCE:${newSymbol} with interval ${currentInterval}`);
+            tradingWidgetInstance.setSymbol(`BINANCE:${newSymbol}`, currentInterval, () => {
+                console.log(`%cTradingView symbol successfully changed to BINANCE:${newSymbol}`, "color: green; font-weight: bold;");
+            });
+        } else {
+             console.warn("Cannot change TradingView symbol: widget instance or setSymbol method not available.");
+        }
+
+        // Затримка перед підключенням нових сокетів
+        setTimeout(async () => {
+            console.log(`Reconnecting WebSockets and fetching initial data for ${newSymbol}`);
+            connectOrderBookWebSocket(newSymbol);
+            connectTradesWebSocket(newSymbol);
+            await fetchInitialDataForSymbol(newSymbol);
+        }, 500);
+    }
+
+    function renderPairList(pairsToRender) {
+        if (!pairListEl) return;
+        pairListEl.innerHTML = '';
+        if (!pairsToRender || pairsToRender.length === 0) {
+            pairListEl.innerHTML = '<li style="text-align:center; padding: 10px; color: #707a8a;">No pairs found.</li>';
+            return;
+        }
+        pairsToRender.slice(0, 100).forEach(pair => { 
+            const li = document.createElement('li');
+            li.dataset.symbol = pair.symbol;
+            const [base, quote] = splitSymbol(pair.symbol);
+            const priceFormatted = formatPrice(pair.lastPrice, quote);
+            const changeFormatted = pair.priceChangePercent ? `${parseFloat(pair.priceChangePercent).toFixed(2)}%` : " ";
+            const changeClass = pair.priceChangePercent ? (parseFloat(pair.priceChangePercent) >= 0 ? 'positive' : 'negative') : '';
+            li.innerHTML = `
+                <span class="pair-symbol-group"><span class="symbol-main">${base}</span><span class="symbol-quote">/${quote}</span></span>
+                <span class="pair-last-price">${priceFormatted}</span>
+                <span class="price-change ${changeClass}">${changeFormatted}</span>`;
+            li.addEventListener('click', () => changeTradingPair(pair.symbol));
+            pairListEl.appendChild(li);
+        });
+    }
+
+    function filterAndRenderPairs() {
+        if (pairSearchInputEl === null && categoryButtonsContainer === null) return; // Якщо елементів немає
+
+        const searchTerm = pairSearchInputEl ? pairSearchInputEl.value.toLowerCase().trim() : "";
+        const activeCategoryButton = categoryButtonsContainer ? categoryButtonsContainer.querySelector('.category-btn.active') : null;
+        const selectedQuote = (activeCategoryButton && activeCategoryButton.dataset.quote) ? activeCategoryButton.dataset.quote : null;
+
+        if (!allMarketPairsCache.length && searchTerm === "" && selectedQuote === "All") {
+             if(pairListEl) pairListEl.innerHTML = '<li style="text-align:center; padding:10px; color:#707a8a;">Loading pairs...</li>';
+             return;
+        }
+        
+        let filteredPairs = allMarketPairsCache;
+        if (selectedQuote && selectedQuote !== "All") {
+            filteredPairs = filteredPairs.filter(pair => pair.quoteAsset === selectedQuote);
+        }
+        if (searchTerm) {
+            filteredPairs = filteredPairs.filter(pair => 
+                pair.symbol.toLowerCase().includes(searchTerm) || 
+                (pair.baseAsset && pair.baseAsset.toLowerCase().includes(searchTerm)) || 
+                (pair.quoteAsset && pair.quoteAsset.toLowerCase().includes(searchTerm))
+            );
+        }
+        renderPairList(filteredPairs);
+    }
+
+    async function fetchAllMarketPairs() { 
+        console.log("Fetching all market pairs for search...");
+        if(pairListEl) pairListEl.innerHTML = '<li style="text-align:center; padding:10px; color:#707a8a;">Loading pairs...</li>';
+        try {
+            const response = await fetch('https://api.binance.com/api/v3/exchangeInfo');
+            if (!response.ok) throw new Error(`Failed to fetch exchange info: ${response.status} ${response.statusText}`);
+            const data = await response.json();
+            const tickerResponse = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+            if(!tickerResponse.ok) console.warn(`Could not fetch 24hr ticker data: ${tickerResponse.status}`);
+            const tickerData = tickerResponse.ok ? await tickerResponse.json() : [];
+            const tickerMap = new Map(tickerData.map(t => [t.symbol, t]));
+            if (data.symbols) {
+                allMarketPairsCache = data.symbols
+                    .filter(s => s.status === 'TRADING' && s.isSpotTradingAllowed)
+                    .map(s => {
+                        const ticker = tickerMap.get(s.symbol);
+                        return {
+                            symbol: s.symbol,
+                            baseAsset: s.baseAsset,
+                            quoteAsset: s.quoteAsset,
+                            lastPrice: ticker ? ticker.lastPrice : null,
+                            priceChangePercent: ticker ? ticker.priceChangePercent : null
+                        };
+                    })
+                    .sort((a,b) => a.symbol.localeCompare(b.symbol));
+                console.log(`Loaded ${allMarketPairsCache.length} tradable spot pairs.`);
+                filterAndRenderPairs(); 
+            } else {
+                console.error("No symbols found in exchangeInfo response.");
+                if(pairListEl) pairListEl.innerHTML = '<li style="text-align:center; padding:10px; color:#707a8a;">Failed to load pairs.</li>';
+            }
+        } catch (error) {
+            console.error("Error fetching market pairs:", error);
+            if(pairListEl) pairListEl.innerHTML = `<li style="text-align:center; padding:10px; color:red;">Error: ${error.message}</li>`;
+        }
+    }
+    
+    async function fetchInitialDataForSymbol(symbol) { 
+        console.log(`Fetching initial data for ${symbol} via REST API...`);
+        try {
+            const [base, quote] = splitSymbol(symbol);
+            const depthResponse = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=50`);
+            if (!depthResponse.ok) {
+                console.error(`Failed to fetch initial depth for ${symbol}: ${depthResponse.status} ${depthResponse.statusText}`);
+            } else {
+                const depthData = await depthResponse.json();
+                if (depthData.bids && depthData.asks) { renderOrderBook(depthData.bids, depthData.asks); }
+            }
+            const tradesResponse = await fetch(`https://api.binance.com/api/v3/trades?symbol=${symbol}&limit=${MAX_TRADES_HISTORY}`);
+            if (!tradesResponse.ok) {
+                 console.error(`Failed to fetch initial trades for ${symbol}: ${tradesResponse.status} ${tradesResponse.statusText}`);
+            } else {
+                const tradesData = await tradesResponse.json();
+                if (marketTradesListEl) marketTradesListEl.innerHTML = '';
+                (tradesData || []).reverse().forEach(t => renderMarketTrade({ p: t.price, q: t.qty, T: t.time, m: !t.isBuyerMaker }));
+            }
+        } catch (error) {
+            console.error(`Error fetching initial data for ${symbol}:`, error);
+        }
+    }
+    
+    // --- ЛОГІКА ДЛЯ ВКЛАДОК НА ПАНЕЛІ ТОРГІВЛІ ---
+    const orderTypeTabs = document.querySelectorAll('.order-type-tabs .type-tab');
+    const executionTypeTabs = document.querySelectorAll('.execution-type-tabs .exec-tab');
+
+    function setActiveTab(tabsNodeList, clickedTab) {
+        tabsNodeList.forEach(tab => tab.classList.remove('active'));
+        clickedTab.classList.add('active');
+    }
+
+    function updateTradingFormsUI(executionType) {
+        const [baseAsset, quoteAsset] = splitSymbol(currentSymbol);
+        [buyFormEl, sellFormEl].forEach(formEl => {
+            if (!formEl) return; 
+            const isBuySide = formEl.classList.contains('buy-form');
+            const priceInput = formEl.querySelector(isBuySide ? '#buy-price' : '#sell-price');
+            const marketPriceLabel = formEl.querySelector('.price-input-group .market-price-label');
+            const priceCurrencySpan = formEl.querySelector(isBuySide ? '#buyPriceQuoteCurrency' : '#sellPriceQuoteCurrency');
+            const amountLabel = formEl.querySelector(isBuySide ? '#buyAmountLabel' : '#sellAmountLabel');
+            const amountInput = formEl.querySelector(isBuySide ? '#buy-amount' : '#sell-amount');
+            const amountCurrencySpan = formEl.querySelector(isBuySide ? '#buyAmountCurrency' : '#sellAmountBaseCurrency');
+            const totalInputGroup = formEl.querySelector('.total-input-group');
+            
+            formEl.dataset.orderExecutionType = executionType;
+
+            if (executionType === 'market') {
+                if(priceInput) { priceInput.style.display = 'none'; priceInput.disabled = true; priceInput.value = ''; }
+                if(priceCurrencySpan) priceCurrencySpan.style.display = 'none';
+                if(marketPriceLabel) marketPriceLabel.style.display = 'block';
+                
+                if (isBuySide) {
+                    if(amountLabel) amountLabel.textContent = 'Всього';
+                    if(amountInput) amountInput.placeholder = "0.00";
+                    if(amountCurrencySpan) amountCurrencySpan.textContent = quoteAsset;
+                    if (totalInputGroup) totalInputGroup.style.display = 'none';
+                } else { 
+                    if(amountLabel) amountLabel.textContent = 'Сума';
+                    if(amountInput) amountInput.placeholder = "0.0000";
+                    if(amountCurrencySpan) amountCurrencySpan.textContent = baseAsset;
+                    if (totalInputGroup) totalInputGroup.style.display = 'none';
+                }
+            } else if (executionType === 'limit') {
+                if (priceInput) { priceInput.style.display = 'block'; priceInput.disabled = false; priceInput.placeholder = "0.00"; }
+                if (priceCurrencySpan) priceCurrencySpan.style.display = 'inline';
+                if (marketPriceLabel) marketPriceLabel.style.display = 'none';
+                if(amountLabel) amountLabel.textContent = 'Сума';
+                if(amountInput) amountInput.placeholder = "0.0000";
+                if(amountCurrencySpan) amountCurrencySpan.textContent = baseAsset;
+                if (totalInputGroup) totalInputGroup.style.display = 'block';
+            }
+        });
+    }
+
+    orderTypeTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            setActiveTab(orderTypeTabs, e.currentTarget);
+        });
+    });
+
+    executionTypeTabs.forEach(tab => {
+        if(!tab.classList.contains('dropdown-toggle')) { 
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.execution-type-tabs .exec-tab:not(.dropdown-toggle).active')
+                    .forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                const execType = e.currentTarget.dataset.exec;
+                updateTradingFormsUI(execType);
+            });
+        }
+    });
+    
+    function updateTradingFormCurrencies(base, quote) {
+        if(buyPriceQuoteCurrencyEl) buyPriceQuoteCurrencyEl.textContent = quote;
+        if(buyAmountLabelEl && buyFormEl) {
+            const currentBuyExecType = buyFormEl.dataset.orderExecutionType || 'limit';
+            if(currentBuyExecType === 'limit') {
+                buyAmountLabelEl.textContent = 'Сума';
+                if(buyAmountCurrencyEl) buyAmountCurrencyEl.textContent = base;
+            } else if (currentBuyExecType === 'market') {
+                buyAmountLabelEl.textContent = 'Всього';
+                if(buyAmountCurrencyEl) buyAmountCurrencyEl.textContent = quote;
+            }
+        }
+        if(buyFormEl && buyFormEl.querySelector('#buyTotalQuoteCurrency')) buyFormEl.querySelector('#buyTotalQuoteCurrency').textContent = quote;
+        // Оновлення тексту кнопки Купити
+        const buyButtonTextSpan = buyButton ? buyButton.querySelector('span') : null;
+        if (buyButtonTextSpan) buyButtonTextSpan.textContent = base;
+
+
+        if(sellPriceQuoteCurrencyEl) sellPriceQuoteCurrencyEl.textContent = quote;
+        if(sellAmountLabelEl) sellAmountLabelEl.textContent = 'Сума';
+        if(sellAmountBaseCurrencyEl) sellAmountBaseCurrencyEl.textContent = base;
+        if(sellFormEl && sellFormEl.querySelector('#sellTotalQuoteCurrency')) sellFormEl.querySelector('#sellTotalQuoteCurrency').textContent = quote;
+        // Оновлення тексту кнопки Продати
+        const sellButtonTextSpan = sellButton ? sellButton.querySelector('span') : null;
+        if (sellButtonTextSpan) sellButtonTextSpan.textContent = base;
+        
+
+        const activeExecTab = document.querySelector('.execution-type-tabs .exec-tab.active');
+        if (activeExecTab) updateTradingFormsUI(activeExecTab.dataset.exec);
+    }
+    
+    // --- ОБРОБНИКИ ПОДІЙ ДЛЯ КНОПОК КУПІВЛІ/ПРОДАЖУ ---
+    function isLoggedIn() {
+        return !!localStorage.getItem('authToken'); 
+    }
+
+    function updateActionButtonsState() {
+        const [baseAsset, ] = splitSymbol(currentSymbol);
+        const buyButtonTextSpan = buyButton ? buyButton.querySelector('span') : null;
+        const sellButtonTextSpan = sellButton ? sellButton.querySelector('span') : null;
+
+        if (isLoggedIn()) {
+            if (buyButton) buyButton.firstChild.textContent = `Купити `; // Оновлюємо текст перед span
+            if (buyButtonTextSpan) buyButtonTextSpan.textContent = baseAsset;
+            
+            if (sellButton) sellButton.firstChild.textContent = `Продати `; // Оновлюємо текст перед span
+            if (sellButtonTextSpan) sellButtonTextSpan.textContent = baseAsset;
+        } else {
+            if (buyButton) buyButton.firstChild.textContent = `Увійти (Купити `;
+            if (buyButtonTextSpan) buyButtonTextSpan.textContent = baseAsset + ')'; // Додаємо закриваючу дужку
+            
+            if (sellButton) sellButton.firstChild.textContent = `Увійти (Продати `;
+            if (sellButtonTextSpan) sellButtonTextSpan.textContent = baseAsset + ')'; // Додаємо закриваючу дужку
+        }
+    }
+
+    if (buyButton) {
+        buyButton.addEventListener('click', () => {
+            if (isLoggedIn()) {
+                alert(`Дія "Купити ${currentSymbol}" (для залогіненого).`);
+            } else {
+                window.location.href = 'login-page.html'; // ЗАМІНИ НА ПРАВИЛЬНИЙ ШЛЯХ
+            }
+        });
+    }
+
+    if (sellButton) {
+        sellButton.addEventListener('click', () => {
+            if (isLoggedIn()) {
+                alert(`Дія "Продати ${currentSymbol}" (для залогіненого).`);
+            } else {
+                window.location.href = 'login-page.html'; // ЗАМІНИ НА ПРАВИЛЬНИЙ ШЛЯХ
+            }
+        });
+    }
+    
+    // --- ОБРОБНИКИ ПОДІЙ ДЛЯ ПОШУКУ ПАР ---
+    if (pairSearchInputEl) pairSearchInputEl.addEventListener('input', filterAndRenderPairs);
+    if (categoryButtonsContainer) {
+        categoryButtonsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('category-btn')) {
+                const currentlyActive = categoryButtonsContainer.querySelector('.category-btn.active');
+                if (currentlyActive) currentlyActive.classList.remove('active');
+                e.target.classList.add('active');
+                filterAndRenderPairs();
+            }
+        });
+    }
+
+    // --- ПОЧАТКОВЕ ЗАВАНТАЖЕННЯ СТОРІНКИ ---
+    async function initializePage() {
+        console.log("Initializing Spot Page (with HTML-embedded TradingView widget)...");
+        const [base, quote] = splitSymbol(currentSymbol);
+        updateSymbolDisplay(currentSymbol); 
+        updateTradingFormCurrencies(base, quote); 
+        updateTradingFormsUI('limit'); 
+        updateActionButtonsState(); // Встановлюємо початковий стан кнопок
+        
+        await fetchAllMarketPairs(); 
+        await fetchInitialDataForSymbol(currentSymbol); 
+        connectOrderBookWebSocket(currentSymbol);
+        connectTradesWebSocket(currentSymbol);
+        
+        getTradingViewWidgetInstanceWhenReady(() => {
+            console.log("Spot page fully initialized and TradingView widget instance is accessible.");
+        });
+    }
+
+    initializePage();
+});
+</script>
 
 </body>
 </html>
