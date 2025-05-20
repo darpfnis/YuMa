@@ -43,8 +43,7 @@
         <nav class="user-nav">
             <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
-            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
-            <button id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</button>
+            <a id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</a>
         </nav>
     </header>
 
@@ -98,14 +97,95 @@
     </div>
 
 <script>
+// --- START: Auth UI Logic (для хедера) ---
+function updateHeaderAuthState() {
+    const token = localStorage.getItem('authToken');
+    // Використовуємо ID з вашого HTML для assets.html
+    const signUpLink = document.getElementById('signUpLinkMarkets');
+    const loginLink = document.getElementById('loginLinkMarkets');
+    const logoutButton = document.getElementById('logoutButtonOrders');
+
+    if (token) {
+        // Користувач залогінений
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'inline-block';
+    } else {
+        // Користувач не залогінений
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'inline-block';
+        if (logoutButton) logoutButton.style.display = 'none';
+    }
+}
+
+function setupLogoutButton() {
+    // Використовуємо ID з вашого HTML для assets.html
+    const logoutButton = document.getElementById('logoutButtonOrders');
+    if (logoutButton) {
+        // Перевіряємо, чи обробник вже не доданий
+        if (!logoutButton.dataset.listenerAttached) {
+            logoutButton.addEventListener('click', async (event) => {
+                event.preventDefault(); // Запобігаємо стандартній дії посилання <a>
+
+                // --- Специфічна логіка очищення для assets.html ПЕРЕД виходом ---
+                if (window.wsReconnectInterval) { // Припускаємо, що wsReconnectInterval глобальний або доступний тут
+                    clearInterval(window.wsReconnectInterval);
+                    window.wsReconnectInterval = null;
+                }
+                if (typeof window.unsubscribeFromAllTickers === 'function') { // Припускаємо, що функція глобальна
+                    window.unsubscribeFromAllTickers();
+                }
+                if (window.binanceWebSocket && window.binanceWebSocket.readyState === WebSocket.OPEN) {
+                    window.binanceWebSocket.close(1000, "User logged out");
+                }
+                window.binanceWebSocket = null;
+                // --- Кінець специфічної логіки очищення ---
+
+                const currentTokenForLogout = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                updateHeaderAuthState(); // Оновлюємо UI негайно
+
+                try {
+                    if (currentTokenForLogout) {
+                        await fetch('/auth/logout', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Logout API error', e);
+                }
+                window.location.href = 'login-page.html';
+            });
+            logoutButton.dataset.listenerAttached = 'true';
+        }
+    }
+}
+// --- END: Auth UI Logic ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[AssetsPage] DOMContentLoaded. Script loaded.');
+
+    // 1. Ініціалізуємо стан UI хедера на основі токена
+    updateHeaderAuthState();
+    // 2. Налаштовуємо кнопку виходу
+    setupLogoutButton(); // Ця функція тепер містить логіку WebSocket cleanup
+
     const token = localStorage.getItem('authToken');
 
-    const logoutButton = document.getElementById('logoutButtonAssets');
-    const signUpLink = document.getElementById('signUpLinkAssets');
-    const loginLink = document.getElementById('loginLinkAssets');
-    const userGreeting = document.getElementById('userGreetingAssets');
+    // Видаляємо старий блок керування кнопками входу/виходу, оскільки це тепер роблять updateHeaderAuthState/setupLogoutButton
+    // Важливо: перевірка токена для доступу до сторінки ЗАЛИШАЄТЬСЯ
+    if (!token) {
+        window.location.href = 'login-page.html';
+        return; // Зупиняємо виконання, якщо немає токена
+    }
+
+    // Старі змінні для посилань (signUpLinkAssets, loginLinkAssets) більше не потрібні тут,
+    // оскільки керування ними відбувається в updateHeaderAuthState.
+    // const logoutButton = document.getElementById('logoutButtonAssets'); // Цей ID не існує в HTML, і логіка перенесена
+    // const signUpLink = document.getElementById('signUpLinkAssets');
+    // const loginLink = document.getElementById('loginLinkAssets');
+    const userGreeting = document.getElementById('userGreetingAssets'); // Якщо цей елемент використовується, залиште
 
     const totalPortfolioValueElement = document.getElementById('totalPortfolioValue');
     const assetsTableContainer = document.getElementById('assetsTableContainer');
@@ -114,87 +194,103 @@ document.addEventListener('DOMContentLoaded', async () => {
     const showAllAssetsButton = document.getElementById('showAllAssetsButton');
     const showAllContainer = document.querySelector('.show-all-container');
 
-    let allFetchedAssets = [];
-    const initialDisplayLimit = 10; // Show 10 assets initially
-    let currentlyDisplayingAll = false;
-    let binanceWebSocket = null;
-    let subscribedSymbols = new Set();
-    let wsReconnectInterval = null;
+    // Зробимо ці змінні доступними глобально в межах цього скрипта, щоб setupLogoutButton міг їх бачити
+    // або передамо їх як параметри, або зробимо setupLogoutButton частиною цього ж скоупу.
+    // Для простоти, припустимо, що setupLogoutButton матиме доступ до них, якщо вони визначені в тому ж скоупі.
+    // Краще передавати як параметри або використовувати властивості об'єкта.
+    // Для даного прикладу, я зробив їх глобальними змінними (window.wsReconnectInterval, window.binanceWebSocket і т.д.)
+    // у тілі setupLogoutButton. Якщо вони оголошені з let/const всередині DOMContentLoaded, то
+    // setupLogoutButton, будучи зовнішньою функцією, не матиме до них прямого доступу.
+    // Один із варіантів - перенести визначення цих змінних вище, або визначити setupLogoutButton всередині DOMContentLoaded.
+    // Я залишу визначення функцій Auth UI Logic поза DOMContentLoaded для чистоти.
+    // Тому WebSocket змінні мають бути доступні для setupLogoutButton.
+    // Найпростіше - це зробити змінні wsReconnectInterval, binanceWebSocket, unsubscribeFromAllTickers
+    // доступними в глобальному контексті (window.) або в спільному батьківському скоупі.
+
+    // Перенесемо визначення цих змінних вище, щоб вони були доступні для setupLogoutButton
+    window.allFetchedAssets = [];
+    window.initialDisplayLimit = 10;
+    window.currentlyDisplayingAll = false;
+    window.binanceWebSocket = null; // Тепер це window.binanceWebSocket
+    window.subscribedSymbols = new Set();
+    window.wsReconnectInterval = null; // Тепер це window.wsReconnectInterval
 
     function connectBinanceWebSocket() {
-        if (binanceWebSocket && (binanceWebSocket.readyState === WebSocket.OPEN || binanceWebSocket.readyState === WebSocket.CONNECTING)) {
+        if (window.binanceWebSocket && (window.binanceWebSocket.readyState === WebSocket.OPEN || window.binanceWebSocket.readyState === WebSocket.CONNECTING)) {
             return;
         }
-        if (wsReconnectInterval) {
-            clearInterval(wsReconnectInterval);
-            wsReconnectInterval = null;
+        if (window.wsReconnectInterval) {
+            clearInterval(window.wsReconnectInterval);
+            window.wsReconnectInterval = null;
         }
         console.log('[AssetsPage] Attempting to connect to Binance WebSocket...');
         const wsUrl = 'wss://stream.binance.com:9443/ws';
-        binanceWebSocket = new WebSocket(wsUrl);
+        window.binanceWebSocket = new WebSocket(wsUrl);
 
-        binanceWebSocket.onopen = () => {
+        window.binanceWebSocket.onopen = () => {
             console.log('[AssetsPage] Binance WebSocket connection established.');
-            if (wsReconnectInterval) { 
-                clearInterval(wsReconnectInterval);
-                wsReconnectInterval = null;
+            if (window.wsReconnectInterval) {
+                clearInterval(window.wsReconnectInterval);
+                window.wsReconnectInterval = null;
             }
-            if (allFetchedAssets.length > 0) {
-                subscribeToAssetTickers(allFetchedAssets);
+            if (window.allFetchedAssets.length > 0) {
+                subscribeToAssetTickers(window.allFetchedAssets);
             }
         };
 
-        binanceWebSocket.onmessage = (event) => {
+        window.binanceWebSocket.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
                 if (message.e === '24hrTicker') {
-                    const symbol = message.s; 
+                    const symbol = message.s;
                     const price = parseFloat(message.c);
                     let assetUpdated = false;
-                    allFetchedAssets = allFetchedAssets.map(asset => {
+                    window.allFetchedAssets = window.allFetchedAssets.map(asset => {
                         const pairSymbol = `${asset.coin_symbol.toUpperCase()}USDT`;
                         if (pairSymbol === symbol && asset.coin_symbol.toUpperCase() !== 'USDT') {
                             const newUsdValue = (parseFloat(asset.total_balance) * price);
                             if (Math.abs(parseFloat(asset.value_usd) - newUsdValue) > 0.001) {
-                                asset.value_usd = newUsdValue.toFixed(2); 
+                                asset.value_usd = newUsdValue.toFixed(2);
                                 assetUpdated = true;
                             }
                         }
                         return asset;
                     });
                     if (assetUpdated) {
-                        updateSpecificAssetRowAndTotal(symbol.replace('USDT',''), price); 
-                        recalculateAndRenderTotalPortfolioValue(); 
+                        updateSpecificAssetRowAndTotal(symbol.replace('USDT',''), price);
+                        recalculateAndRenderTotalPortfolioValue();
                     }
                 }
             } catch (error) {
                 console.error('[AssetsPage] Error processing WebSocket message:', error, event.data);
             }
         };
-        binanceWebSocket.onerror = (error) => console.error('[AssetsPage] Binance WebSocket error:', error);
-        binanceWebSocket.onclose = (event) => {
+        window.binanceWebSocket.onerror = (error) => console.error('[AssetsPage] Binance WebSocket error:', error);
+        window.binanceWebSocket.onclose = (event) => {
             console.log(`[AssetsPage] Binance WebSocket connection closed. Code: ${event.code}, Reason: '${event.reason}'`);
-            binanceWebSocket = null;
-            subscribedSymbols.clear();
-            if (!wsReconnectInterval && token) { 
+            window.binanceWebSocket = null;
+            window.subscribedSymbols.clear();
+            // Перевіряємо токен перед спробою перепідключення
+            const currentTokenCheck = localStorage.getItem('authToken');
+            if (!window.wsReconnectInterval && currentTokenCheck) { // Тільки якщо є токен
                 console.log('[AssetsPage] Attempting to reconnect WebSocket in 5 seconds...');
-                wsReconnectInterval = setInterval(() => {
-                    if (!binanceWebSocket || binanceWebSocket.readyState === WebSocket.CLOSED) {
+                window.wsReconnectInterval = setInterval(() => {
+                    if (!window.binanceWebSocket || window.binanceWebSocket.readyState === WebSocket.CLOSED) {
                          console.log('[AssetsPage] Retrying WebSocket connection...');
                          connectBinanceWebSocket();
-                    } else if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
-                        clearInterval(wsReconnectInterval); 
-                        wsReconnectInterval = null;
+                    } else if (window.binanceWebSocket && window.binanceWebSocket.readyState === WebSocket.OPEN) {
+                        clearInterval(window.wsReconnectInterval);
+                        window.wsReconnectInterval = null;
                     }
-                }, 5000); 
+                }, 5000);
             }
         };
     }
-    
+
     function updateSpecificAssetRowAndTotal(baseAssetSymbol, newPrice) {
         const assetRow = assetsTableContainer.querySelector(`.custom-table-row[data-asset-symbol="${baseAssetSymbol.toUpperCase()}"]`);
         if (assetRow) {
-            const asset = allFetchedAssets.find(a => a.coin_symbol.toUpperCase() === baseAssetSymbol.toUpperCase());
+            const asset = window.allFetchedAssets.find(a => a.coin_symbol.toUpperCase() === baseAssetSymbol.toUpperCase());
             if (asset) {
                 const valueCell = assetRow.querySelector('.asset-value-usd');
                 if (valueCell) valueCell.textContent = `$${parseFloat(asset.value_usd).toFixed(2)}`;
@@ -203,16 +299,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function subscribeToAssetTickers(assets) {
-        if (!binanceWebSocket || binanceWebSocket.readyState !== WebSocket.OPEN) {
-            if (!wsReconnectInterval && token) connectBinanceWebSocket(); 
+        if (!window.binanceWebSocket || window.binanceWebSocket.readyState !== WebSocket.OPEN) {
+            // Перевіряємо токен перед спробою перепідключення
+            const currentTokenCheck = localStorage.getItem('authToken');
+            if (!window.wsReconnectInterval && currentTokenCheck) connectBinanceWebSocket();
             return;
         }
         const newSymbolsToSubscribe = [];
         assets.forEach(asset => {
             const symbol = asset.coin_symbol.toUpperCase();
-            if (symbol !== 'USDT' && symbol !== 'USD' && symbol !== 'USDC' && symbol !== 'BUSD') { 
+            if (symbol !== 'USDT' && symbol !== 'USD' && symbol !== 'USDC' && symbol !== 'BUSD') {
                 const pair = `${symbol}USDT`;
-                if (!subscribedSymbols.has(pair)) {
+                if (!window.subscribedSymbols.has(pair)) {
                     newSymbolsToSubscribe.push(`${pair.toLowerCase()}@ticker`);
                 }
             }
@@ -220,61 +318,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (newSymbolsToSubscribe.length > 0) {
             const currentAssetPairs = new Set(assets.map(a => `${a.coin_symbol.toUpperCase()}USDT`));
             const symbolsToUnsubscribeImmediately = [];
-            subscribedSymbols.forEach(subscribedPair => {
-                if (!currentAssetPairs.has(subscribedPair) && 
+            window.subscribedSymbols.forEach(subscribedPair => {
+                if (!currentAssetPairs.has(subscribedPair) &&
                     !subscribedPair.endsWith('USDT') && !subscribedPair.endsWith('USD') &&
                     !subscribedPair.endsWith('USDC') && !subscribedPair.endsWith('BUSD')) {
                     symbolsToUnsubscribeImmediately.push(`${subscribedPair.toLowerCase()}@ticker`);
                 }
             });
             if (symbolsToUnsubscribeImmediately.length > 0) {
-                 binanceWebSocket.send(JSON.stringify({ method: "UNSUBSCRIBE", params: symbolsToUnsubscribeImmediately, id: Date.now() }));
-                symbolsToUnsubscribeImmediately.forEach(s => subscribedSymbols.delete(s.replace('@ticker','').toUpperCase()));
+                 window.binanceWebSocket.send(JSON.stringify({ method: "UNSUBSCRIBE", params: symbolsToUnsubscribeImmediately, id: Date.now() }));
+                symbolsToUnsubscribeImmediately.forEach(s => window.subscribedSymbols.delete(s.replace('@ticker','').toUpperCase()));
                 console.log('[AssetsPage] Unsubscribed from obsolete tickers:', symbolsToUnsubscribeImmediately);
             }
-            binanceWebSocket.send(JSON.stringify({ method: "SUBSCRIBE", params: newSymbolsToSubscribe, id: Date.now() + 1 }));
-            newSymbolsToSubscribe.forEach(s => subscribedSymbols.add(s.replace('@ticker','').toUpperCase()));
+            window.binanceWebSocket.send(JSON.stringify({ method: "SUBSCRIBE", params: newSymbolsToSubscribe, id: Date.now() + 1 }));
+            newSymbolsToSubscribe.forEach(s => window.subscribedSymbols.add(s.replace('@ticker','').toUpperCase()));
             console.log('[AssetsPage] Subscribing to tickers:', newSymbolsToSubscribe);
         }
     }
-    
-    function unsubscribeFromAllTickers(clearLocally = true) {
-        if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size > 0) {
-            const symbolsToUnsubscribe = Array.from(subscribedSymbols).map(s => `${s.toLowerCase()}@ticker`);
-            binanceWebSocket.send(JSON.stringify({ method: "UNSUBSCRIBE", params: symbolsToUnsubscribe, id: Date.now() }));
+
+    // Зробимо цю функцію доступною для setupLogoutButton
+    window.unsubscribeFromAllTickers = function(clearLocally = true) {
+        if (window.binanceWebSocket && window.binanceWebSocket.readyState === WebSocket.OPEN && window.subscribedSymbols.size > 0) {
+            const symbolsToUnsubscribe = Array.from(window.subscribedSymbols).map(s => `${s.toLowerCase()}@ticker`);
+            window.binanceWebSocket.send(JSON.stringify({ method: "UNSUBSCRIBE", params: symbolsToUnsubscribe, id: Date.now() }));
             console.log('[AssetsPage] Sent unsubscribe request for tickers:', symbolsToUnsubscribe);
         }
-        if (clearLocally) subscribedSymbols.clear();
-    }
-
-    if (token) {
-        if(logoutButton) logoutButton.style.display = 'inline-block';
-        if(signUpLink) signUpLink.style.display = 'none';
-        if(loginLink) loginLink.style.display = 'none';
-        if(logoutButton) {
-            logoutButton.addEventListener('click', async () => {
-                if (wsReconnectInterval) { clearInterval(wsReconnectInterval); wsReconnectInterval = null;}
-                unsubscribeFromAllTickers();
-                if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
-                     binanceWebSocket.close(1000, "User logged out"); 
-                }
-                binanceWebSocket = null; 
-                const currentToken = localStorage.getItem('authToken');
-                localStorage.removeItem('authToken');
-                try {
-                    await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
-                } catch(e) { console.error('Logout API error', e); }
-                window.location.href = 'login-page.html';
-            });
-        }
-    } else {
-        window.location.href = 'login-page.html';
-        return;
+        if (clearLocally) window.subscribedSymbols.clear();
     }
 
     async function fetchProtectedData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
         if (!currentToken) {
+            updateHeaderAuthState(); // Оновлюємо хедер перед перенаправленням
             window.location.href = 'login-page.html';
             return Promise.reject(new Error('No token, redirecting.'));
         }
@@ -284,11 +359,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch(url, fetchOptions);
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
-                    if (wsReconnectInterval) { clearInterval(wsReconnectInterval); wsReconnectInterval = null; }
-                    unsubscribeFromAllTickers();
-                    if (binanceWebSocket) binanceWebSocket.close(1000, "Unauthorized");
-                    binanceWebSocket = null;
+                    if (window.wsReconnectInterval) { clearInterval(window.wsReconnectInterval); window.wsReconnectInterval = null; }
+                    if (typeof window.unsubscribeFromAllTickers === 'function') window.unsubscribeFromAllTickers();
+                    if (window.binanceWebSocket) window.binanceWebSocket.close(1000, "Unauthorized");
+                    window.binanceWebSocket = null;
+
                     localStorage.removeItem('authToken');
+                    updateHeaderAuthState(); // Оновлюємо хедер перед перенаправленням
                     window.location.href = 'login-page.html';
                     return Promise.reject(new Error('Unauthorized or Forbidden, redirecting.'));
                 }
@@ -303,14 +380,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderAssets(assetsToRender) {
         const existingRows = assetsTableContainer.querySelectorAll('.custom-table-row');
-        existingRows.forEach(row => row.remove()); 
+        existingRows.forEach(row => row.remove());
         const noDataPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
         if (noDataPlaceholder) noDataPlaceholder.remove();
 
         if (!assetsToRender || assetsToRender.length === 0) {
             const message = (searchAssetInput.value || hideZeroBalancesCheckbox.checked) ? 'No assets found matching your criteria.' : 'You have no assets yet.';
             assetsTableContainer.insertAdjacentHTML('beforeend', `<div class="no-data-placeholder">${message}</div>`);
-            if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00'; 
+            if (totalPortfolioValueElement) totalPortfolioValueElement.textContent = '$0.00';
             return;
         }
 
@@ -321,9 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             row.dataset.assetSymbol = asset.coin_symbol.toUpperCase();
 
             const valueUSD = parseFloat(asset.value_usd) || 0;
-            // Використовуємо coin_name якщо є, інакше coin_symbol
             const displayName = asset.coin_name && asset.coin_name !== asset.coin_symbol ? asset.coin_name : asset.coin_symbol;
-            // Використовуємо quantity_precision з даних активу, або 8 за замовчуванням
             const quantityPrecision = asset.quantity_precision !== undefined ? parseInt(asset.quantity_precision) : 8;
 
             row.innerHTML = `
@@ -346,29 +421,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         assetsTableContainer.appendChild(fragment);
         recalculateAndRenderTotalPortfolioValue();
 
-        // Логіка для кнопки "Show All Assets"
         const searchTerm = searchAssetInput.value.toLowerCase();
         const hideZero = hideZeroBalancesCheckbox.checked;
-        let filteredAssetsCount = allFetchedAssets.filter(asset => {
+        let filteredAssetsCount = window.allFetchedAssets.filter(asset => {
             const nameMatch = (asset.coin_name || asset.coin_symbol).toLowerCase().includes(searchTerm);
             const symbolMatch = asset.coin_symbol.toLowerCase().includes(searchTerm);
             const matchesSearch = nameMatch || symbolMatch;
-            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9; 
+            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9;
             return matchesSearch && (!hideZero || nonZeroBalance);
         }).length;
 
-        if (filteredAssetsCount > initialDisplayLimit && !currentlyDisplayingAll) {
+        if (filteredAssetsCount > window.initialDisplayLimit && !window.currentlyDisplayingAll) {
             if (showAllContainer) showAllContainer.style.display = 'block';
         } else {
             if (showAllContainer) showAllContainer.style.display = 'none';
         }
     }
-    
+
     function recalculateAndRenderTotalPortfolioValue() {
         let calculatedTotalPortfolioValue = 0;
-        // Розраховуємо загальну вартість по всіх активах, що є у allFetchedAssets
-        // (які вже відфільтровані від YMC і мають оновлені ціни з WebSocket)
-        allFetchedAssets.forEach(asset => {
+        window.allFetchedAssets.forEach(asset => {
             calculatedTotalPortfolioValue += parseFloat(asset.value_usd) || 0;
         });
         if (totalPortfolioValueElement) {
@@ -380,32 +452,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const searchTerm = searchAssetInput.value.toLowerCase();
         const hideZero = hideZeroBalancesCheckbox.checked;
 
-        let filteredAssets = allFetchedAssets.filter(asset => { // allFetchedAssets вже без YMC
-            const nameMatch = (asset.coin_name || asset.coin_symbol).toLowerCase().includes(searchTerm); // Шукаємо по coin_name або coin_symbol
+        let filteredAssets = window.allFetchedAssets.filter(asset => {
+            const nameMatch = (asset.coin_name || asset.coin_symbol).toLowerCase().includes(searchTerm);
             const symbolMatch = asset.coin_symbol.toLowerCase().includes(searchTerm);
             const matchesSearch = nameMatch || symbolMatch;
-            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9; 
+            const nonZeroBalance = parseFloat(asset.total_balance) > 1e-9;
             return matchesSearch && (!hideZero || nonZeroBalance);
         });
 
         filteredAssets.sort((a, b) => {
             const aValue = parseFloat(a.value_usd) || 0;
             const bValue = parseFloat(b.value_usd) || 0;
-            // Якщо value_usd однакове (наприклад, для активів з нульовим балансом), сортуємо за алфавітом
             if (bValue === aValue) {
                 return (a.coin_name || a.coin_symbol).localeCompare(b.coin_name || b.coin_symbol);
             }
-            return bValue - aValue; // Сортування за вартістю (спадання)
+            return bValue - aValue;
         });
-        
-        const assetsToDisplay = currentlyDisplayingAll ? filteredAssets : filteredAssets.slice(0, initialDisplayLimit);
+
+        const assetsToDisplay = window.currentlyDisplayingAll ? filteredAssets : filteredAssets.slice(0, window.initialDisplayLimit);
         renderAssets(assetsToDisplay);
     }
 
     async function loadAssets() {
         const placeholder = assetsTableContainer.querySelector('.no-data-placeholder');
         if (placeholder) placeholder.textContent = 'Loading assets...';
-        else { 
+        else {
              const header = assetsTableContainer.querySelector('.custom-table-header');
              if (header && header.nextSibling === null) {
                 const newPlaceholder = document.createElement('div');
@@ -418,26 +489,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const data = await fetchProtectedData('/api/assets');
             if (data.success && data.assets) {
-                // Припускаємо, що `data.assets` вже містить `coin_name`, `quantity_precision`, `value_usd`
-                allFetchedAssets = data.assets
+                window.allFetchedAssets = data.assets
                     .map(asset => ({
                         ...asset,
-                        // Переконуємось, що value_usd - це рядок з двома знаками після коми
-                        value_usd: parseFloat(asset.value_usd || 0).toFixed(2) 
+                        value_usd: parseFloat(asset.value_usd || 0).toFixed(2)
                     }))
-                    .filter(asset => asset.coin_symbol.toUpperCase() !== 'YMC'); // Фільтрація YMC
-                
-                currentlyDisplayingAll = false;
+                    .filter(asset => asset.coin_symbol.toUpperCase() !== 'YMC');
+
+                window.currentlyDisplayingAll = false;
                 if (showAllAssetsButton) showAllAssetsButton.textContent = 'Show All Assets';
-                
+
                 filterAndPrepareAssets();
-                subscribeToAssetTickers(allFetchedAssets);
+                subscribeToAssetTickers(window.allFetchedAssets);
             } else {
+                // Перевірка, чи не було перенаправлення
+                if (data && data.message && data.message.includes('redirecting')) return;
                 const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
                 if (currentPlaceholder) currentPlaceholder.textContent = data.message || 'Failed to load assets.';
                 if (showAllContainer) showAllContainer.style.display = 'none';
             }
         } catch (error) {
+            // Перевірка, чи не було перенаправлення
+            if (error && error.message && error.message.includes('redirecting')) return;
             const currentPlaceholder = assetsTableContainer.querySelector('.no-data-placeholder');
             if (currentPlaceholder) currentPlaceholder.textContent = 'Error loading assets. Please try again.';
             if (showAllContainer) showAllContainer.style.display = 'none';
@@ -448,34 +521,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(hideZeroBalancesCheckbox) hideZeroBalancesCheckbox.addEventListener('change', filterAndPrepareAssets);
     if(showAllAssetsButton) {
         showAllAssetsButton.addEventListener('click', () => {
-            currentlyDisplayingAll = !currentlyDisplayingAll;
-            showAllAssetsButton.textContent = currentlyDisplayingAll ? 'Show Less' : 'Show All Assets';
+            window.currentlyDisplayingAll = !window.currentlyDisplayingAll;
+            showAllAssetsButton.textContent = window.currentlyDisplayingAll ? 'Show Less' : 'Show All Assets';
             filterAndPrepareAssets();
         });
     }
-    
+
     window.addEventListener('beforeunload', () => {
-        if (wsReconnectInterval) { clearInterval(wsReconnectInterval); }
-        unsubscribeFromAllTickers(false); 
-        if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN) {
-            binanceWebSocket.close(1000, "Page unloading");
+        if (window.wsReconnectInterval) { clearInterval(window.wsReconnectInterval); }
+        if (typeof window.unsubscribeFromAllTickers === 'function') window.unsubscribeFromAllTickers(false);
+        if (window.binanceWebSocket && window.binanceWebSocket.readyState === WebSocket.OPEN) {
+            window.binanceWebSocket.close(1000, "Page unloading");
         }
     });
 
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) { /* Handle page hidden */ } 
+        const currentTokenCheck = localStorage.getItem('authToken'); // Перевірка токена
+        if (document.hidden) { /* Handle page hidden */ }
         else { /* Handle page visible */
-            if (binanceWebSocket && binanceWebSocket.readyState === WebSocket.OPEN && subscribedSymbols.size === 0 && allFetchedAssets.length > 0) {
-                // Можна розглянути автоматичну перепідписку, якщо потрібно
-                // subscribeToAssetTickers(allFetchedAssets); 
-            } else if ((!binanceWebSocket || binanceWebSocket.readyState === WebSocket.CLOSED) && token) {
+            if (window.binanceWebSocket && window.binanceWebSocket.readyState === WebSocket.OPEN && window.subscribedSymbols.size === 0 && window.allFetchedAssets.length > 0 && currentTokenCheck) {
+                 subscribeToAssetTickers(window.allFetchedAssets);
+            } else if ((!window.binanceWebSocket || window.binanceWebSocket.readyState === WebSocket.CLOSED) && currentTokenCheck) { // Тільки якщо є токен
                 connectBinanceWebSocket();
             }
         }
     });
 
-    loadAssets();
-    if (token) { 
+    // Завантажуємо активи та підключаємося до WebSocket тільки якщо є токен (перевірка на початку DOMContentLoaded)
+    if (token) {
+        loadAssets();
         connectBinanceWebSocket();
     }
 });
