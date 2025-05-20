@@ -43,8 +43,7 @@
         <nav class="user-nav">
             <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
-            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
-            <button id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</button>
+            <a id="logoutButtonAccount" style="display: none;">Log out</a>
         </nav>
     </header>
 
@@ -151,8 +150,60 @@
     </div>
 
 <script>
+// --- START: Auth UI Logic (для хедера) ---
+function updateHeaderAuthState() {
+    const token = localStorage.getItem('authToken');
+    const signUpLink = document.getElementById('signUpLinkMarkets');
+    const loginLink = document.getElementById('loginLinkMarkets');
+    const logoutButton = document.getElementById('logoutButtonAccount'); // Використовуємо ID з HTML
+
+    if (token) {
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'inline-block';
+    } else {
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'inline-block';
+        if (logoutButton) logoutButton.style.display = 'none';
+    }
+}
+
+function setupLogoutButton() {
+    const logoutButton = document.getElementById('logoutButtonAccount'); // Використовуємо ID з HTML
+    if (logoutButton) {
+        if (!logoutButton.dataset.listenerAttached) {
+            logoutButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const currentTokenForLogout = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                updateHeaderAuthState(); // Оновлюємо UI
+
+                try {
+                    if (currentTokenForLogout) {
+                        await fetch('/auth/logout', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Logout API error', e);
+                }
+                window.location.href = 'login-page.html';
+            });
+            logoutButton.dataset.listenerAttached = 'true';
+        }
+    }
+}
+// --- END: Auth UI Logic ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SettingsPage] DOMContentLoaded.');
+
+    // 1. Ініціалізуємо стан UI хедера
+    updateHeaderAuthState();
+    // 2. Налаштовуємо кнопку виходу
+    setupLogoutButton();
+
     const token = localStorage.getItem('authToken');
 
     const avatarPreview = document.getElementById('avatarPreview');
@@ -170,30 +221,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     const notificationsForm = document.getElementById('notificationsForm');
     const notificationsMessage = document.getElementById('notificationsMessage');
 
-    const logoutButton = document.getElementById('logoutButtonSettings');
+    // const logoutButton = document.getElementById('logoutButtonSettings'); // Цей ID не існує в HTML, і логіка перенесена
 
     if (!token) {
-        window.location.href = 'login-page.html'; 
+        // updateHeaderAuthState(); // Вже викликано вище
+        window.location.href = 'login-page.html';
         return;
     }
 
-    if (logoutButton) {
+    // Видаляємо цей блок, оскільки його функціональність тепер в setupLogoutButton
+    /*
+    if (logoutButton) { // logoutButton тут посилався на неіснуючий ID logoutButtonSettings
         logoutButton.style.display = 'inline-block';
         logoutButton.addEventListener('click', async () => {
             const currentToken = localStorage.getItem('authToken');
             localStorage.removeItem('authToken');
+            // updateHeaderAuthState(); // Додамо, щоб UI оновився
             try {
                 await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
             } catch(e) { console.error('Logout API error', e); }
             window.location.href = 'login-page.html';
         });
     }
+    */
 
     async function fetchApiData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
         const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
 
         if (requiresAuth && !currentToken) {
+             updateHeaderAuthState(); // Оновлюємо хедер перед перенаправленням
              window.location.href = 'login-page.html';
              return Promise.resolve({ success: false, message: 'Auth token missing, redirecting.', shouldRedirect: true });
         }
@@ -207,15 +264,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) {
                 if ((response.status === 401 || response.status === 403) && requiresAuth) {
                     localStorage.removeItem('authToken');
+                    updateHeaderAuthState(); // Оновлюємо хедер перед перенаправленням
                     window.location.href = 'login-page.html';
                     return Promise.resolve({ success: false, message: `Auth error. Redirecting.`, shouldRedirect: true });
                 }
                 try {
                     const errorData = await response.json();
-                    return { success: false, ...errorData };
+                    return { success: false, ...errorData, status: response.status };
                 } catch (jsonError) {
                     const errorText = await response.text();
-                    return { success: false, message: `Server error: ${response.status}. Resp: ${errorText.substring(0,100)}`};
+                    return { success: false, message: `Server error: ${response.status}. Resp: ${errorText.substring(0,100)}`, status: response.status};
                 }
             }
             return response.json();
@@ -229,15 +287,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadCurrentProfileSettings() {
-        if(avatarMessage) avatarMessage.textContent = ''; 
+        if(avatarMessage) avatarMessage.textContent = '';
         if(usernameMessage) usernameMessage.textContent = '';
         try {
             const data = await fetchApiData('/api/profile', { requiresAuth: true });
+            if (data.shouldRedirect) return; // Перевірка, чи не відбулося перенаправлення
+
             if (data && data.success && data.profile) {
                 const profile = data.profile;
                 if (currentUsernameElement) currentUsernameElement.textContent = `Current: ${profile.username || 'Not set'}`;
                 if (usernameInput) usernameInput.value = profile.username || '';
-                
+
                 if (avatarUrlInput) avatarUrlInput.value = profile.avatar_url || '';
                 if (avatarPreview) {
                     if (profile.avatar_url) {
@@ -250,10 +310,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } else {
                 const errorMsg = data ? data.message : 'Failed to load profile settings (undefined response).';
-                alert(errorMsg);
+                // Не показуємо alert, якщо це була проблема з авторизацією і користувача перенаправили
+                if (!data || !data.shouldRedirect) {
+                    alert(errorMsg);
+                     // Можна додати відображення помилки на сторінці
+                    const mainContent = document.querySelector('.main-content-profile');
+                    if (mainContent) mainContent.innerHTML = `<p class="no-data-placeholder">${errorMsg}</p>`;
+                }
             }
         } catch (error) {
+            if (error.shouldRedirect) return; // Перевірка, чи не відбулося перенаправлення
             alert(error.message || 'Could not load profile settings due to an error.');
+            const mainContent = document.querySelector('.main-content-profile');
+            if (mainContent) mainContent.innerHTML = `<p class="no-data-placeholder">${error.message || 'Error loading profile settings.'}</p>`;
         }
     }
 
@@ -269,6 +338,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ avatarUrl: newAvatarUrl }),
                     requiresAuth: true
                 });
+                if (data.shouldRedirect) return;
+
                 if (data && data.success) {
                     avatarMessage.textContent = data.message || 'Avatar updated!';
                     avatarMessage.classList.add('success');
@@ -286,6 +357,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     avatarMessage.classList.add('error');
                 }
             } catch (error) {
+                if (error.shouldRedirect) return;
                 avatarMessage.textContent = error.message || 'Error updating avatar.';
                 avatarMessage.classList.add('error');
             }
@@ -311,13 +383,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     body: JSON.stringify({ newUsername: newUsername }),
                     requiresAuth: true
                 });
+                if (data.shouldRedirect) return;
+
                 if (data && data.success) {
                     usernameMessage.textContent = data.message || 'Username updated!';
                     usernameMessage.classList.add('success');
                     if (currentUsernameElement && data.user) currentUsernameElement.textContent = `Current: ${data.user.username}`;
-                    // Очищаємо поле після успішного збереження або встановлюємо нове значення
-                    if (usernameInput && data.user) usernameInput.value = data.user.username; 
-                    
+                    if (usernameInput && data.user) usernameInput.value = data.user.username;
+
                     if (data.token) {
                         localStorage.setItem('authToken', data.token);
                         console.log('[SettingsPage] New JWT token saved after username update.');
@@ -327,19 +400,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     usernameMessage.classList.add('error');
                 }
             } catch (error) {
+                if (error.shouldRedirect) return;
                 usernameMessage.textContent = error.message || 'Error updating username.';
                 usernameMessage.classList.add('error');
             }
         });
     }
-    
-    // Плейсхолдери для інших форм
+
     function showNotImplementedMessage(form, messageElement) {
         if (form && messageElement) {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 messageElement.textContent = 'This feature is not implemented yet.';
-                messageElement.className = 'form-message'; // Скидаємо класи
+                messageElement.className = 'form-message';
                 messageElement.style.color = 'orange';
             });
         }
@@ -347,7 +420,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     showNotImplementedMessage(preferencesForm, preferencesMessage);
     showNotImplementedMessage(notificationsForm, notificationsMessage);
 
-    loadCurrentProfileSettings();
+    // Завантажуємо дані, тільки якщо є токен (перевірка вже є на початку)
+    if (token) {
+        loadCurrentProfileSettings();
+    }
 });
 </script>
 </body>
