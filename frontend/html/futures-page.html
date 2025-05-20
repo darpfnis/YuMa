@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>YuMa - USDⓈ-M Futures</title>
-    <link rel="stylesheet" href="../css/header.css"> 
+    <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">   <!-- Глобальні стилі -->
     <link rel="stylesheet" href="../css/cards.css">    <!-- Стилі для .ui-panel, .panel-title -->
     <link rel="stylesheet" href="../css/futures-page.css"> <!-- Специфічні стилі для цієї сторінки -->
@@ -39,16 +39,19 @@
             </nav>
         </div>
         <nav class="user-nav">
-            <a href="sign_up-page.html">Sign up</a>
-            <a href="login-page.html">Log in</a>
+            <!-- ОНОВЛЕНО: ID для сторінки ф'ючерсів -->
+            <a href="sign_up-page.html" id="signUpLinkFutures">Sign up</a>
+            <a href="login-page.html" id="loginLinkFutures">Log in</a>
+            <a href="profile.html" id="profileLinkFutures" style="display: none;" title="My Profile">Profile</a>
+            <a href="#" id="logoutButtonFutures" class="nav-button" style="display: none;">Log out</a>
         </nav>
     </header>
 
         <!-- КОНТЕЙНЕР ДЛЯ ДЕКОРАТИВНИХ SVG ЕЛЕМЕНТІВ -->
     <div class="background-svg-decorations">
         <img src="../resources/13.svg" alt="Top Left Blob Decoration" class="decor-element decor-blob-tl">
-        <img src="../resources/15.svg" alt="Top Left Ring Decoration" class="decor-element decor-ring-tl"> <!-- УВАГА: Ти використала 15.svg тут, можливо, мало бути 14.svg? -->
-        <img src="../resources/14.svg" alt="Bottom Right Blob Decoration" class="decor-element decor-blob-br"> <!-- УВАГА: Ти використала 14.svg тут, можливо, мало бути 15.svg? -->
+        <img src="../resources/15.svg" alt="Top Left Ring Decoration" class="decor-element decor-ring-tl">
+        <img src="../resources/14.svg" alt="Bottom Right Blob Decoration" class="decor-element decor-blob-br">
         <img src="../resources/16.svg" alt="Bottom Right Ring Decoration" class="decor-element decor-ring-br">
     </div>
 
@@ -71,6 +74,7 @@
         </div>
         <div class="bar-actions">
             <a href="#">Guide</a>
+            <!-- Можливо, додати вибір пар тут пізніше -->
         </div>
     </div>
 
@@ -78,23 +82,24 @@
         <section class="main-content-area panel-column">
             <div class="ui-panel chart-card">
                 <!-- TradingView Widget BEGIN -->
-<div class="tradingview-widget-container" style="height:100%;width:100%">
-  <div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-  {
-  "autosize": true,
-  "symbol": "BINANCE:BTCUSDT",
-  "interval": "D",
-  "timezone": "Etc/UTC",
-  "theme": "light",
-  "style": "1",
-  "locale": "en",
-  "allow_symbol_change": true,
-  "support_host": "https://www.tradingview.com"
-}
-  </script>
-</div>
-<!-- TradingView Widget END -->
+                <div class="tradingview-widget-container" style="height:100%;width:100%">
+                  <div id="tradingview_widget_futures" class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>
+                  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                  {
+                  "autosize": true,
+                  "symbol": "BINANCE:BTCUSDTPERP", // Початковий символ для ф'ючерсів
+                  "interval": "D",
+                  "timezone": "Etc/UTC",
+                  "theme": "dark", // Змінено на темну тему
+                  "style": "1",
+                  "locale": "en",
+                  "allow_symbol_change": true,
+                  "support_host": "https://www.tradingview.com",
+                  "container_id": "tradingview_widget_futures" // Додано ID контейнера
+                }
+                  </script>
+                </div>
+                <!-- TradingView Widget END -->
             </div>
             <div class="ui-panel positions-history-card">
                 <div class="panel-title">Positions & Orders</div>
@@ -103,12 +108,21 @@
                     <button class="tab-button" data-tab-target="#open-orders-content-futures">Open Orders (0)</button>
                     <button class="tab-button" data-tab-target="#order-history-content-futures">Order History</button>
                     <button class="tab-button" data-tab-target="#trade-history-content-futures">Trade History</button>
+                    <!-- Можна додати інші вкладки, наприклад, Transaction History -->
                 </nav>
                 <div class="tab-content-area">
-                    <div id="positions-content-futures" class="tab-pane active"><p>No open positions.</p></div>
-                    <div id="open-orders-content-futures" class="tab-pane"><p>No open orders.</p></div>
-                    <div id="order-history-content-futures" class="tab-pane"><p>Order history will be displayed here.</p></div>
-                    <div id="trade-history-content-futures" class="tab-pane"><p>Trade history will be displayed here.</p></div>
+                    <div id="positions-content-futures" class="tab-pane active">
+                        <p class="no-data-message">No open positions. <a href="#" class="login-prompt-link" style="display:none;">Log in</a> to view your positions.</p>
+                    </div>
+                    <div id="open-orders-content-futures" class="tab-pane">
+                        <p class="no-data-message">No open orders. <a href="#" class="login-prompt-link" style="display:none;">Log in</a> to view your open orders.</p>
+                    </div>
+                    <div id="order-history-content-futures" class="tab-pane">
+                        <p class="no-data-message">Order history will be displayed here. <a href="#" class="login-prompt-link" style="display:none;">Log in</a> to view your order history.</p>
+                    </div>
+                    <div id="trade-history-content-futures" class="tab-pane">
+                        <p class="no-data-message">Trade history will be displayed here. <a href="#" class="login-prompt-link" style="display:none;">Log in</a> to view your trade history.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -118,8 +132,8 @@
                 <div class="panel-title">Order Book <span id="futuresOrderBookSymbol">(BTCUSDTPERP)</span></div>
                 <div class="order-book-columns">
                     <span>Price (USDT)</span>
-                    <span>Size (BTC)</span> 
-                    <span>Total (USDT)</span> 
+                    <span>Size (BTC)</span>
+                    <span>Total (USDT)</span>
                 </div>
                 <div class="order-book-content">
                     <div class="asks-container">
@@ -133,7 +147,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="ui-panel market-trades-card-futures">
                  <div class="panel-title">Market Trades <span id="futuresMarketTradesSymbol">(BTCUSDTPERP)</span></div>
                  <div class="market-trades-columns-futures">
@@ -144,52 +158,49 @@
                 <ul id="futures-market-trades-list"></ul>
             </div>
 
-                        <div class="ui-panel trading-panel-card"> <!-- На ф'ючерсній сторінці цей клас вже є -->
-                <div class="panel-title">Trade</div> <!-- Заголовок панелі -->
-                <div class="trading-form-container"> <!-- Обгортка для всього вмісту форми -->
-                    
-                    <div class="leverage-cross-isolated-tabs"> <!-- Вкладки Крос/Ізольована та плече -->
+            <div class="ui-panel trading-panel-card">
+                <div class="panel-title">Trade</div>
+                <div class="trading-form-container">
+
+                    <div class="leverage-cross-isolated-tabs">
                         <div class="margin-type-tabs">
                             <button class="type-tab active" data-margin-type="cross">Cross</button>
                             <button class="type-tab" data-margin-type="isolated">Isolated</button>
                         </div>
                         <div class="leverage-selector">
-                            <button class="leverage-btn" id="leverageBtn">20x</button> <!-- Приклад значення -->
-                            <!-- Тут може бути випадаючий список або модальне вікно для зміни плеча -->
+                            <button class="leverage-btn" id="leverageBtn">20x</button>
                         </div>
                     </div>
 
-                    <div class="execution-type-tabs"> <!-- Вкладки Ліміт/Маркет/Стоп-ліміт -->
+                    <div class="execution-type-tabs">
                         <button class="exec-tab active" data-exec="limit">Limit</button>
                         <button class="exec-tab" data-exec="market">Market</button>
                         <div class="dropdown-container stop-limit-dropdown">
                              <button class="exec-tab dropdown-toggle" data-exec="stop-limit">Stop Limit</button>
-                             <!-- Можна додати випадаюче меню для TP/SL, OCO тощо -->
                         </div>
-                        <span class="info-icon">ⓘ</span> <!-- Іконка інформації -->
+                        <span class="info-icon">ⓘ</span>
                     </div>
 
                     <div class="order-forms-columns">
-                        <!-- Колонка для Купівлі/Long -->
-                        <div class="order-form buy-long-form"> <!-- Змінено клас для ясності -->
-                            <div class="available-balance top"> <!-- Баланс зверху -->
+                        <div class="order-form buy-long-form">
+                            <div class="available-balance top">
                                 <span>Avbl:</span>
                                 <span id="buyLongAvailableQuote">-- USDT</span>
-                                <span class="refresh-icon">⇌</span> <!-- Іконка оновлення/обміну -->
+                                <span class="refresh-icon">⇌</span>
                             </div>
-                            <div class="input-group">
+                            <div class="input-group price-input-group"> <!-- Додано price-input-group -->
                                 <label for="buyLongPrice">Price</label>
+                                <span class="market-price-label" style="display: none;">Market Price</span> <!-- Для маркет ордера -->
                                 <div class="input-with-currency">
                                     <input type="number" id="buyLongPrice" placeholder="0.00">
                                     <span class="currency" id="buyLongPriceQuoteCurrency">USDT</span>
                                 </div>
-                                <!-- Можна додати кнопки BBO/Last/Mark -->
                             </div>
-                            <div class="input-group">
-                                <label for="buyLongAmount">Size</label> <!-- На ф'ючерсах це "Size" -->
+                            <div class="input-group size-input-group"> <!-- Додано size-input-group -->
+                                <label for="buyLongAmount" id="buyLongAmountLabel">Size</label> <!-- ID для зміни тексту -->
                                 <div class="input-with-currency">
                                     <input type="number" id="buyLongAmount" placeholder="0.000">
-                                    <span class="currency" id="buyLongAmountBaseCurrency">BTC</span>
+                                    <span class="currency" id="buyLongAmountDisplayCurrency">BTC</span> <!-- ID для зміни валюти -->
                                 </div>
                             </div>
                             <div class="balance-slider">
@@ -198,37 +209,37 @@
                                     <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
                                 </div>
                             </div>
-                             <div class="advanced-options-futures"> <!-- TP/SL для ф'ючерсів -->
+                             <div class="advanced-options-futures">
                                 <input type="checkbox" id="buyLongTPSL" name="buyLongTPSL">
                                 <label for="buyLongTPSL">TP/SL</label>
                                 <a href="#" class="advanced-link">Advanced</a>
                             </div>
-                            <div class="order-cost-info"> <!-- Інформація про вартість ордера -->
+                            <div class="order-cost-info">
                                 <div><span>Cost:</span> <span id="buyLongCost">-- USDT</span></div>
                                 <div><span>Max:</span> <span id="buyLongMaxAmount">-- BTC</span></div>
                             </div>
                             <button class="action-button buy-long-button">Buy/Long</button>
                         </div>
 
-                        <!-- Колонка для Продажу/Short -->
-                        <div class="order-form sell-short-form"> <!-- Змінено клас -->
+                        <div class="order-form sell-short-form">
                              <div class="available-balance top">
                                 <span>Avbl:</span>
                                 <span id="sellShortAvailableQuote">-- USDT</span>
                                  <span class="refresh-icon">⇌</span>
                             </div>
-                            <div class="input-group">
+                            <div class="input-group price-input-group"> <!-- Додано price-input-group -->
                                 <label for="sellShortPrice">Price</label>
+                                <span class="market-price-label" style="display: none;">Market Price</span> <!-- Для маркет ордера -->
                                 <div class="input-with-currency">
                                     <input type="number" id="sellShortPrice" placeholder="0.00">
                                     <span class="currency" id="sellShortPriceQuoteCurrency">USDT</span>
                                 </div>
                             </div>
-                            <div class="input-group">
-                                <label for="sellShortAmount">Size</label>
+                            <div class="input-group size-input-group"> <!-- Додано size-input-group -->
+                                <label for="sellShortAmount" id="sellShortAmountLabel">Size</label> <!-- ID для зміни тексту -->
                                 <div class="input-with-currency">
                                     <input type="number" id="sellShortAmount" placeholder="0.000">
-                                    <span class="currency" id="sellShortAmountBaseCurrency">BTC</span>
+                                    <span class="currency" id="sellShortAmountDisplayCurrency">BTC</span> <!-- ID для зміни валюти -->
                                 </div>
                             </div>
                             <div class="balance-slider">
@@ -257,24 +268,89 @@
         </aside>
     </main>
 
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<!-- <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script> --><!-- Вже є в <head> або вбудований в віджет -->
 <script>
+// --- START: Auth UI Logic (для хедера Futures сторінки) ---
+function updateHeaderAuthStateFutures() {
+    const token = localStorage.getItem('authToken');
+    const signUpLink = document.getElementById('signUpLinkFutures');
+    const loginLink = document.getElementById('loginLinkFutures');
+    const profileLink = document.getElementById('profileLinkFutures');
+    const logoutButton = document.getElementById('logoutButtonFutures');
+
+    if (token) {
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        if (profileLink) profileLink.style.display = 'inline-block'; // або 'block' залежно від стилів
+        if (logoutButton) logoutButton.style.display = 'inline-block'; // або 'block'
+    } else {
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'inline-block';
+        if (profileLink) profileLink.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'none';
+    }
+}
+
+function setupLogoutButtonFutures() {
+    const logoutButton = document.getElementById('logoutButtonFutures');
+    if (logoutButton) {
+        if (!logoutButton.dataset.listenerAttached) { // Запобігання повторному навішуванню
+            logoutButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const currentTokenForLogout = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                
+                updateHeaderAuthStateFutures(); // Оновити UI хедера негайно
+                updateTradingPanelAuthPrompt(); // Оновити підказку на панелі торгівлі
+                updatePositionsHistoryAuthPrompt(); // Оновити підказки в позиціях/історії
+
+                if (currentTokenForLogout) {
+                    try {
+                        await fetch('/auth/logout', { // Переконайтесь, що шлях правильний
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
+                        });
+                        console.log('Logout request sent to backend.');
+                    } catch (e) {
+                        console.error('Backend logout API error:', e);
+                    }
+                }
+                // Перенаправлення на сторінку логіну (можливо, не потрібно, якщо користувач може залишатися на сторінці)
+                // window.location.href = 'login-page.html'; // Розкоментуйте, якщо перенаправлення обов'язкове
+                console.log('User logged out. UI updated.');
+            });
+            logoutButton.dataset.listenerAttached = 'true';
+        }
+    }
+}
+// --- END: Auth UI Logic ---
+
+
 // JavaScript для futures-page.html
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("--------------------------------------------------");
     console.log("Futures Page DOM loaded. Initializing script...");
     console.log("--------------------------------------------------");
 
-    let currentFuturesSymbol = 'BTCUSDTPERP'; // Початковий ф'ючерсний символ
+    // Ініціалізація стану хедера при завантаженні сторінки
+    updateHeaderAuthStateFutures();
+    setupLogoutButtonFutures();
+    updateTradingPanelAuthPrompt(); // Початкове оновлення підказки на панелі торгівлі
+    updatePositionsHistoryAuthPrompt(); // Початкове оновлення підказок в позиціях/історії
 
-    // Елементи DOM для ф'ючерсів
+
+    let currentFuturesSymbol = 'BTCUSDTPERP';
+
     const futuresAsksListEl = document.getElementById('futures-asks-list');
     const futuresBidsListEl = document.getElementById('futures-bids-list');
     const futuresCurrentMarketPriceEl = document.getElementById('futuresCurrentMarketPrice');
     const futuresOrderBookSymbolEl = document.getElementById('futuresOrderBookSymbol');
-    const futuresChartTitleSymbolEl = document.getElementById('futuresChartTitleSymbol'); 
+    
+    // Змінено: тепер беремо ID контейнера з HTML
+    const tradingViewWidgetContainerId = 'tradingview_widget_futures';
+    let tradingWidgetInstance = null;
 
-    // Елементи DOM для верхньої інформаційної панелі
+
     const futuresPairDisplayEl = document.getElementById('futuresPairDisplay');
     const futuresMarkPriceEl = document.getElementById('futuresMarkPrice');
     const futuresIndexPriceEl = document.getElementById('futuresIndexPrice');
@@ -284,9 +360,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const futures24hLowEl = document.getElementById('futures24hLow');
     const futures24hVolumeEl = document.getElementById('futures24hVolume');
     
-    // Елементи DOM для Market Trades ф'ючерсів
     const futuresMarketTradesListEl = document.getElementById('futures-market-trades-list');
     const futuresMarketTradesSymbolEl = document.getElementById('futuresMarketTradesSymbol');
+
+    // Елементи форм торгівлі
+    const buyLongForm = document.querySelector('.buy-long-form');
+    const sellShortForm = document.querySelector('.sell-short-form');
+    const buyLongPriceInput = document.getElementById('buyLongPrice');
+    const buyLongMarketPriceLabel = buyLongForm.querySelector('.market-price-label');
+    const buyLongAmountInput = document.getElementById('buyLongAmount');
+    const buyLongAmountLabel = document.getElementById('buyLongAmountLabel');
+    const buyLongAmountDisplayCurrency = document.getElementById('buyLongAmountDisplayCurrency');
+    const buyLongButton = document.querySelector('.buy-long-button');
+
+    const sellShortPriceInput = document.getElementById('sellShortPrice');
+    const sellShortMarketPriceLabel = sellShortForm.querySelector('.market-price-label');
+    const sellShortAmountInput = document.getElementById('sellShortAmount');
+    const sellShortAmountLabel = document.getElementById('sellShortAmountLabel');
+    const sellShortAmountDisplayCurrency = document.getElementById('sellShortAmountDisplayCurrency');
+    const sellShortButton = document.querySelector('.sell-short-button');
+
+    const authPromptTradingPanel = document.querySelector('.trading-panel-card .auth-prompt');
+
 
     let futuresOrderBookSocket = null;
     let futuresMarkPriceSocket = null; 
@@ -298,7 +393,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let obUpdateCounter = 0; 
     let mtUpdateCounter = 0; 
 
-    // Ініціалізація вкладок
     const tabButtons = document.querySelectorAll('.positions-history-card .tab-button');
     const tabPanes = document.querySelectorAll('.positions-history-card .tab-pane');
 
@@ -314,7 +408,95 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     });
-        
+
+    function isLoggedIn() {
+        return !!localStorage.getItem('authToken');
+    }
+
+    function updateTradingPanelAuthPrompt() {
+        if (authPromptTradingPanel) {
+            authPromptTradingPanel.style.display = isLoggedIn() ? 'none' : 'block';
+        }
+        // Оновлення тексту кнопок Buy/Long та Sell/Short
+        const [baseAsset, ] = splitSymbolFutures(currentFuturesSymbol);
+        if (isLoggedIn()) {
+            if(buyLongButton) buyLongButton.textContent = `Buy/Long`;
+            if(sellShortButton) sellShortButton.textContent = `Sell/Short`;
+        } else {
+            if(buyLongButton) buyLongButton.textContent = `Log In to Buy/Long`;
+            if(sellShortButton) sellShortButton.textContent = `Log In to Sell/Short`;
+        }
+    }
+    
+    if (buyLongButton) {
+        buyLongButton.addEventListener('click', () => {
+            if (!isLoggedIn()) {
+                window.location.href = 'login-page.html';
+            } else {
+                // Логіка для Buy/Long
+                alert('Buy/Long action for logged in user.');
+            }
+        });
+    }
+
+    if (sellShortButton) {
+        sellShortButton.addEventListener('click', () => {
+            if (!isLoggedIn()) {
+                window.location.href = 'login-page.html';
+            } else {
+                // Логіка для Sell/Short
+                alert('Sell/Short action for logged in user.');
+            }
+        });
+    }
+    
+    function updatePositionsHistoryAuthPrompt() {
+        const loginPromptLinks = document.querySelectorAll('.positions-history-card .login-prompt-link');
+        loginPromptLinks.forEach(link => {
+            link.style.display = isLoggedIn() ? 'none' : 'inline'; // Показуємо, якщо не залогінений
+        });
+
+        // Також можна приховати вміст вкладок, якщо користувач не залогінений,
+        // або показати повідомлення "Please log in to see your data"
+        tabPanes.forEach(pane => {
+            const noDataMessage = pane.querySelector('.no-data-message');
+            if (noDataMessage) {
+                if (!isLoggedIn()) {
+                    // Можна змінити текст повідомлення або просто залишити як є
+                    // noDataMessage.innerHTML = `Please <a href="login-page.html">Log In</a> or <a href="sign_up-page.html">Register</a> to view this information.`;
+                } else {
+                    // Якщо залогінений, тут має бути логіка завантаження даних для вкладок
+                    // Наприклад: if (pane.id === 'positions-content-futures') loadPositions();
+                }
+            }
+        });
+    }
+
+
+    function getTradingViewWidgetInstanceWhenReady(callback) {
+        let attempts = 0;
+        const maxAttempts = 35;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (typeof TradingView !== 'undefined' &&
+                TradingView.widgets &&
+                TradingView.widgets[tradingViewWidgetContainerId] &&
+                typeof TradingView.widgets[tradingViewWidgetContainerId].setSymbol === 'function') {
+                
+                clearInterval(checkInterval);
+                tradingWidgetInstance = TradingView.widgets[tradingViewWidgetContainerId];
+                console.log(`%cTradingView widget instance (ID: ${tradingViewWidgetContainerId}) obtained successfully for Futures!`, "color: green; font-weight: bold;", tradingWidgetInstance);
+                if (callback && typeof callback === 'function') {
+                    callback(tradingWidgetInstance);
+                }
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.error(`Timeout or failure: TradingView widget instance (ID: ${tradingViewWidgetContainerId}) could not be obtained for Futures.`);
+            }
+        }, 300);
+    }
+
+
     function formatPriceFutures(price, quoteAsset, defaultDecimals = 2) {
         if (price === undefined || price === null || price === '--') return '--';
         const priceNum = parseFloat(price);
@@ -324,20 +506,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (priceNum >= 1000) return priceNum.toFixed(1);
             if (priceNum >= 10) return priceNum.toFixed(2);
             if (priceNum >= 0.1) return priceNum.toFixed(3);
-            return priceNum.toFixed(4); 
+            if (priceNum >= 0.001) return priceNum.toFixed(4);
+            return priceNum.toFixed(Math.max(4, defaultDecimals));
         }
-        return priceNum.toFixed(defaultDecimals); 
+        return priceNum.toFixed(defaultDecimals);
     }
 
-    function formatAmountFutures(amount, defaultDecimals = 3) { 
+    function formatAmountFutures(amount, defaultDecimals = 3) {
         if (amount === undefined || amount === null || amount === '--') return '--';
         const amountNum = parseFloat(amount);
         if (isNaN(amountNum)) return '--';
-        return amountNum.toFixed(defaultDecimals); 
+        return amountNum.toFixed(defaultDecimals);
     }
 
     function renderFuturesOrderBook(bidsData, asksData) {
-        // console.log(`[Render OB #${obUpdateCounter}] Called. Asks: ${(asksData || []).length}, Bids: ${(bidsData || []).length}`);
         if (!futuresAsksListEl || !futuresBidsListEl) { 
             console.error("[Render OB] CRITICAL: Futures OB list elements missing!"); 
             return; 
@@ -352,7 +534,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const [price, quantity] = ask;
             const li = document.createElement('li');
             const priceFormatted = formatPriceFutures(price, quoteAsset);
-            const amountFormatted = formatAmountFutures(quantity);  
+            const amountFormatted = formatAmountFutures(quantity, getPrecisionForBaseAsset(baseAsset));  
             const total = formatPriceFutures((parseFloat(price) * parseFloat(quantity)), quoteAsset, 2); 
 
             li.innerHTML = `
@@ -370,7 +552,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const [price, quantity] = bid;
             const li = document.createElement('li');
             const priceFormatted = formatPriceFutures(price, quoteAsset);
-            const amountFormatted = formatAmountFutures(quantity);
+            const amountFormatted = formatAmountFutures(quantity, getPrecisionForBaseAsset(baseAsset));
             const total = formatPriceFutures((parseFloat(price) * parseFloat(quantity)), quoteAsset, 2);
             li.innerHTML = `
                 <span class="price bid-price">${priceFormatted}</span>
@@ -386,27 +568,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             const bestBid = parseFloat(bidsData[0][0]);
             const bestAsk = parseFloat(asksData[0][0]);
             const midPrice = (bestBid + bestAsk) / 2; 
+            const oldPrice = parseFloat(futuresCurrentMarketPriceEl.dataset.lastPrice || "0");
             futuresCurrentMarketPriceEl.textContent = formatPriceFutures(midPrice, quoteAsset);
             futuresCurrentMarketPriceEl.classList.remove('price-up', 'price-down');
-            const lastPrice = parseFloat(futuresCurrentMarketPriceEl.dataset.lastPrice);
-            if (!isNaN(lastPrice)) {
-                if (lastPrice < midPrice ) futuresCurrentMarketPriceEl.classList.add('price-up');
-                else if (lastPrice > midPrice ) futuresCurrentMarketPriceEl.classList.add('price-down');
-            }
+            if (midPrice > oldPrice) futuresCurrentMarketPriceEl.classList.add('price-up');
+            else if (midPrice < oldPrice) futuresCurrentMarketPriceEl.classList.add('price-down');
             futuresCurrentMarketPriceEl.dataset.lastPrice = midPrice.toString();
         }
     }
     
     function renderFuturesMarketTrade(trade) { 
-        // console.log(`[Render MT #${mtUpdateCounter}] Called with trade:`, trade);
         if (!futuresMarketTradesListEl) {
             console.warn("[Render MT] Futures market trades list element not found, skipping render.");
             return;
         }
-        const [, quoteAsset] = splitSymbolFutures(currentFuturesSymbol);
+        const [baseAsset, quoteAsset] = splitSymbolFutures(currentFuturesSymbol);
         const li = document.createElement('li');
         const priceFormatted = formatPriceFutures(trade.p, quoteAsset);
-        const amountFormatted = formatAmountFutures(trade.q);   
+        const amountFormatted = formatAmountFutures(trade.q, getPrecisionForBaseAsset(baseAsset));   
         const tradeTime = new Date(trade.T).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit'}); 
         const priceClass = trade.m ? 'sell-trade' : 'buy-trade'; 
         li.innerHTML = `
@@ -426,7 +605,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         socket.onopen = () => console.log(`[WS Open] ${onOpenMsg}`);
         
         socket.onmessage = (event) => {
-            console.log(`%c[WS Message RAW] from ${socketUrl.substring(socketUrl.lastIndexOf('/') + 1)}:`, "color: gray;", event.data.substring(0,300) + (event.data.length > 300 ? "..." : "")); 
+            // console.log(`%c[WS Message RAW] from ${socketUrl.substring(socketUrl.lastIndexOf('/') + 1)}:`, "color: gray;", event.data.substring(0,300) + (event.data.length > 300 ? "..." : "")); 
             try {
                 const data = JSON.parse(event.data);
                 onMessageCallback(data);
@@ -457,25 +636,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             futuresOrderBookSocket.close(1000, "Reconnecting Futures OB");
         }
         const wsSym = symbolPair.toLowerCase(); 
-        const url = `wss://fstream.binance.com/ws/${wsSym}@depth20@500ms`;
+        const url = `wss://fstream.binance.com/ws/${wsSym}@depth20@500ms`; // Можна 100ms або 250ms для більшої плавності
         
         futuresOrderBookSocket = setupWebSocket(url, `Futures Order Book WS opened for ${symbolPair}.`,
             (data) => { 
                 obUpdateCounter++;
-                console.log(`[OB WS Data Parsed #${obUpdateCounter}]:`, data); 
+                // console.log(`[OB WS Data Parsed #${obUpdateCounter}]:`, data); 
                 if (data && typeof data === 'object' && Array.isArray(data.b) && Array.isArray(data.a)) { 
-                    console.log(`%c[OB WS #${obUpdateCounter}] Rendering snapshot using 'b' and 'a'. Bids count: ${data.b.length}, Asks count: ${data.a.length}`, "color: green; font-weight: bold;");
+                    // console.log(`%c[OB WS #${obUpdateCounter}] Rendering snapshot using 'b' and 'a'. Bids count: ${data.b.length}, Asks count: ${data.a.length}`, "color: green; font-weight: bold;");
                     renderFuturesOrderBook(data.b, data.a);
                 } 
                 else if (data && typeof data === 'object' && Array.isArray(data.bids) && Array.isArray(data.asks)) {
-                     console.log(`%c[OB WS #${obUpdateCounter}] Rendering snapshot using 'bids' and 'asks'. Bids: ${data.bids.length}, Asks: ${data.asks.length}`, "color: orange; font-weight: bold;");
+                     // console.log(`%c[OB WS #${obUpdateCounter}] Rendering snapshot using 'bids' and 'asks'. Bids: ${data.bids.length}, Asks: ${data.asks.length}`, "color: orange; font-weight: bold;");
                      renderFuturesOrderBook(data.bids, data.asks);
                 }
                 else if (data && data.e === 'depthUpdate' && Array.isArray(data.b) && Array.isArray(data.a)) { 
-                     console.warn(`[OB WS #${obUpdateCounter}] Received differential 'depthUpdate'. Attempting to render with b/a. (Note: This requires initial snapshot logic for full accuracy)`);
+                     // console.warn(`[OB WS #${obUpdateCounter}] Received differential 'depthUpdate'. Attempting to render with b/a. (Note: This requires initial snapshot logic for full accuracy)`);
                      renderFuturesOrderBook(data.b, data.a); 
                 } else {
-                    console.warn(`[OB WS #${obUpdateCounter}] ❌ Unexpected data format (expected 'b'/'a' or 'bids'/'asks' arrays, or 'depthUpdate' event):`, data);
+                    // console.warn(`[OB WS #${obUpdateCounter}] ❌ Unexpected data format (expected 'b'/'a' or 'bids'/'asks' arrays, or 'depthUpdate' event):`, data);
                 }
             },
             `Futures OB WS Error for ${symbolPair}`, 
@@ -494,12 +673,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         futuresTradesSocket = setupWebSocket(url, `Futures Market Trades WS for ${symbolPair} opened.`,
             (data) => { 
                 mtUpdateCounter++;
-                console.log(`[MT WS Data Parsed #${mtUpdateCounter}]:`, data); 
+                // console.log(`[MT WS Data Parsed #${mtUpdateCounter}]:`, data); 
                 if (data && data.e === 'aggTrade' && data.p !== undefined && data.q !== undefined && data.T !== undefined && data.m !== undefined) {
-                    console.log(`%c[MT WS #${mtUpdateCounter}] Rendering aggTrade. Price: ${data.p}, Qty: ${data.q}`, "color: green; font-weight: bold;");
+                    // console.log(`%c[MT WS #${mtUpdateCounter}] Rendering aggTrade. Price: ${data.p}, Qty: ${data.q}`, "color: green; font-weight: bold;");
                     renderFuturesMarketTrade({ p: data.p, q: data.q, T: data.T, m: data.m });
                 } else {
-                    console.warn(`[MT WS #${mtUpdateCounter}] ❌ Unexpected aggTrade data format or event type:`, data);
+                    // console.warn(`[MT WS #${mtUpdateCounter}] ❌ Unexpected aggTrade data format or event type:`, data);
                 }
             },
             `Futures Market Trades WS Error for ${symbolPair}`,
@@ -507,7 +686,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    function splitSymbol(spotSymbol) {
+    function splitSymbol(spotSymbol) { // Допоміжна для splitSymbolFutures
         if (!spotSymbol || typeof spotSymbol !== 'string') return ["", ""];
         const commonQuotes = ["USDT", "FDUSD", "BUSD", "USDC", "DAI", "TUSD", "BTC", "ETH", "BNB", "TRY", "EUR", "GBP", "UAH", "PLN"];
         for (const quote of commonQuotes) {
@@ -516,47 +695,60 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return [base, quote];
             }
         }
+        // Фоллбек, якщо стандартні котирувальні валюти не знайдені
         if (spotSymbol.length > 4 && spotSymbol.length <= 8) return [spotSymbol.substring(0,spotSymbol.length-4), spotSymbol.substring(spotSymbol.length-4)];
         if (spotSymbol.length > 3 && spotSymbol.length <=7) return [spotSymbol.substring(0,spotSymbol.length-3), spotSymbol.substring(spotSymbol.length-3)];
-        return [spotSymbol, ""];
+        return [spotSymbol, ""]; // Малоймовірно для валідних пар
     }
 
-    function splitSymbolFutures(futuresSymbol) {
-        if (!futuresSymbol || typeof futuresSymbol !== 'string') return ["", ""];
+    function splitSymbolFutures(futuresSymbol) { // Основна функція для ф'ючерсів
+        if (!futuresSymbol || typeof futuresSymbol !== 'string') return ["", ""]; // Повертає [baseAsset, quoteAsset]
+        
+        // Для безстрокових контрактів (наприклад, BTCUSDTPERP)
         if (futuresSymbol.endsWith("PERP")) {
-            const underlyingSpotSymbol = futuresSymbol.slice(0, -4); 
+            const underlyingSpotSymbol = futuresSymbol.slice(0, -4); // Видаляємо "PERP" -> BTCUSDT
+            return splitSymbol(underlyingSpotSymbol); // Використовуємо функцію для спот-символів
+        }
+        // Для квартальних/строкових контрактів (наприклад, BTCUSDT_240628)
+        else if (/\d{6}$/.test(futuresSymbol) && futuresSymbol.includes('_')) { // Перевіряємо формат _YYMMDD
+            const underlyingSpotSymbol = futuresSymbol.split('_')[0]; // Беремо частину до "_" -> BTCUSDT
             return splitSymbol(underlyingSpotSymbol);
         }
-        else if (/\d{6}$/.test(futuresSymbol) && futuresSymbol.includes('_')) { 
-            const underlyingSpotSymbol = futuresSymbol.split('_')[0];
-            return splitSymbol(underlyingSpotSymbol);
-        }
+        // Якщо формат невідомий, пробуємо як спот
         return splitSymbol(futuresSymbol);
     }
 
+    function getPrecisionForBaseAsset(baseAsset) {
+        // Тут можна додати логіку для визначення точності на основі базового активу
+        // Наприклад, для BTC - 3 знаки, для SHIB - 0 знаків і т.д.
+        // Поки що повертаємо стандартне значення
+        if (baseAsset === 'BTC' || baseAsset === 'ETH') return 3;
+        if (baseAsset === 'XRP' || baseAsset === 'ADA' || baseAsset === 'DOGE') return 1;
+        if (baseAsset === 'SHIB' || baseAsset === 'PEPE') return 0;
+        return 2; // За замовчуванням
+    }
+
+
     function updateFuturesSymbolDisplay(symbolPair) {
-        let displayBaseShow = symbolPair;
-        let displayQuoteShow = "PERP"; 
+        let displayBaseShow = symbolPair; // Базовий актив для відображення (наприклад, BTC)
+        let displayQuoteShow = "";    // Котирувальна валюта + тип контракту (наприклад, USDT PERP)
+
+        const [baseAsset, quoteAsset] = splitSymbolFutures(symbolPair); // Отримуємо чисті активи
+        displayBaseShow = baseAsset;
 
         if (symbolPair.endsWith("PERP")) {
-            const [base] = splitSymbolFutures(symbolPair);
-            displayBaseShow = base;
+            displayQuoteShow = `${quoteAsset} PERP`;
         } else if (/\d{6}$/.test(symbolPair) && symbolPair.includes('_')) {
-            const [base] = splitSymbolFutures(symbolPair);
-            displayBaseShow = base;
-            displayQuoteShow = symbolPair.split('_')[1]; 
+            const datePart = symbolPair.split('_')[1]; // 240628
+            displayQuoteShow = `${quoteAsset} ${datePart.substring(4,6)}${datePart.substring(2,4)}${datePart.substring(0,2)}`; // DDMMYY
         } else {
-             const [base] = splitSymbolFutures(symbolPair); 
-             displayBaseShow = base;
-             displayQuoteShow = ""; 
+             displayQuoteShow = quoteAsset; // Якщо невідомий формат, просто котирувальна
         }
         
-        const [baseAsset, quoteAsset] = splitSymbolFutures(symbolPair); 
-
         if (futuresPairDisplayEl) futuresPairDisplayEl.innerHTML = `${displayBaseShow}<span class="quote-asset"> ${displayQuoteShow}</span>`;
-        if (futuresOrderBookSymbolEl) futuresOrderBookSymbolEl.textContent = `(${displayBaseShow}/${quoteAsset})`;
-        if (futuresChartTitleSymbolEl) futuresChartTitleSymbolEl.textContent = `(${symbolPair})`; 
-        if (futuresMarketTradesSymbolEl) futuresMarketTradesSymbolEl.textContent = `(${displayBaseShow}/${quoteAsset})`;
+        if (futuresOrderBookSymbolEl) futuresOrderBookSymbolEl.textContent = `(${baseAsset}/${quoteAsset})`; // Завжди чисті активи тут
+        // if (futuresChartTitleSymbolEl) futuresChartTitleSymbolEl.textContent = `(${symbolPair})`; // Повний символ для графіка
+        if (futuresMarketTradesSymbolEl) futuresMarketTradesSymbolEl.textContent = `(${baseAsset}/${quoteAsset})`;
         
         const obPriceCol = document.querySelector('#futures-order-book .order-book-columns span:first-child');
         const obSizeCol = document.querySelector('#futures-order-book .order-book-columns span:nth-child(2)');
@@ -570,9 +762,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         const mtSizeCol = document.querySelector('.market-trades-card-futures .market-trades-columns-futures span:nth-child(2)');
         if(mtPriceCol) mtPriceCol.textContent = `Price (${quoteAsset})`;
         if(mtSizeCol) mtSizeCol.textContent = `Size (${baseAsset})`;
+
+        // Оновлення валют у формах торгівлі
+        if(buyLongPriceQuoteCurrency) buyLongPriceQuoteCurrency.textContent = quoteAsset;
+        if(buyLongAmountDisplayCurrency) buyLongAmountDisplayCurrency.textContent = baseAsset;
+        if(buyLongCost) buyLongCost.textContent = `-- ${quoteAsset}`;
+        if(buyLongMaxAmount) buyLongMaxAmount.textContent = `-- ${baseAsset}`;
+        if(buyLongAvailableQuote) buyLongAvailableQuote.textContent = `-- ${quoteAsset}`;
+
+
+        if(sellShortPriceQuoteCurrency) sellShortPriceQuoteCurrency.textContent = quoteAsset;
+        if(sellShortAmountDisplayCurrency) sellShortAmountDisplayCurrency.textContent = baseAsset;
+        if(sellShortCost) sellShortCost.textContent = `-- ${quoteAsset}`;
+        if(sellShortMaxAmount) sellShortMaxAmount.textContent = `-- ${baseAsset}`;
+        if(sellShortAvailableQuote) sellShortAvailableQuote.textContent = `-- ${quoteAsset}`;
+
+        // Оновлення плейсхолдерів для кількості на основі точності
+        const basePrecision = getPrecisionForBaseAsset(baseAsset);
+        const amountPlaceholder = "0." + "0".repeat(basePrecision);
+        if(buyLongAmountInput) buyLongAmountInput.placeholder = amountPlaceholder;
+        if(sellShortAmountInput) sellShortAmountInput.placeholder = amountPlaceholder;
+
+        // Оновлення TradingView віджету
+        if (tradingWidgetInstance && typeof tradingWidgetInstance.setSymbol === 'function') {
+            const tvSymbol = `BINANCE:${symbolPair}`; // Для ф'ючерсів зазвичай просто символ
+            console.log(`Attempting to set TradingView symbol to: ${tvSymbol}`);
+            tradingWidgetInstance.setSymbol(tvSymbol, tradingWidgetInstance.options.interval || "D", () => {
+                console.log(`%cTradingView symbol successfully changed to ${tvSymbol}`, "color: green; font-weight: bold;");
+            });
+        } else {
+            console.warn("Cannot change TradingView symbol: widget instance or setSymbol method not available yet.");
+        }
     }
     
     function updateTopInfoBar(data) {
+        if (!data || !data.s) {
+            // console.warn("[TopInfoBar] Received invalid data for update:", data);
+            return;
+        }
         const [, quoteAsset] = splitSymbolFutures(data.s); 
         if (data.e === 'markPriceUpdate') { 
             if (futuresMarkPriceEl) futuresMarkPriceEl.textContent = formatPriceFutures(data.p, quoteAsset); 
@@ -589,17 +816,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 futuresFundingRateEl.textContent = `${fundingRatePercent} / ${countdown}`;
             }
-        } else if (data.e === '24hrTicker') { 
+        } else if (data.e === '24hrTicker' || (Array.isArray(data) && data[0] && data[0].e === '24hrTicker') ) {
+            const ticker = Array.isArray(data) ? data.find(t => t.s === currentFuturesSymbol) : (data.s === currentFuturesSymbol ? data : null);
+            if (!ticker) return;
+
             if(futures24hChangeEl) {
-                const changePercent = parseFloat(data.P); 
+                const changePercent = parseFloat(ticker.P); 
                 futures24hChangeEl.textContent = `${changePercent.toFixed(2)}%`;
                 futures24hChangeEl.className = 'value'; 
                 if (changePercent > 0) futures24hChangeEl.classList.add('positive');
                 else if (changePercent < 0) futures24hChangeEl.classList.add('negative');
             }
-            if (futures24hHighEl) futures24hHighEl.textContent = formatPriceFutures(data.h, quoteAsset); 
-            if (futures24hLowEl) futures24hLowEl.textContent = formatPriceFutures(data.l, quoteAsset);   
-            if (futures24hVolumeEl) futures24hVolumeEl.textContent = parseFloat(data.q).toLocaleString(undefined, {maximumFractionDigits: 0}); 
+            if (futures24hHighEl) futures24hHighEl.textContent = formatPriceFutures(ticker.h, quoteAsset); 
+            if (futures24hLowEl) futures24hLowEl.textContent = formatPriceFutures(ticker.l, quoteAsset);   
+            // Об'єм в USDT (quoteVolume)
+            if (futures24hVolumeEl) futures24hVolumeEl.textContent = parseFloat(ticker.q).toLocaleString(undefined, {maximumFractionDigits: 0}); 
         }
     }
 
@@ -608,7 +839,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             futuresMarkPriceSocket.close(1000, "Reconnecting Mark Price");
         }
         const wsSym = symbolPair.toLowerCase();
-        const url = `wss://fstream.binance.com/ws/${wsSym}@markPrice@1s`;
+        const url = `wss://fstream.binance.com/ws/${wsSym}@markPrice@1s`; // Оновлення кожну секунду
         futuresMarkPriceSocket = setupWebSocket(url, `Mark Price WS for ${symbolPair} opened.`, 
             updateTopInfoBar, 
             `Mark Price WS Error for ${symbolPair}`,
@@ -616,34 +847,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    function connectTickerWebSocket(symbolPair) {
+    function connectTickerWebSocket(symbolPairOrAll) { // Може приймати конкретний символ або '!ticker@arr' для всіх
         if (futuresTickerSocket && futuresTickerSocket.readyState < WebSocket.CLOSING) {
             futuresTickerSocket.close(1000, "Reconnecting Ticker");
         }
-        const wsSym = symbolPair.toLowerCase();
-        const url = `wss://fstream.binance.com/ws/${wsSym}@ticker`; 
-        futuresTickerSocket = setupWebSocket(url, `24hr Ticker WS for ${symbolPair} opened.`,
-            (data) => { 
-                if (Array.isArray(data)) { 
-                    const relevantTicker = data.find(t => t.s === symbolPair);
+        const url = (symbolPairOrAll === '!ticker@arr') 
+            ? `wss://fstream.binance.com/ws/!ticker@arr`
+            : `wss://fstream.binance.com/ws/${symbolPairOrAll.toLowerCase()}@ticker`;
+        
+        const streamName = (symbolPairOrAll === '!ticker@arr') ? "All Tickers Stream" : `24hr Ticker WS for ${symbolPairOrAll}`;
+
+        futuresTickerSocket = setupWebSocket(url, `${streamName} opened.`,
+            (data) => { // data може бути масивом або об'єктом
+                if (Array.isArray(data)) { // Для !ticker@arr
+                    const relevantTicker = data.find(t => t.s === currentFuturesSymbol);
                     if (relevantTicker) updateTopInfoBar(relevantTicker);
-                } else if (data.s === symbolPair) { 
+                } else if (data.s === currentFuturesSymbol) { // Для окремого символу
                      updateTopInfoBar(data);
                 }
             },
-            `24hr Ticker WS Error for ${symbolPair}`,
-            `24hr Ticker WS closed for ${symbolPair}`
+            `${streamName} Error`,
+            `${streamName} closed`
         );
     }
 
     async function fetchInitialFuturesData(symbolForWebSocket) {
-        const symbolForREST = symbolForWebSocket.endsWith("PERP") 
-                              ? symbolForWebSocket.slice(0, -4) 
-                              : (/\d{6}$/.test(symbolForWebSocket) && symbolForWebSocket.includes('_')
-                                 ? symbolForWebSocket.split('_')[0]
-                                 : symbolForWebSocket);
+        const symbolForREST = symbolForWebSocket; // Для fapi Binance використовує повний символ контракту
 
-        console.log(`[Fetch Initial] For ${symbolForREST} (REST) / ${symbolForWebSocket} (WS)`);
+        console.log(`[Fetch Initial] For ${symbolForREST} (REST & WS)`);
         
         if(futuresAsksListEl) futuresAsksListEl.innerHTML = '<li>Loading OB...</li>';
         if(futuresBidsListEl) futuresBidsListEl.innerHTML = '';
@@ -651,7 +882,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(futuresMarketTradesListEl) futuresMarketTradesListEl.innerHTML = '<li>Loading Trades...</li>';
 
         try {
-            // 1. Order Book
             console.log(`[Fetch Initial] Depth for: ${symbolForREST} (limit 50)`);
             const depthResponse = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbolForREST}&limit=50`); 
             if (!depthResponse.ok) {
@@ -667,14 +897,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 2. Mark Price & Funding Rate
             console.log(`[Fetch Initial] PremiumIndex for: ${symbolForREST}`);
             const markPriceResponse = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbolForREST}`);
             if(markPriceResponse.ok) {
                 const markPriceData = await markPriceResponse.json();
                 updateTopInfoBar({ 
                     e: 'markPriceUpdate', 
-                    s: symbolForWebSocket, 
+                    s: symbolForWebSocket, // Використовуємо символ для WS
                     p: markPriceData.markPrice, 
                     i: markPriceData.indexPrice, 
                     r: markPriceData.lastFundingRate, 
@@ -684,27 +913,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                  console.warn(`[Fetch Initial] Failed to fetch mark price for ${symbolForREST}: ${markPriceResponse.status} ${markPriceResponse.statusText}`);
             }
 
-            // 3. 24hr Ticker
             console.log(`[Fetch Initial] 24hr Ticker for: ${symbolForREST}`);
             const tickerResponse = await fetch(`https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${symbolForREST}`);
             if(tickerResponse.ok) {
                 const tickerData = await tickerResponse.json();
                  updateTopInfoBar({ 
                     e: '24hrTicker',
-                    s: symbolForWebSocket, 
-                    p: tickerData.priceChange, 
+                    s: symbolForWebSocket, // Використовуємо символ для WS
+                    p: tickerData.priceChange, // Не використовується в updateTopInfoBar для 24hrTicker
                     P: tickerData.priceChangePercent, 
                     h: tickerData.highPrice,
                     l: tickerData.lowPrice,
-                    q: tickerData.quoteVolume 
+                    q: tickerData.quoteVolume // Об'єм в котирувальній валюті (USDT)
                 });
             } else {
                 console.warn(`[Fetch Initial] Failed to fetch 24hr ticker for ${symbolForREST}: ${tickerResponse.status} ${tickerResponse.statusText}`);
             }
             
-            // 4. Recent Aggregated Trades
             console.log(`[Fetch Initial] AggTrades for: ${symbolForREST} (limit 30)`);
-            const aggTradesResponse = await fetch(`https://fapi.binance.com/fapi/v1/aggTrades?symbol=${symbolForREST}&limit=30`);
+            const aggTradesResponse = await fetch(`https://fapi.binance.com/fapi/v1/aggTrades?symbol=${symbolForREST}&limit=${MAX_FUTURES_TRADES_HISTORY}`);
             if(aggTradesResponse.ok) {
                 const aggTradesData = await aggTradesResponse.json();
                 if (futuresMarketTradesListEl) futuresMarketTradesListEl.innerHTML = ''; 
@@ -724,19 +951,94 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("[Fetch Initial] Initial data fetching attempt complete.");
     }
 
+    // --- ЛОГІКА ДЛЯ ВКЛАДОК НА ПАНЕЛІ ТОРГІВЛІ ---
+    const marginTypeTabs = document.querySelectorAll('.margin-type-tabs .type-tab');
+    const executionTypeTabsFutures = document.querySelectorAll('.trading-panel-card .execution-type-tabs .exec-tab');
+
+    function setActiveTradingTab(tabsNodeList, clickedTab) {
+        tabsNodeList.forEach(tab => tab.classList.remove('active'));
+        clickedTab.classList.add('active');
+    }
+
+    function updateFuturesTradingFormsUI(executionType) {
+        const [baseAsset, quoteAsset] = splitSymbolFutures(currentFuturesSymbol);
+        [buyLongForm, sellShortForm].forEach(formEl => {
+            if (!formEl) return;
+            const isBuySide = formEl.classList.contains('buy-long-form');
+            const priceInput = formEl.querySelector(isBuySide ? '#buyLongPrice' : '#sellShortPrice');
+            const marketPriceLabel = formEl.querySelector('.market-price-label');
+            const amountLabel = formEl.querySelector(isBuySide ? '#buyLongAmountLabel' : '#sellShortAmountLabel');
+            const amountInput = formEl.querySelector(isBuySide ? '#buyLongAmount' : '#sellShortAmount');
+            const amountDisplayCurrency = formEl.querySelector(isBuySide ? '#buyLongAmountDisplayCurrency' : '#sellShortAmountDisplayCurrency');
+            
+            formEl.dataset.orderExecutionType = executionType;
+
+            if (executionType === 'market') {
+                if(priceInput) { priceInput.style.display = 'none'; priceInput.disabled = true; priceInput.value = ''; }
+                if(marketPriceLabel) marketPriceLabel.style.display = 'block';
+                
+                if(amountLabel) amountLabel.textContent = 'Quantity'; // Для ринкового ордеру це може бути кількість або вартість
+                if(amountInput) amountInput.placeholder = "0.000"; // Наприклад, в USDT або BTC
+                // Валюта для amountInput може змінюватися. Наприклад, 'Quantity in USDT' або 'Quantity in BTC'
+                // Це потребує додаткової логіки вибору (наприклад, перемикач Base/Quote для кількості)
+                // Поки що залишимо як є, валюта не змінюється
+                
+            } else if (executionType === 'limit') {
+                if (priceInput) { priceInput.style.display = 'block'; priceInput.disabled = false; priceInput.placeholder = "0.00"; }
+                if (marketPriceLabel) marketPriceLabel.style.display = 'none';
+                if(amountLabel) amountLabel.textContent = 'Size';
+                if(amountInput) amountInput.placeholder = "0." + "0".repeat(getPrecisionForBaseAsset(baseAsset));
+                if(amountDisplayCurrency) amountDisplayCurrency.textContent = baseAsset;
+            }
+        });
+    }
+
+    marginTypeTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            setActiveTradingTab(marginTypeTabs, e.currentTarget);
+            // Додати логіку зміни типу маржі, якщо потрібно
+        });
+    });
+
+    executionTypeTabsFutures.forEach(tab => {
+        if(!tab.classList.contains('dropdown-toggle')) { 
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.trading-panel-card .execution-type-tabs .exec-tab:not(.dropdown-toggle).active')
+                    .forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                const execType = e.currentTarget.dataset.exec;
+                updateFuturesTradingFormsUI(execType);
+            });
+        }
+    });
+
+
     async function initializeFuturesPage() {
         console.log("--------------------------------------------------");
         console.log("Initializing Futures Page Components...");
         console.log("--------------------------------------------------");
-        updateFuturesSymbolDisplay(currentFuturesSymbol); 
+        
+        getTradingViewWidgetInstanceWhenReady((widget) => {
+            // Ця функція викличеться, коли віджет буде готовий
+            // Можна ініціалізувати/оновити символ тут, якщо потрібно
+            updateFuturesSymbolDisplay(currentFuturesSymbol); // Оновлюємо віджет символом
+        });
 
-        console.log("TradingView widget for futures is expected to load based on its HTML config.");
+        // updateFuturesSymbolDisplay(currentFuturesSymbol); // Початкове оновлення UI (включаючи TradingView)
 
         await fetchInitialFuturesData(currentFuturesSymbol);
         connectFuturesOrderBookWebSocket(currentFuturesSymbol);
         connectMarkPriceWebSocket(currentFuturesSymbol);
-        connectTickerWebSocket(currentFuturesSymbol);
+        connectTickerWebSocket(currentFuturesSymbol); // Підключаємось до конкретного символу
         connectFuturesTradesWebSocket(currentFuturesSymbol);
+
+        // Встановлюємо початковий стан для форм торгівлі (наприклад, Ліміт)
+        const initialExecType = document.querySelector('.trading-panel-card .execution-type-tabs .exec-tab.active:not(.dropdown-toggle)');
+        if (initialExecType && initialExecType.dataset.exec) {
+            updateFuturesTradingFormsUI(initialExecType.dataset.exec);
+        } else {
+            updateFuturesTradingFormsUI('limit'); // За замовчуванням
+        }
         
         console.log("--------------------------------------------------");
         console.log("Futures page main components initialization sequence finished.");
