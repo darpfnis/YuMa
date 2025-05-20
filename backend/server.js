@@ -666,7 +666,58 @@ app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
     }
 });
 
+app.get('/api/user/balances', authenticateToken, async (req, res) => {
+    // req.user тепер містить дані з JWT, включаючи ID користувача
+    // У тебе в authenticateToken використовується `userId` (з токена { userId: user.id, ... })
+    const userId = req.user.userId;
 
+    if (!userId) {
+        // Ця перевірка, ймовірно, зайва, якщо authenticateToken завжди встановлює req.user або повертає помилку
+        return res.status(400).json({ success: false, message: "User ID not found in token." });
+    }
+
+    try {
+        // Запит до БД для отримання балансів користувача
+        // Важливо: повертаємо числові значення як TEXT, щоб уникнути проблем з точністю
+        const query = `
+            SELECT
+                a.coin_symbol,
+                a.total_balance::TEXT AS total_balance,
+                a.available_balance::TEXT AS available_balance,
+                a.in_order_balance::TEXT AS in_order_balance,
+                COALESCE(
+                    cry.quantity_precision, -- Беремо точність з таблиці cryptocurrencies
+                    CASE -- Якщо в cryptocurrencies немає, використовуємо дефолтні значення
+                        WHEN a.coin_symbol IN ('BTC', 'ETH') THEN 8
+                        WHEN a.coin_symbol IN ('USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD') THEN 2
+                        ELSE 6 -- Дефолтна точність для інших
+                    END
+                ) AS quantity_precision
+            FROM assets a
+            LEFT JOIN cryptocurrencies cry ON a.coin_symbol = cry.symbol
+            WHERE a.user_id = $1;
+        `;
+        const { rows } = await pool.query(query, [userId]);
+
+        // Трансформація результату у зручний для фронтенда формат
+        // Об'єкт, де ключ - це символ монети
+        const balances = rows.reduce((acc, row) => {
+            acc[row.coin_symbol] = {
+                total: row.total_balance,
+                available: row.available_balance, // Це значення нам потрібне для форм
+                inOrder: row.in_order_balance,
+                precision: parseInt(row.quantity_precision) // Переконуємось, що precision - це число
+            };
+            return acc;
+        }, {});
+        
+        res.json({ success: true, balances: balances });
+
+    } catch (error) {
+        console.error('[API GET /api/user/balances] Error fetching user balances:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch user balances' });
+    }
+});
 
 // --- Зовнішні дані та кешування (CoinGecko) ---
 let marketDataCache = {
