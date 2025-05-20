@@ -83,7 +83,6 @@
   font-weight: 500;
   color: #374151;
   padding: 0.6rem 0.85rem;
-  background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   flex-shrink: 0;
@@ -259,14 +258,15 @@
   border-radius: 4px;
   font-size: 0.8rem;
   outline: none;
-  background-color: #fff;
+  background-color: rgba(18, 20, 24, 0.7);
+  color: #d1d4dc;
 }
 #pairSearchInput:focus {
   border-color: #9ca3af;
 }
 .search-pair-wrapper .search-icon {
   padding-left: 0.5rem;
-  color: #9ca3af;
+  color: #848e9c;
   font-size: 0.9rem;
 }
 .pair-categories {
@@ -281,11 +281,11 @@
 .category-btn {
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
-  background-color: #e5e7eb;
+  background-color: rgba(43, 47, 54, 0.8);
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  color: #4b5563;
+  color: #aeb4bc;
   transition: background-color 0.2s, color 0.2s;
 }
 .category-btn:hover {
@@ -310,12 +310,12 @@
   align-items: center;
   padding: 0.35rem 0.85rem;
   cursor: pointer;
-  border-bottom: 1px solid #f9fafb;
+  border-bottom-color: rgba(54, 58, 69, 0.3);
   transition: background-color 0.15s;
   line-height: 1.2;
 }
 #pairList li:hover {
-  background-color: #f3f4f6;
+  background-color: rgba(43, 47, 54, 0.5);
 }
 #pairList li > span {
   white-space: nowrap;
@@ -328,17 +328,17 @@
 }
 #pairList li .symbol-main {
   font-weight: 500;
-  color: #1f2937;
+  color: #e0e6f1;
 }
 #pairList li .symbol-quote {
-  color: #6b7280;
+  color: #848e9c;
   font-size: 0.9em;
   margin-left: 2px;
 }
 #pairList li .pair-last-price {
   flex-basis: 25%;
   text-align: right;
-  color: #374151;
+  color: #d1d4dc;
   font-size: 0.95em;
 }
 #pairList li .price-change {
@@ -444,7 +444,7 @@
   font-size: 0.85rem;
   border: none;
   background-color: transparent;
-  color: #707a8a; /* Сірий для неактивних */
+  color: #8c96a5; /* Сірий для неактивних */
   cursor: pointer;
   border-radius: 4px;
   transition: color 0.2s, background-color 0.2s;
@@ -452,11 +452,11 @@
 }
 .order-type-tabs .type-tab:hover,
 .execution-type-tabs .exec-tab:hover {
-  color: #1e2329; /* Темніший при наведенні */
+  color: #e0e6f1; /* Темніший при наведенні */
 }
 .order-type-tabs .type-tab.active,
 .execution-type-tabs .exec-tab.active {
-  color: #1e2329; /* Колір активної вкладки */
+  color: #f065f7; /* Колір активної вкладки */
   /* Можна додати підкреслення або фон */
   /* background-color: #f0f2f5; */
   /* border-bottom: 2px solid #f0b90b; /* Жовтий Binance */
@@ -474,7 +474,7 @@
 }
 .execution-type-tabs .info-icon {
   margin-left: auto; /* Іконка інформації справа */
-  color: #707a8a;
+  color: #8c96a5;
   cursor: help;
 }
 .stop-limit-dropdown .dropdown-toggle::after {
@@ -483,6 +483,7 @@
   font-size: 0.7em;
   margin-left: 0.3em;
   display: inline-block;
+  color: #8c96a5;
 }
 
 /* Контейнер для двох форм (Купівля/Продаж) */
@@ -511,8 +512,8 @@
 .order-form .input-with-currency {
   display: flex;
   align-items: center;
-  background-color: #f0f2f5; /* Світло-сірий фон поля */
-  border: 1px solid #dde0e3;
+  background-color: rgba(18, 20, 24, 0.7); /* Світло-сірий фон поля */
+  border: 1px solid #363a45;
   border-radius: 4px;
   padding: 0 0.6rem; /* Відступи всередині поля */
 }
@@ -522,7 +523,7 @@
   border: none;
   background-color: transparent;
   font-size: 0.9rem;
-  color: #1e2329;
+  color: #e0e6f1;
   outline: none;
   text-align: left; /* Вирівнювання тексту в полі */
   -moz-appearance: textfield;
@@ -538,12 +539,18 @@
 }
 .order-form .input-with-currency .currency {
   font-size: 0.8rem;
-  color: #474d57;
+  color: #aeb4bc;
   padding-left: 0.5rem;
   white-space: nowrap;
 }
 .order-form input[readonly] {
-  background-color: #e9ecef; /* Трохи темніший фон для readonly полів */
+  background-color: rgba(
+    30,
+    33,
+    38,
+    0.7
+  ); /* Трохи темніший фон для readonly полів */
+  color: #8c96a5;
   cursor: not-allowed;
 }
 
@@ -557,7 +564,7 @@
   -webkit-appearance: none;
   appearance: none;
   height: 6px; /* Висота треку слайдера */
-  background: #d1d5db; /* Колір треку */
+  background: #363a45; /* Колір треку */
   outline: none;
   opacity: 0.7;
   transition: opacity 0.15s ease-in-out;
@@ -571,26 +578,26 @@
   appearance: none;
   width: 14px; /* Розмір повзунка */
   height: 14px;
-  background: #4b5563; /* Колір повзунка */
+  background: #707a8a; /* Колір повзунка */
   cursor: pointer;
   border-radius: 50%;
-  border: 2px solid #fff; /* Біла рамка навколо повзунка */
+  border: 2px solid #1e2329; /* Біла рамка навколо повзунка */
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 .balance-slider .slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  background: #4b5563;
+  background: #707a8a;
   cursor: pointer;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid #1e2329;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 .slider-percentage-markers {
   display: flex;
   justify-content: space-between;
   font-size: 0.7rem;
-  color: #707a8a;
+  color: #8c96a5;
   padding: 0 2px; /* Щоб мітки не вилазили за межі */
   margin-top: 2px;
 }
@@ -609,17 +616,17 @@
 }
 .advanced-options label {
   font-size: 0.8rem;
-  color: #474d57;
+  color: #aeb4bc;
   cursor: pointer;
 }
 
 .available-balance {
   font-size: 0.75rem; /* 12px */
-  color: #707a8a;
+  color: #8c96a5;
   margin-top: 0.5rem;
 }
 .available-balance span:last-child {
-  color: #1e2329; /* Колір значення балансу */
+  color: #d1d4dc; /* Колір значення балансу */
   font-weight: 500;
   margin-left: 0.3rem;
 }
