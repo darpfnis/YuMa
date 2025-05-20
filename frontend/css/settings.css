@@ -1,1 +1,201 @@
+html {
+    box-sizing: border-box;
+}
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+body {
+    margin: 0;
+    padding: 0;
+}
 
+.page-wrapper-profile {
+    display: flex;
+    max-width: 160rem;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    gap: 2rem;
+}
+.sidebar {
+    flex-basis: 20rem;
+    flex-shrink: 0;
+}
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.sidebar-button {
+    display: block;
+    padding: 1.2rem 1.5rem;
+}
+.main-content-profile {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+}
+.content-header h2 {
+    margin: 0;
+}
+
+.profile-card {
+    height: auto;
+}
+
+.settings-section {
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    min-height: 60rem;
+    height: auto;
+}
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+}
+.settings-form {
+    width: 100%;
+}
+.form-group {
+    margin-bottom: 2.5rem;
+}
+.form-group:last-child {
+    margin-bottom: 1.5rem;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 0.8rem;
+}
+.settings-form input[type="text"],
+.settings-form input[type="url"],
+.settings-form input[type="email"],
+.settings-form input[type="password"],
+.settings-form select {
+    padding: 1.2rem;
+    width: 100%;
+}
+.settings-form small {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.avatar-preview {
+    width: 10rem;
+    height: 10rem;
+    border-radius: 50%;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.current-value {
+    margin-bottom: 0.8rem;
+    display: block;
+}
+
+.action-button {
+    padding: 1rem 2rem;
+}
+
+.form-message {
+    margin-top: 1rem;
+    padding: 0.5rem 0;
+}
+
+.checkbox-group, .radio-group {
+    margin-bottom: 0.8rem;
+}
+.checkbox-group label, .radio-group label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+.checkbox-group input, .radio-group input {
+    margin-right: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .page-wrapper-profile {
+        flex-direction: column;
+    }
+    .sidebar {
+        flex-basis: auto;
+        width: 100%;
+    }
+    .sidebar nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .sidebar-button {
+        flex: 1;
+        min-width: 12rem;
+    }
+    .settings-section {
+        padding: 1.5rem;
+    }
+}
+@media (max-width: 480px) {
+    .sidebar-button {
+        min-width: auto;
+        flex: 1 1 auto;
+        padding: 1rem;
+    }
+    .avatar-preview {
+        width: 8rem;
+        height: 8rem;
+    }
+}
+
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 6rem;
+    height: 3rem;
+    margin-left: auto;
+}
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.theme-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 3rem;
+}
+.theme-slider:before {
+    position: absolute;
+    content: "";
+    height: 2.2rem;
+    width: 2.2rem;
+    left: 0.4rem;
+    bottom: 0.4rem;
+    border-radius: 50%;
+}
+input:checked + .theme-slider:before {
+    transform: translateX(3rem);
+}
+.theme-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
