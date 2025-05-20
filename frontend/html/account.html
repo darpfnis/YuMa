@@ -44,8 +44,7 @@
         <nav class="user-nav">
             <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
-            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
-            <button id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</button>
+            <a id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</a>
         </nav>
     </header>
 
@@ -128,50 +127,113 @@
     </div>
 
 <script>
+// --- START: Auth UI Logic (для хедера) ---
+function updateHeaderAuthState() {
+    const token = localStorage.getItem('authToken');
+    // Використовуємо ID з вашого HTML для account.html
+    const signUpLink = document.getElementById('signUpLinkMarkets');
+    const loginLink = document.getElementById('loginLinkMarkets');
+    const logoutButton = document.getElementById('logoutButtonOrders'); // Правильний ID з HTML
+
+    if (token) {
+        // Користувач залогінений
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'inline-block';
+    } else {
+        // Користувач не залогінений
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'inline-block';
+        if (logoutButton) logoutButton.style.display = 'none';
+    }
+}
+
+function setupLogoutButton() {
+    // Використовуємо ID з вашого HTML для account.html
+    const logoutButton = document.getElementById('logoutButtonOrders'); // Правильний ID з HTML
+    if (logoutButton) {
+        // Перевіряємо, чи обробник вже не доданий
+        if (!logoutButton.dataset.listenerAttached) {
+            logoutButton.addEventListener('click', async (event) => {
+                event.preventDefault(); // Запобігаємо стандартній дії посилання <a>
+
+                const currentTokenForLogout = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                updateHeaderAuthState(); // Оновлюємо UI негайно
+
+                try {
+                    if (currentTokenForLogout) {
+                        await fetch('/auth/logout', { // Ваш ендпоінт для виходу
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Logout API error', e);
+                }
+                window.location.href = 'login-page.html'; // Перенаправлення на сторінку входу
+            });
+            logoutButton.dataset.listenerAttached = 'true';
+        }
+    }
+}
+// --- END: Auth UI Logic ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[AccountPage] DOMContentLoaded. Script loaded.');
+
+    // 1. Ініціалізуємо стан UI хедера на основі токена
+    updateHeaderAuthState();
+    // 2. Налаштовуємо кнопку виходу
+    setupLogoutButton();
+
     const token = localStorage.getItem('authToken');
 
     // Елементи для оновлення
     const accUsernameElement = document.getElementById('accUsername');
     const accUIDElement = document.getElementById('accUID');
     const accEmailElement = document.getElementById('accEmail');
-    const accPhoneElement = document.getElementById('accPhone'); // Поки не використовуємо
-    const accKYCStatusElement = document.getElementById('accKYCStatus'); // Поки не використовуємо
+    const accPhoneElement = document.getElementById('accPhone');
+    const accKYCStatusElement = document.getElementById('accKYCStatus');
     const accCreatedAtElement = document.getElementById('accCreatedAt');
-    const acc2FAStatusElement = document.getElementById('acc2FAStatus'); // Поки не використовуємо
+    const acc2FAStatusElement = document.getElementById('acc2FAStatus');
 
-    const logoutButton = document.getElementById('logoutButtonAccount');
+    // const logoutButton = document.getElementById('logoutButtonAccount'); // Цей рядок більше не потрібен, ID змінено на logoutButtonOrders в HTML і в setupLogoutButton
 
     if (!token) {
         console.warn('[AccountPage] No token. Redirecting to login.');
+        // updateHeaderAuthState(); // Це вже викликано вище, але не завадить
         window.location.href = 'login-page.html';
         return;
     }
 
-    if (logoutButton) {
+    // Видаляємо цей блок, оскільки його функціональність тепер в setupLogoutButton
+    /*
+    if (logoutButton) { // logoutButton тут посилався на неіснуючий ID logoutButtonAccount
         logoutButton.style.display = 'inline-block';
         logoutButton.addEventListener('click', async () => {
             console.log('[AccountPage] Logout clicked.');
             const currentToken = localStorage.getItem('authToken');
             localStorage.removeItem('authToken');
+            updateHeaderAuthState(); // Додамо, щоб UI оновився
             try {
                 await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
             } catch(e) { console.error('Logout API error', e); }
             window.location.href = 'login-page.html';
         });
     }
+    */
 
     async function fetchApiData(url, options = {}) {
-        // ... (ваша функція fetchApiData з попередніх відповідей, яка обробляє токен та помилки) ...
-        // Переконайтеся, що вона тут присутня і працює
         const currentToken = localStorage.getItem('authToken');
         const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
 
         if (requiresAuth && !currentToken) {
              console.warn(`[fetchApiData] Auth required for ${url} but no token. Redirecting.`);
+             updateHeaderAuthState(); // Оновлюємо хедер перед перенаправленням
              window.location.href = 'login-page.html';
-             return Promise.reject({ success: false, message: 'Authentication required.', shouldRedirect: true });
+             // Повертаємо відхилений проміс, щоб зупинити подальше виконання
+             return Promise.reject({ success: false, message: 'Authentication required, redirecting.', shouldRedirect: true });
         }
         const headers = { 'Content-Type': 'application/json' };
         if (requiresAuth && currentToken) {
@@ -183,11 +245,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) {
                 if ((response.status === 401 || response.status === 403) && requiresAuth) {
                     localStorage.removeItem('authToken');
+                    updateHeaderAuthState(); // Оновлюємо хедер перед перенаправленням
                     window.location.href = 'login-page.html';
                     return Promise.reject({ success: false, message: `Unauthorized or Forbidden for ${url}. Redirecting.`, shouldRedirect: true });
                 }
-                const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
-                return Promise.reject({ success: false, ...errorData });
+                // Якщо помилка не 401/403, спробуємо розпарсити JSON
+                try {
+                    const errorData = await response.json();
+                    return Promise.reject({ success: false, ...errorData, status: response.status });
+                } catch (jsonError) {
+                    // Якщо не вдалося розпарсити JSON, повертаємо текстову помилку
+                    const errorText = await response.text();
+                    return Promise.reject({ success: false, message: `HTTP error! Status: ${response.status}. Response: ${errorText.substring(0, 100)}`, status: response.status });
+                }
             }
             return response.json();
         } catch (error) {
@@ -195,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
              if (error.message && error.message.toLowerCase().includes("failed to fetch")) {
                 alert(`Network error: Could not connect to the server to fetch data for ${url}.`);
              }
+             // Повертаємо відхилений проміс для коректної обробки в .catch()
              return Promise.reject({ success: false, message: error.message || `Network error fetching ${url}.` });
         }
     }
@@ -210,34 +281,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (accUsernameElement) accUsernameElement.textContent = profile.username || 'N/A';
                 if (accUIDElement) accUIDElement.textContent = profile.uid || 'N/A';
                 if (accEmailElement) {
-                    accEmailElement.innerHTML = `${profile.email || 'N/A'} <span class="status-verified">(Verified)</span>`; // Припускаємо, що email завжди верифікований після реєстрації
+                    accEmailElement.innerHTML = `${profile.email || 'N/A'} <span class="status-verified">(Verified)</span>`;
                 }
                 if (accCreatedAtElement) {
                     accCreatedAtElement.textContent = profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A';
                 }
                 
-                // Плейсхолдери для даних, яких ще немає в API / базі даних
                 if (accPhoneElement) accPhoneElement.innerHTML = 'Not Set <span class="status-notset">(Unverified)</span>';
                 if (accKYCStatusElement) accKYCStatusElement.innerHTML = 'Unverified <span class="status-unverified"></span>';
                 if (acc2FAStatusElement) acc2FAStatusElement.innerHTML = 'Disabled <span class="status-disabled"></span>';
 
-
                 console.log('[AccountPage] Account data rendered.');
             } else {
+                // Якщо shouldRedirect встановлено, перенаправлення вже відбулося у fetchApiData
+                if (data.shouldRedirect) return; 
                 console.error('[AccountPage] Failed to load account data:', data.message);
-                // Показати помилку користувачу
                 const mainContent = document.querySelector('.main-content-profile');
                 if (mainContent) mainContent.innerHTML = `<p class="no-data-placeholder">${data.message || 'Could not load account information.'}</p>`;
             }
         } catch (error) {
+            // Якщо shouldRedirect встановлено, перенаправлення вже відбулося у fetchApiData
+            if (error.shouldRedirect) return;
             console.error('[AccountPage] Error in loadAccountData catcher:', error);
-             const mainContent = document.querySelector('.main-content-profile');
+            const mainContent = document.querySelector('.main-content-profile');
             if (mainContent) mainContent.innerHTML = `<p class="no-data-placeholder">${error.message || 'Error loading account information. Please try again.'}</p>`;
         }
     }
 
-    // Завантажуємо дані при завантаженні сторінки
-    loadAccountData();
+    // Завантажуємо дані при завантаженні сторінки, тільки якщо є токен (перевірка вище)
+    if (token) {
+        loadAccountData();
+    }
 });
 </script>
 </body>
