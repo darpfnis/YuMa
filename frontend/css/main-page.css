@@ -27,7 +27,7 @@
   font-weight: 700; /* Жирний */
   line-height: 1.1;
   margin: 0 0 2rem 0;
-  color: #1e2329; /* Темний колір, як на Binance */
+  color: #ffffff; /* Темний колір, як на Binance */
   text-align: left;
 }
 
@@ -52,7 +52,7 @@
   outline: none;
 }
 .hero-signup-form input[type="email"]:focus {
-  border-color: #f0b90b;
+  border-color: #f065f7;
   box-shadow: 0 0 0 2px rgba(240, 185, 11, 0.2);
 }
 
@@ -73,7 +73,7 @@
 }
 
 .alternative-signup-options {
-  color: #222; /* Сірий текст */
+  color: whitesmoke; /* Сірий текст */
   font-size: 0.875rem;
   text-align: left;
 }
@@ -127,12 +127,9 @@
   min-height: 18.75rem; /* 300px - для віджетів, щоб вони не колапсували */
 }
 
-.news-card {
-  /* Специфічні стилі для картки новин, якщо є */
-}
-
+.news-card,
 .crypto-overview-card {
-  /* Специфічні стилі для картки огляду, якщо є */
+  color: white;
 }
 
 /* Видаляємо старі стилі для .cards та .signup-section, якщо вони більше не використовуються */
