@@ -11,20 +11,41 @@
 </head>
 <body>
     <header>
-        <div class="logo"><a href="../../index.html">YuMa</a></div>
-        <nav class="header-nav">
-            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
-            <a href="markets.html" class="nav-button">Markets</a>
-            <a href="trading-page.html" class="nav-button">Trade</a>
-        </nav>
-        <div class="header-actions">
-            <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
-            <div class="icon-placeholder dark-square"></div>
-            <div class="icon-placeholder"></div>
-            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
-            <div class="icon-placeholder"></div>
-            <button id="logoutButtonSettings" class="nav-button" style="display: none;">Log out</button>
+        <div class="header-left">
+            <div class="logo"><a href="../../index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="buy_crypto-page.html">Buy Crypto</a>
+                <!-- Додаємо клас active до посилання Markets -->
+                <a href="markets.html" class="active">Markets</a> 
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <a href="spot-page.html">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
         </div>
+        <nav class="user-nav">
+            <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
+            <a href="login-page.html" id="loginLinkMarkets">Log in</a>
+            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
+            <button id="logoutButtonAccount" style="display: none;">Log out</button>
+        </nav>
     </header>
 
     <div class="page-wrapper-profile">
