@@ -12,7 +12,7 @@
 <body>
     <header>
         <div class="header-left">
-            <div class="logo"><a href="./index.html">YuMa</a></div>
+            <div class="logo"><a href="./index.html">YuMa</a></div> <!-- Логотип є "активним" посиланням на головну -->
             <nav class="main-nav">
                 <a href="./frontend/html/buy_crypto-page.html">Buy Crypto</a>
                 <a href="./frontend/html/markets.html">Markets</a>
@@ -40,8 +40,10 @@
             </nav>
         </div>
         <nav class="user-nav">
-            <a href="./frontend/html/sign_up-page.html">Sign up</a>
-            <a href="./frontend/html/login-page.html">Log in</a>
+            <a href="./frontend/html/sign_up-page.html" id="signUpLinkMain">Sign up</a>
+            <a href="./frontend/html/login-page.html" id="loginLinkMain">Log in</a>
+            <a href="./frontend/html/profile.html" id="profileLinkMain" style="display: none;" title="My Profile">Profile</a>
+            <a href="#" id="logoutButtonMain" class="nav-button" style="display: none;">Log out</a>
         </nav>
     </header>
     
@@ -63,12 +65,6 @@
                 <input type="email" placeholder="Ел. пошта/номер телефону">
                 <a href="./frontend/html/sign_up-page.html"><button>Почати</button></a>
             </div>
-            <!--<div class="alternative-signup-options">
-                <p>Або продовжити через</p>
-                <div class="social-buttons">
-                    <a href="#" class="social-btn google-btn">G</a> 
-                    <a href="#" class="social-btn apple-btn">A</a>
-            </div> -->
         </section>
 
         <aside class="sidebar-section"> <!-- Права колонка з картками -->
@@ -81,9 +77,9 @@
                     {
                     "feedMode": "market",
                     "isTransparent": true,
-                    "displayMode": "regular", /* Змінено на regular для більшого розміру */
+                    "displayMode": "regular",
                     "width": "100%",
-                    "height": "100%", /* Або фіксована висота, наприклад 400 */
+                    "height": "100%",
                     "colorTheme": "dark",
                     "locale": "en"
                   }
@@ -103,12 +99,50 @@
                     "showChart": false,
                     "locale": "en",
                     "width": "100%",
-                    "height": "100%", /* Або фіксована висота, наприклад 400 */
+                    "height": "100%",
                     "largeChartUrl": "",
-                    "isTransparent": false, /* Зміни на false */
+                    "isTransparent": false,
                     "showSymbolLogo": true,
                     "showFloatingTooltip": true,
-                    "tabs": [ /* ... твої таби ... */ ]
+                    "tabs": [ 
+                        {
+                            "title": "Indices",
+                            "symbols": [
+                                {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
+                                {"s": "FOREXCOM:NSXUSD", "d": "US 100"},
+                                {"s": "FOREXCOM:DJI", "d": "Dow 30"}
+                            ],
+                            "originalTitle": "Indices"
+                        },
+                        {
+                            "title": "Futures",
+                            "symbols": [
+                                {"s": "CME_MINI:ES1!", "d": "S&P 500"},
+                                {"s": "CME:6E1!", "d": "Euro"},
+                                {"s": "COMEX:GC1!", "d": "Gold"},
+                                {"s": "NYMEX:CL1!", "d": "Crude Oil"}
+                            ],
+                            "originalTitle": "Futures"
+                        },
+                        {
+                            "title": "Bonds",
+                            "symbols": [
+                                {"s": "CBOT:ZB1!", "d": "T-Bond"},
+                                {"s": "CBOT:UB1!", "d": "Ultra T-Bond"},
+                                {"s": "EUREX:FGBL1!", "d": "Euro Bund"}
+                            ],
+                            "originalTitle": "Bonds"
+                        },
+                        {
+                            "title": "Forex",
+                            "symbols": [
+                                {"s": "FX:EURUSD", "d": "EUR/USD"},
+                                {"s": "FX:GBPUSD", "d": "GBP/USD"},
+                                {"s": "FX:USDJPY", "d": "USD/JPY"}
+                            ],
+                            "originalTitle": "Forex"
+                        }
+                    ]
                   }
                     </script>
                 </div>
@@ -116,7 +150,68 @@
             </div>
         </aside>
     </main>
-    <!-- Існуюча signup-section знизу може бути видалена, якщо форма тепер у hero-section -->
-    <!-- <section class="signup-section"> ... </section> -->
+
+<script>
+// --- START: Auth UI Logic (for header on Main page) ---
+function updateHeaderAuthStateMain() {
+    const token = localStorage.getItem('authToken');
+    const signUpLink = document.getElementById('signUpLinkMain');
+    const loginLink = document.getElementById('loginLinkMain');
+    const profileLink = document.getElementById('profileLinkMain');
+    const logoutButton = document.getElementById('logoutButtonMain');
+
+    if (token) {
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        if (profileLink) profileLink.style.display = 'inline-block'; // Змінено на inline-block для видимості
+        if (logoutButton) logoutButton.style.display = 'inline-block'; // Змінено на inline-block для видимості
+    } else {
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'inline-block';
+        if (profileLink) profileLink.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'none';
+    }
+}
+
+function setupLogoutButtonMain() {
+    const logoutButton = document.getElementById('logoutButtonMain');
+    if (logoutButton) {
+        if (!logoutButton.dataset.listenerAttached) {
+            logoutButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const currentTokenForLogout = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                
+                updateHeaderAuthStateMain(); 
+
+                try {
+                    if (currentTokenForLogout) {
+                        // Припускаємо, що кінцева точка /auth/logout знаходиться в корені сервера
+                        // Якщо ваш API знаходиться, наприклад, за шляхом /api/auth/logout, змініть шлях
+                        await fetch('/auth/logout', { 
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Logout API error', e);
+                }
+                // Перенаправлення на сторінку входу
+                window.location.href = './frontend/html/login-page.html'; 
+            });
+            logoutButton.dataset.listenerAttached = 'true';
+        }
+    }
+}
+// --- END: Auth UI Logic ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[MainPage] DOMContentLoaded. Auth script loaded.');
+    updateHeaderAuthStateMain();
+    setupLogoutButtonMain();
+
+    // Інший JavaScript для головної сторінки може бути тут
+});
+</script>
 </body>
 </html>
