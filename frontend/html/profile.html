@@ -44,8 +44,7 @@
         <nav class="user-nav">
             <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
             <a href="login-page.html" id="loginLinkMarkets">Log in</a>
-            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
-            <button id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</button>
+            <a id="logoutButtonOrders" class="nav-button" style="display: none;">Log out</a>
         </nav>
     </header>
 
@@ -103,8 +102,57 @@
     </div>
 
 <script>
+    function updateHeaderAuthState() {
+    const token = localStorage.getItem('authToken');
+    const signUpLink = document.getElementById('signUpLinkMarkets'); // ID з вашого HTML
+    const loginLink = document.getElementById('loginLinkMarkets');   // ID з вашого HTML
+    const logoutButton = document.getElementById('logoutButtonOrders'); // ID з вашого HTML
+
+    if (token) {
+        // Користувач залогінений
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'inline-block'; // Показуємо кнопку виходу
+    } else {
+        // Користувач не залогінений
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (loginLink) loginLink.style.display = 'inline-block';
+        if (logoutButton) logoutButton.style.display = 'none'; // Ховаємо кнопку виходу
+    }
+}
+
+function setupLogoutButton() {
+    const logoutButton = document.getElementById('logoutButtonOrders'); // ID з вашого HTML
+    if (logoutButton) {
+        // Перевіряємо, чи обробник вже не доданий, щоб уникнути дублювання
+        if (!logoutButton.dataset.listenerAttached) {
+            logoutButton.addEventListener('click', async (event) => {
+                event.preventDefault(); // Запобігаємо стандартній дії посилання <a>
+
+                const currentTokenForLogout = localStorage.getItem('authToken');
+                localStorage.removeItem('authToken');
+                updateHeaderAuthState(); // Оновлюємо UI негайно
+
+                try {
+                    if (currentTokenForLogout) {
+                        await fetch('/auth/logout', { // Ваш ендпоінт для виходу
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${currentTokenForLogout}` }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Logout API error', e);
+                }
+                window.location.href = 'login-page.html'; // Перенаправлення на сторінку входу
+            });
+            logoutButton.dataset.listenerAttached = 'true'; // Позначаємо, що обробник додано
+        }
+    }
+}
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[ProfilePage] DOMContentLoaded. Script loaded.');
+    updateHeaderAuthState();
+    setupLogoutButton();
     const token = localStorage.getItem('authToken');
 
     const userNameElement = document.getElementById('userName');
@@ -123,22 +171,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    if (logoutButton) {
-        logoutButton.style.display = 'inline-block';
-        logoutButton.addEventListener('click', async () => {
-            const currentToken = localStorage.getItem('authToken');
-            localStorage.removeItem('authToken');
-            try {
-                await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}` }});
-            } catch(e) { console.error('Logout API error', e); }
-            window.location.href = 'login-page.html';
-        });
-    }
 
     async function fetchApiData(url, options = {}) {
         const currentToken = localStorage.getItem('authToken');
         const requiresAuth = options.requiresAuth !== undefined ? options.requiresAuth : true;
         if (requiresAuth && !currentToken) {
+            updateHeaderAuthState();
              window.location.href = 'login-page.html';
              return Promise.resolve({ success: false, message: 'Auth token missing, redirecting.', shouldRedirect: true });
         }
@@ -152,6 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) {
                 if ((response.status === 401 || response.status === 403) && requiresAuth) {
                     localStorage.removeItem('authToken');
+                    updateHeaderAuthState();
                     window.location.href = 'login-page.html';
                     return Promise.resolve({ success: false, message: `Auth error for ${url}. Redirecting.`, shouldRedirect: true });
                 }
