@@ -7,32 +7,46 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
-    <!-- <link rel="stylesheet" href="../css/account.css"> -- Якщо є специфічні стилі -->
-    <style>
-        /* Стилі для статусів (можна винести в global.css або account.css) */
-        .status-verified { color: green; font-weight: bold; font-size: 0.9em; }
-        .status-unverified, .status-disabled { color: #cc0000; font-weight: bold; font-size: 0.9em; }
-        .status-notset { color: #777; font-style: italic; }
-        .action-link.primary-link { font-weight: bold; color: #007bff; }
-        .info-row .value { font-weight: 500; }
-    </style>
+    <link rel="stylesheet" href="../css/account.css">
+
 </head>
 <body>
     <header>
-        <div class="logo"><a href="../../index.html">YuMa</a></div>
-        <nav class="header-nav">
-            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
-            <a href="markets.html" class="nav-button">Markets</a>
-            <a href="trading-page.html" class="nav-button">Trade</a>
-        </nav>
-        <div class="header-actions">
-            <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
-            <div class="icon-placeholder dark-square"></div>
-            <div class="icon-placeholder"></div>
-            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
-            <div class="icon-placeholder"></div>
-            <button id="logoutButtonAccount" class="nav-button" style="display: none;">Log out</button>
+        <div class="header-left">
+            <div class="logo"><a href="../../index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="buy_crypto-page.html">Buy Crypto</a>
+                <!-- Додаємо клас active до посилання Markets -->
+                <a href="markets.html" class="active">Markets</a> 
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <a href="spot-page.html">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
         </div>
+        <nav class="user-nav">
+            <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
+            <a href="login-page.html" id="loginLinkMarkets">Log in</a>
+            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
+            <button id="logoutButtonAccount" style="display: none;">Log out</button>
+        </nav>
     </header>
 
     <div class="page-wrapper-profile">
