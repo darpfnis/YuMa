@@ -7,55 +7,46 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/global.css">
-    <!-- <link rel="stylesheet" href="../css/profile.css"> -- Якщо є специфічні стилі -->
-    <style>
-        /* Стилі для аватара на дашборді, як у попередньому прикладі */
-        .user-avatar-placeholder {
-            width: 80px; height: 80px; border-radius: 50%;
-            background-color: #e9ecef; margin-right: 20px;
-            background-size: cover; background-position: center;
-            border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex; align-items: center; justify-content: center;
-            color: #6c757d; font-size: 1.3rem; overflow: hidden;
-        }
-        /* Інші стилі з попередньої відповіді для улюблених, змін ціни тощо */
-        .favourite-btn, .remove-favourite-btn { cursor: pointer; font-size: 1.8rem; color: #ccc; border: none; background: none; padding: 0.2rem 0.5rem; }
-        .favourite-btn.is-favourite, .remove-favourite-btn.is-favourite { color: #ffc107; }
-        .positive-change { color: green; }
-        .negative-change { color: red; }
-        .coin-symbol-small { color: #777; font-size: 0.85em; margin-left: 0.3em; }
-        .no-data-placeholder a { color: #007bff; text-decoration: underline; }
-    </style>
+    <link rel="stylesheet" href="../css/profile.css"> 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* ... ваші стилі ... */
-        .card-chart { /* Можливо, знадобиться для кращого розміщення */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #portfolioChartCanvas { /* Стиль для самого canvas */
-            max-width: 100%;
-            height: auto !important; /* Важливо для Chart.js, щоб він міг керувати висотою */
-        }
-    </style>
 </head>
 <body>
     <header>
-        <div class="logo"><a href="../../index.html">YuMa</a></div>
-        <nav class="header-nav">
-            <a href="buy_crypto-page.html" class="nav-button">Buy Crypto</a>
-            <a href="markets.html" class="nav-button">Markets</a>
-            <a href="trading-page.html" class="nav-button">Trade</a>
-        </nav>
-        <div class="header-actions">
-            <button class="btn-deposit nav-button" onclick="window.location.href='deposit.html'">Deposit</button>
-            <div class="icon-placeholder dark-square"></div>
-            <div class="icon-placeholder"></div>
-            <div class="icon-placeholder user-profile-icon"><a href="profile.html" title="Profile" style="text-decoration:none; color:inherit;">👤</a></div>
-            <div class="icon-placeholder"></div>
-            <button id="logoutButtonProfile" class="nav-button" style="display: none;">Log out</button>
+        <div class="header-left">
+            <div class="logo"><a href="../../index.html">YuMa</a></div>
+            <nav class="main-nav">
+                <a href="buy_crypto-page.html">Buy Crypto</a>
+                <!-- Додаємо клас active до посилання Markets -->
+                <a href="markets.html" class="active">Markets</a> 
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Trade</a>
+                    <div class="dropdown-content trade-dropdown">
+                        <div class="dropdown-column">
+                            <a href="spot-page.html">Spot</a>
+                            <a href="#">Margin</a>
+                            <a href="#">P2P</a>
+                            <a href="#">Convert & Block Trade</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <a href="#" class="nav-link dropdown-toggle">Futures</a>
+                    <div class="dropdown-content futures-dropdown">
+                        <a href="futures-page.html">USDⓈ-M Futures</a>
+                        <a href="#">COIN-M Futures</a>
+                        <a href="#">Options</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                </div>
+                <a href="#">FAQ</a>
+            </nav>
         </div>
+        <nav class="user-nav">
+            <a href="sign_up-page.html" id="signUpLinkMarkets">Sign up</a>
+            <a href="login-page.html" id="loginLinkMarkets">Log in</a>
+            <a href="profile.html" id="profileLinkAccount" style="display: none;" title="My Profile">Profile</a>
+            <button id="logoutButtonAccount" style="display: none;">Log out</button>
+        </nav>
     </header>
 
     <div class="page-wrapper-profile">
