@@ -1,0 +1,5 @@
+.status-verified { color: green; font-weight: bold; font-size: 0.9em; }
+        .status-unverified, .status-disabled { color: #cc0000; font-weight: bold; font-size: 0.9em; }
+        .status-notset { color: #777; font-style: italic; }
+        .action-link.primary-link { font-weight: bold; color: #007bff; }
+        .info-row .value { font-weight: 500; }

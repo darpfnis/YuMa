@@ -1,0 +1,7 @@
+.side-buy { color: green; font-weight: bold; }
+        .side-sell { color: red; font-weight: bold; }
+        .status-filled { color: green; }
+        .status-canceled { color: #6c757d; }
+        .status-open, .status-partially_filled { color: #ffc107; } /* Жовтий для відкритих/частково виконаних */
+        .action-link.danger-link { color: #dc3545; }
+        .action-link.danger-link:hover { color: #c82333; }
