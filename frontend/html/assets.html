@@ -411,9 +411,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span>${parseFloat(asset.in_order_balance).toFixed(quantityPrecision)}</span>
                 <span class="asset-value-usd">$${valueUSD.toFixed(2)}</span>
                 <span class="asset-actions">
-                    <a href="deposit-page.html?coin=${asset.coin_symbol.toLowerCase()}" class="action-link">Deposit</a>
-                    <a href="withdraw-page.html?coin=${asset.coin_symbol.toLowerCase()}" class="action-link">Withdraw</a>
-                    <a href="spot-page.html?pair=${asset.coin_symbol.toUpperCase()}USDT" class="action-link">Trade</a>
+                    <a href="buy_crypto-page.html?coin=${asset.coin_symbol.toLowerCase()}" class="action-link">Deposit</a>
+                    <a href="buy_crypto-page.html?coin=${asset.coin_symbol.toLowerCase()}" class="action-link">Withdraw</a>
+                    <a href="markets.html?pair=${asset.coin_symbol.toUpperCase()}USDT" class="action-link">Trade</a>
                 </span>
             `;
             fragment.appendChild(row);
