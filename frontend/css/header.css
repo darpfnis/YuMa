@@ -1,14 +1,46 @@
 /* header.css */
 
 header {
-  /* Залишаємо цей загальний селектор, якщо HTML структура хедера однакова */
-  background-color: #222;
-  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.9375rem 1.875rem;
+  color: white; /* Колір тексту в хедері */
+
+  /* --- ЕФЕКТ СКЛА (GLASSMORPHISM) --- */
+  /* 1. Напівпрозорий фон */
+  background-color: rgba(
+    34,
+    34,
+    34,
+    0.65
+  ); /* #222 з прозорістю 65%. Підбери значення за смаком. */
+  /* Зменш прозорість (наприклад, 0.8), якщо блюр недостатньо помітний. */
+
+  /* 2. Розмиття фону під хедером */
+  backdrop-filter: blur(
+    10px
+  ); /* Розмиття на 10px. Експериментуй зі значенням. */
+  -webkit-backdrop-filter: blur(10px); /* Для підтримки в Safari */
+
+  /* 3. Додатково: легка рамка для кращого візуального відокремлення (необов'язково) */
+  /* border-bottom: 1px solid rgba(255, 255, 255, 0.1); */
+
+  /* 4. Забезпечення, щоб хедер був поверх іншого контенту (якщо потрібно) */
+  position: sticky; /* Або fixed, залежно від бажаної поведінки при скролі */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000; /* Високий z-index, щоб хедер був поверх інших елементів */
+  box-sizing: border-box; /* Щоб padding не збільшував загальну ширину */
 }
+
+/* --- Щоб фон сторінки під хедером був видимий для блюру --- */
+/* Якщо твій основний контент (main) має фон, який перекриває фон body,
+   тоді блюр буде застосовуватися до фону main. Це зазвичай те, що потрібно.
+   Якщо ж хедер має бути "над" порожнім простором, а потім над контентом,
+   тоді переконайся, що елемент body має якийсь фон (зображення або колір).
+*/
 
 .header-left {
   display: flex;
@@ -16,39 +48,33 @@ header {
 }
 
 header .logo {
-  /* Уточнюємо, що це лого всередині хедера */
   font-size: 1.8em;
   font-weight: bold;
   margin-right: 1.25rem;
 }
 
 header .logo a {
-  /* Уточнюємо */
   color: white;
   text-decoration: none;
 }
 
 header .main-nav {
-  /* Уточнюємо */
   display: flex;
   align-items: center;
 }
 
-header .main-nav > a, /* Уточнюємо */
-  header .dropdown-container {
-  /* Уточнюємо */
+header .main-nav > a,
+header .dropdown-container {
   margin-left: 1.25rem;
 }
-header .main-nav > a:first-child, /* Уточнюємо */
-  header .main-nav > .dropdown-container:first-child {
-  /* Уточнюємо */
+header .main-nav > a:first-child,
+header .main-nav > .dropdown-container:first-child {
   margin-left: 0;
 }
 
-header .main-nav > a, /* Уточнюємо */
-  header .dropdown-toggle {
-  /* Уточнюємо */
-  color: white;
+header .main-nav > a,
+header .dropdown-toggle {
+  color: white; /* Переконайся, що текст залишається білим або світлим */
   text-decoration: none;
   font-size: 1em;
   display: inline-flex;
@@ -59,24 +85,21 @@ header .main-nav > a, /* Уточнюємо */
 }
 
 header .dropdown-toggle {
-  /* Уточнюємо */
   padding-right: 1em;
 }
 
-header .main-nav a:hover, /* Уточнюємо */
-  header .dropdown-toggle:hover {
-  /* Уточнюємо */
+header .main-nav a:hover,
+header .dropdown-toggle:hover {
   text-decoration: underline;
+  color: #f065f7; /* Приклад кольору при наведенні, як на Binance */
 }
 
 header .dropdown-container {
-  /* Уточнюємо */
   position: relative;
   display: inline-block;
 }
 
 header .dropdown-toggle::after {
-  /* Уточнюємо */
   content: "";
   display: inline-block;
   width: 0.35em;
@@ -92,22 +115,24 @@ header .dropdown-toggle::after {
 }
 
 header .dropdown-container:hover .dropdown-toggle::after {
-  /* Уточнюємо */
   transform: rotate(225deg);
   margin-top: -0.1em;
 }
 
 header .dropdown-content {
-  /* Уточнюємо */
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: #333333; /* Змінений колір фону */
+  /* Для випадаючих меню також можна застосувати ефект скла, якщо бажаєш */
+  background-color: rgba(51, 51, 51, 0.85); /* #333 з прозорістю */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   min-width: 15.625rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
   border-radius: 0 0 0.375rem 0.375rem;
-  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Легка рамка для меню */
+  z-index: 1000; /* Має бути вище, ніж z-index хедера, якщо він не 1000 */
   padding: 0.75rem;
   opacity: 0;
   visibility: hidden;
@@ -118,17 +143,14 @@ header .dropdown-content {
 }
 
 header .trade-dropdown {
-  /* Уточнюємо */
-  /* Стилі для trade-dropdown, якщо вони відрізняються від загального .dropdown-content */
+  /* Стилі для trade-dropdown, якщо вони відрізняються */
 }
 
 header .dropdown-column {
-  /* Уточнюємо */
   /* Стилі для колонок, якщо використовуються */
 }
 
 header .dropdown-column h4 {
-  /* Уточнюємо */
   font-size: 0.85em;
   color: #bdc3c7;
   margin-top: 0;
@@ -139,7 +161,6 @@ header .dropdown-column h4 {
 }
 
 header .dropdown-container:hover .dropdown-content {
-  /* Уточнюємо */
   display: flex;
   opacity: 1;
   visibility: visible;
@@ -148,7 +169,6 @@ header .dropdown-container:hover .dropdown-content {
 }
 
 header .dropdown-content a {
-  /* Уточнюємо */
   color: #dfe6e9;
   padding: 0.625rem 0.75rem;
   text-decoration: none;
@@ -162,15 +182,13 @@ header .dropdown-content a {
 }
 
 header .dropdown-content a:hover {
-  /* Уточнюємо */
-  background-color: #636e72;
+  background-color: rgba(99, 110, 114, 0.7); /* #636e72 з прозорістю */
   color: white;
   text-decoration: none;
 }
 
 header .new-badge {
-  /* Уточнюємо */
-  background-color: #f1c40f;
+  background-color: #f065f7;
   color: #2c3e50;
   font-size: 0.7em;
   padding: 0.1em 0.4em;
@@ -181,13 +199,11 @@ header .new-badge {
 }
 
 header .user-nav {
-  /* Уточнюємо */
   display: flex;
   align-items: center;
 }
 
 header .user-nav a {
-  /* Уточнюємо */
   color: white;
   text-decoration: none;
   margin-left: 1.25rem;
@@ -197,11 +213,10 @@ header .user-nav a {
 }
 
 header .user-nav a:first-child {
-  /* Уточнюємо */
   margin-left: 0;
 }
 
 header .user-nav a:hover {
-  /* Уточнюємо */
   text-decoration: underline;
+  color: #f065f7; /* Приклад кольору */
 }
