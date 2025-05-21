@@ -484,19 +484,81 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Symbol and Pair Management ---
 
-    function splitSymbol(symbolPairStr) {
-    if (!symbolPairStr || typeof symbolPairStr !== 'string') return ["ERR", "ERR"];
-    
-    const cachedPair = allMarketPairsCache.find(p => p.symbol === symbolPairStr);
-    if (cachedPair && cachedPair.baseAsset && cachedPair.quoteAsset) {
-        return [cachedPair.baseAsset, cachedPair.quoteAsset];
+    // --- Symbol and Pair Management (або подібна секція) ---
+
+/**
+ * Розділяє символ торгової пари (наприклад, "BTCUSDT") на базовий актив та актив котирування.
+ * Спочатку намагається знайти точні дані в allMarketPairsCache.
+ * Якщо не знаходить, використовує евристику з відомими котирувальними активами.
+ * @param {string} symbolPairStr - Символ торгової пари, наприклад, "BTCUSDT".
+ * @returns {Array<string>} Масив з двох елементів: [baseAsset, quoteAsset]. Наприклад, ["BTC", "USDT"].
+ *                          Або ["ERR", "ERR"], якщо не вдалося розділити.
+ */
+function splitSymbol(symbolPairStr) {
+    if (!symbolPairStr || typeof symbolPairStr !== 'string') {
+        console.warn(`[splitSymbol] Invalid input: not a string or empty - ${symbolPairStr}`);
+        return ["ERR", "ERR"];
     }
 
-    const commonQuotes = ["USDT", "FDUSD", "BUSD", "USDC", "DAI", "TUSD", "TRY", "EUR", "GBP", "UAH", "PLN", "BTC", "ETH", "BNB"];
-    for (const quote of commonQuotes) { /* ... (решта логіки з попередньої відповіді) ... */ }
-    // ... (і так далі, повне тіло функції з попередньої відповіді) ...
-    if (symbolPairStr.length > 3) return [symbolPairStr.substring(0, symbolPairStr.length - 3), symbolPairStr.substring(symbolPairStr.length - 3)];
-    return [symbolPairStr, ""];
+    // 1. Пріоритет: спробувати знайти пару в кеші allMarketPairsCache
+    //    Цей кеш має містити об'єкти з полями symbol, baseAsset, quoteAsset.
+    //    Переконайся, що allMarketPairsCache заповнюється коректно функцією fetchAllMarketPairs.
+    if (allMarketPairsCache && allMarketPairsCache.length > 0) {
+        const cachedPair = allMarketPairsCache.find(p => p.symbol === symbolPairStr);
+        if (cachedPair && cachedPair.baseAsset && cachedPair.quoteAsset) {
+            return [cachedPair.baseAsset, cachedPair.quoteAsset];
+        }
+    }
+
+    // 2. Fallback-логіка, якщо в кеші немає або кеш ще не завантажений.
+    //    Список популярних котирувальних активів. Можна розширити.
+    const commonQuotes = [
+        "USDT", "FDUSD", "TUSD", "BUSD", "USDC", "DAI", // Стейблкоіни
+        "TRY", "EUR", "GBP", "AUD", "BRL", "RUB", "UAH", "PLN", // Фіатні
+        "BTC", "ETH", "BNB", "XRP" // Основні криптовалюти як котирувальні
+    ];
+
+    // Перебираємо відомі котирувальні активи від найдовшого до найкоротшого,
+    // щоб уникнути неправильного розділення (наприклад, "BNBTC" як "BNB", "TC" замість "BNB", "TC")
+    // Сортуємо commonQuotes за довжиною в зворотньому порядку (необов'язково, але може допомогти в деяких випадках)
+    // commonQuotes.sort((a, b) => b.length - a.length); 
+
+    for (const quote of commonQuotes) {
+        if (symbolPairStr.endsWith(quote) && symbolPairStr.length > quote.length) {
+            const base = symbolPairStr.substring(0, symbolPairStr.length - quote.length);
+            // Додаткова перевірка, щоб базовий актив не був порожнім
+            if (base.length > 0) {
+                return [base, quote];
+            }
+        }
+    }
+
+    // Дуже грубий fallback для невідомих комбінацій, намагаємося відрізати 3 або 4 символи
+    // Ця логіка може бути неточною для деяких екзотичних пар.
+    if (symbolPairStr.length > 6 && symbolPairStr.length <= 12) { // Для довших символів, де ймовірніше 3-4 символи котирування
+        let base = symbolPairStr.substring(0, symbolPairStr.length - 4);
+        let quote = symbolPairStr.substring(symbolPairStr.length - 4);
+        // Проста перевірка, чи quote містить тільки великі літери (типово для символів)
+        if (base.length > 0 && /^[A-Z0-9]+$/.test(quote)) return [base, quote];
+
+        base = symbolPairStr.substring(0, symbolPairStr.length - 3);
+        quote = symbolPairStr.substring(symbolPairStr.length - 3);
+        if (base.length > 0 && /^[A-Z0-9]+$/.test(quote)) return [base, quote];
+
+    } else if (symbolPairStr.length > 3 && symbolPairStr.length <= 6) { // Для коротших символів
+        const base = symbolPairStr.substring(0, symbolPairStr.length - 3);
+        const quote = symbolPairStr.substring(symbolPairStr.length - 3);
+         if (base.length > 0 && /^[A-Z0-9]+$/.test(quote)) return [base, quote];
+    }
+
+
+    console.warn(`[splitSymbol] Could not accurately split symbol using common quotes or length heuristics: "${symbolPairStr}". Returning as is or with error.`);
+    // Якщо нічого не спрацювало, повертаємо помилку або намагаємося зробити дуже грубе припущення (не рекомендовано)
+    // Для безпеки краще повернути помилку, щоб було видно проблему.
+    // Або, як варіант, якщо передбачається, що quote завжди 3 символи:
+    // if (symbolPairStr.length > 3) return [symbolPairStr.substring(0, symbolPairStr.length - 3), symbolPairStr.substring(symbolPairStr.length - 3)];
+    
+    return ["ERR", "ERR"]; // Повертаємо помилку, якщо не вдалося розділити
 }
     
     function updateSymbolDisplay(symbolPair) {
@@ -519,24 +581,111 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (orderBookSymbolEl) orderBookSymbolEl.textContent = `(${currentPairDetails.baseAsset}/${currentPairDetails.quoteAsset})`;
         if (marketTradesSymbolEl) marketTradesSymbolEl.textContent = `(${currentPairDetails.baseAsset}/${currentPairDetails.quoteAsset})`;
-        // ... (оновлення заголовків колонок, як було)
+        const obPriceCol = document.querySelector('.order-book-columns span:first-child');
+        const obAmountCol = document.querySelector('.order-book-columns span:nth-child(2)');
+        const obTotalCol = document.querySelector('.order-book-columns span:last-child');
+        const mtPriceCol = document.querySelector('.market-trades-columns span:first-child');
+        const mtAmountCol = document.querySelector('.market-trades-columns span:nth-child(2)');
+
+        if(obPriceCol) obPriceCol.textContent = `Price (${quote})`;
+        if(obAmountCol) obAmountCol.textContent = `Amount (${base})`;
+        if(obTotalCol) obTotalCol.textContent = `Total (${quote})`;
+        if(mtPriceCol) mtPriceCol.textContent = `Price (${quote})`;
+        if(mtAmountCol) mtAmountCol.textContent = `Amount (${base})`;
     }
 
     
     
-    async function changeTradingPair(newSymbol) { /* ... (код без змін, але тепер викликає fetchUserBalances ЯКЩО залогінений) ... */
-        if (currentSymbol === newSymbol && tradingWidgetInstance) return;
-        currentSymbol = newSymbol;
-        // ... (очищення UI, сокетів)
-        updateSymbolDisplay(newSymbol);
-        updateTradingFormCurrencies(currentPairDetails.baseAsset, currentPairDetails.quoteAsset);
-        updateActionButtonsState();
-        if (isLoggedIn()) {
-            await fetchUserBalances(); // Оновити баланси для нової пари
-        } else {
-            updateBalanceDisplay(); // Якщо не залогінений, просто оновити UI на "--"
+        async function changeTradingPair(newSymbol) {
+        if (currentSymbol === newSymbol && tradingWidgetInstance) { // Перевіряємо і tradingWidgetInstance, бо зміна символу на графіку важлива
+            console.log(`Symbol ${newSymbol} is already active.`);
+            return; // Нічого не робимо, якщо символ той самий
         }
-        // ... (оновлення TradingView, реконект сокетів)
+        console.log(`Changing trading pair from ${currentSymbol} to: ${newSymbol}`);
+
+        // 1. Закриваємо старі WebSocket з'єднання, якщо вони є та відкриті
+        if (orderBookSocket && orderBookSocket.readyState === WebSocket.OPEN) {
+            console.log(`Closing Order Book WebSocket for ${currentSymbol}`);
+            orderBookSocket.close(1000, "Symbol changed - Order Book");
+        }
+        if (tradesSocket && tradesSocket.readyState === WebSocket.OPEN) {
+            console.log(`Closing Market Trades WebSocket for ${currentSymbol}`);
+            tradesSocket.close(1000, "Symbol changed - Market Trades");
+        }
+
+        // 2. Оновлюємо поточний символ
+        currentSymbol = newSymbol;
+
+        // 3. Очищуємо UI елементи, пов'язані з даними старої пари
+        if (asksListEl) asksListEl.innerHTML = '<li style="text-align:center;color:#777;padding:10px;">Loading...</li>';
+        if (bidsListEl) bidsListEl.innerHTML = ''; // Очищаємо тільки bids, asks будуть переписані
+        if (currentMarketPriceEl) currentMarketPriceEl.textContent = '0.00';
+        if (marketTradesListEl) marketTradesListEl.innerHTML = '<li style="text-align:center;color:#777;padding:10px;">Loading...</li>';
+        
+        // 4. Оновлюємо відображення символу та деталей пари (це оновить currentPairDetails)
+        updateSymbolDisplay(newSymbol); // Ця функція має оновити currentPairDetails на основі allMarketPairsCache або splitSymbol
+
+        // 5. Оновлюємо валюти у формах торгівлі на основі нової пари
+        // currentPairDetails вже оновлено всередині updateSymbolDisplay
+        updateTradingFormCurrencies(currentPairDetails.baseAsset, currentPairDetails.quoteAsset);
+
+        // 6. Оновлюємо стан кнопок Купити/Продати (текст, активність)
+        updateActionButtonsState();
+
+        // 7. Оновлюємо баланси користувача для нової пари, ЯКЩО користувач залогінений
+        if (isLoggedIn()) {
+            console.log("User is logged in, fetching balances for new pair...");
+            await fetchUserBalances(); // Завантажуємо всі баланси, а updateBalanceDisplay візьме потрібні
+        } else {
+            console.log("User not logged in, clearing balance display for new pair.");
+            updateBalanceDisplay(); // Якщо не залогінений, просто оновити UI на "--" для нової пари
+        }
+        
+        // 8. Очищаємо поля вводу у формах торгівлі
+        clearFormInputs(buyOrderForm);
+        clearFormInputs(sellOrderForm);
+        // calculateTotal() вже викликається всередині clearFormInputs
+
+        // 9. Оновлюємо символ на віджеті TradingView
+        if (tradingWidgetInstance && typeof tradingWidgetInstance.setSymbol === 'function') {
+            // Отримуємо поточний інтервал з віджета, якщо можливо, або використовуємо дефолтний
+            const currentInterval = tradingWidgetInstance.symbolInterval ? tradingWidgetInstance.symbolInterval().interval : "D";
+            const tvSymbol = `BINANCE:${newSymbol.toUpperCase()}`; // Binance зазвичай використовує великі літери
+            
+            console.log(`Attempting to set symbol on TradingView widget: ${tvSymbol} with interval ${currentInterval}`);
+            try {
+                tradingWidgetInstance.setSymbol(tvSymbol, currentInterval, () => {
+                    console.log(`%cTradingView symbol successfully changed to ${tvSymbol}`, "color: green; font-weight: bold;");
+                });
+            } catch (e) {
+                console.error(`%cError setting symbol on TradingView widget: ${e.message}`, "color: red; font-weight: bold;");
+                // Можливо, варто спробувати перезавантажити віджет, якщо це повторювана проблема
+            }
+        } else {
+             console.warn("Cannot change TradingView symbol: widget instance or setSymbol method not available.");
+             // Тут можна спробувати отримати інстанс ще раз, якщо він не був отриманий при завантаженні
+             if (!tradingWidgetInstance) {
+                console.log("Attempting to re-obtain TradingView widget instance...");
+                getTradingViewWidgetInstanceWhenReady(widget => {
+                    if (widget && typeof widget.setSymbol === 'function') {
+                        const currentInterval = widget.symbolInterval ? widget.symbolInterval().interval : "D";
+                        const tvSymbol = `BINANCE:${newSymbol.toUpperCase()}`;
+                        widget.setSymbol(tvSymbol, currentInterval, () => {
+                             console.log(`%cTradingView symbol successfully changed to ${tvSymbol} (after re-obtaining instance)`, "color: green; font-weight: bold;");
+                        });
+                    }
+                });
+             }
+        }
+
+        // 10. Затримка перед перепідключенням WebSockets та завантаженням початкових даних
+        // Це дає час старим сокетам закритися повністю і запобігає можливим конфліктам
+        setTimeout(async () => {
+            console.log(`Reconnecting WebSockets and fetching initial data for ${newSymbol} after delay.`);
+            await fetchInitialDataForSymbol(newSymbol); // Завантажуємо початкові дані (книга ордерів, останні угоди)
+            connectOrderBookWebSocket(newSymbol);       // Підключаємо WebSocket для книги ордерів
+            connectTradesWebSocket(newSymbol);          // Підключаємо WebSocket для ринкових угод
+        }, 700); // Збільшив затримку до 700ms для надійності
     }
 
     function renderPairList(pairsToRender) {
@@ -660,11 +809,104 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Trading Form UI and Logic ---
     const orderTypeTabs = document.querySelectorAll('.order-type-tabs .type-tab');
     const executionTypeTabs = document.querySelectorAll('.execution-type-tabs .exec-tab');
-    function setActiveTab(tabsNodeList, clickedTab) { /* ... (код без змін) ... */ }
-    function updateTradingFormsUI(executionType) { /* ... (код без змін, використовує currentPairDetails) ... */ }
-    orderTypeTabs.forEach(tab => { /* ... (код без змін) ... */ });
-    executionTypeTabs.forEach(tab => { /* ... (код без змін) ... */ });
-    function updateTradingFormCurrencies(base, quote) { /* ... (код без змін, викликає updateTradingFormsUI) ... */ }
+    function setActiveTab(tabsNodeList, clickedTab) {
+        tabsNodeList.forEach(tab => tab.classList.remove('active'));
+        clickedTab.classList.add('active');
+    }
+
+    function updateTradingFormsUI(executionType) {
+        const [baseAsset, quoteAsset] = splitSymbol(currentSymbol);
+        [buyFormEl, sellFormEl].forEach(formEl => {
+            if (!formEl) return; 
+            const isBuySide = formEl.classList.contains('buy-form');
+            
+            const priceInput = formEl.querySelector(isBuySide ? '#buy-price' : '#sell-price');
+            const marketPriceLabel = formEl.querySelector('.market-price-label'); // Спільний клас для мітки
+            const priceCurrencySpan = formEl.querySelector(isBuySide ? '#buyPriceQuoteCurrency' : '#sellPriceQuoteCurrency');
+            const amountLabel = formEl.querySelector(isBuySide ? '#buyAmountLabel' : '#sellAmountLabel');
+            const amountInput = formEl.querySelector(isBuySide ? '#buy-amount' : '#sell-amount');
+            const amountCurrencySpan = formEl.querySelector(isBuySide ? '#buyAmountCurrency' : '#sellAmountBaseCurrency'); // Використовуємо #buyAmountCurrency для купівлі
+            const totalInputGroup = formEl.querySelector('.total-input-group');
+            
+            formEl.dataset.orderExecutionType = executionType;
+
+            if (executionType === 'market') {
+                if(priceInput) { priceInput.style.display = 'none'; priceInput.disabled = true; priceInput.value = ''; }
+                if(priceCurrencySpan) priceCurrencySpan.style.display = 'none';
+                if(marketPriceLabel) marketPriceLabel.style.display = 'block';
+                
+                if (isBuySide) { // Для купівлі за ринком, "Сума" стає "Всього" і вводиться в quote
+                    if(amountLabel) amountLabel.textContent = 'Всього';
+                    if(amountInput) amountInput.placeholder = "0.00"; // В USDT
+                    if(amountCurrencySpan) amountCurrencySpan.textContent = quoteAsset; // Валюта Всього
+                    if (totalInputGroup) totalInputGroup.style.display = 'none'; // Ховаємо поле "Всього", бо воно тепер "Сума"
+                } else { // Для продажу за ринком, "Сума" залишається в base
+                    if(amountLabel) amountLabel.textContent = 'Сума';
+                    if(amountInput) amountInput.placeholder = "0.0000"; // В BTC
+                    if(amountCurrencySpan) amountCurrencySpan.textContent = baseAsset; // Валюта Суми
+                    if (totalInputGroup) totalInputGroup.style.display = 'none'; // Також ховаємо, оскільки сума не перераховується
+                }
+            } else if (executionType === 'limit') {
+                if (priceInput) { priceInput.style.display = 'block'; priceInput.disabled = false; priceInput.placeholder = "0.00"; }
+                if (priceCurrencySpan) priceCurrencySpan.style.display = 'inline';
+                if (marketPriceLabel) marketPriceLabel.style.display = 'none';
+
+                // Для лімітного ордера, "Сума" завжди в base-валюті
+                if(amountLabel) amountLabel.textContent = 'Сума';
+                if(amountInput) amountInput.placeholder = "0.0000"; // В BTC
+                if(amountCurrencySpan) amountCurrencySpan.textContent = baseAsset; // Валюта Суми
+                if (totalInputGroup) totalInputGroup.style.display = 'block'; // Показуємо поле "Всього"
+            }
+        });
+    }
+
+    orderTypeTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            setActiveTab(orderTypeTabs, e.currentTarget);
+            // Тут можна додати логіку для зміни UI, якщо типи ордерів (Спот, Крос і т.д.) впливають на форми
+        });
+    });
+
+    executionTypeTabs.forEach(tab => {
+        if(!tab.classList.contains('dropdown-toggle')) { 
+            tab.addEventListener('click', (e) => {
+                // Знімаємо .active з усіх кнопок типів виконання, крім dropdown-toggle
+                document.querySelectorAll('.execution-type-tabs .exec-tab:not(.dropdown-toggle).active')
+                    .forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                const execType = e.currentTarget.dataset.exec;
+                updateTradingFormsUI(execType);
+            });
+        }
+    });
+    
+    function updateTradingFormCurrencies(base, quote) {
+        // Купівля
+        if(buyPriceQuoteCurrencyEl) buyPriceQuoteCurrencyEl.textContent = quote;
+        // buyAmountCurrencyEl оновлюється в updateTradingFormsUI залежно від типу ордера (ліміт/маркет)
+        if(buyFormEl && buyFormEl.querySelector('#buyTotalQuoteCurrency')) buyFormEl.querySelector('#buyTotalQuoteCurrency').textContent = quote;
+        const buyButtonBaseSpan = document.getElementById('buyButtonBase');
+        if(buyButtonBaseSpan) buyButtonBaseSpan.textContent = base;
+        if(buyAvailableQuoteEl) buyAvailableQuoteEl.textContent = `-- ${quote}`;
+
+
+        // Продаж
+        if(sellPriceQuoteCurrencyEl) sellPriceQuoteCurrencyEl.textContent = quote;
+        if(sellAmountBaseCurrencyEl) sellAmountBaseCurrencyEl.textContent = base; // Для продажу сума завжди в base
+        if(sellFormEl && sellFormEl.querySelector('#sellTotalQuoteCurrency')) sellFormEl.querySelector('#sellTotalQuoteCurrency').textContent = quote;
+        const sellButtonBaseSpan = document.getElementById('sellButtonBase');
+        if(sellButtonBaseSpan) sellButtonBaseSpan.textContent = base;
+        if(sellAvailableBaseEl) sellAvailableBaseEl.textContent = `-- ${base}`;
+
+
+        // Застосувати оновлення UI для форм на основі поточного активного типу виконання
+        const activeExecTab = document.querySelector('.execution-type-tabs .exec-tab.active:not(.dropdown-toggle)');
+        if (activeExecTab) {
+            updateTradingFormsUI(activeExecTab.dataset.exec);
+        } else { // Якщо жоден не активний (мало б бути, але про всяк випадок)
+            updateTradingFormsUI('limit'); // За замовчуванням
+        }
+    }
     
     function isLoggedIn() { return !!localStorage.getItem('authToken'); }
 
@@ -939,9 +1181,150 @@ document.addEventListener('DOMContentLoaded', async () => {
             displayOrderStatus(error.message || "Failed to place order.", false);
         }
     }
-    function calculateTotal() { /* ... (код без змін, використовує currentPairDetails) ... */ }
-    [buyPriceInput, buyAmountInput, sellPriceInput, sellAmountInput].forEach(input => { if (input) input.addEventListener('input', calculateTotal); });
-    function setupSliders() { /* ... (код без змін, використовує userBalancesCache та currentPairDetails) ... */ }
+        // --- Trading Form UI and Logic ---
+    // ... (інші функції цієї секції, наприклад, updateTradingFormsUI) ...
+
+    /**
+     * Розраховує та оновлює поле "Всього" (total) для лімітних ордерів
+     * на основі введених значень ціни та суми.
+     */
+    function calculateTotal() {
+        // Перевіряємо, чи визначені елементи та currentPairDetails
+        if (!buyPriceInput || !buyAmountInput || !buyTotalInput || 
+            !sellPriceInput || !sellAmountInput || !sellTotalInput || 
+            !currentPairDetails || !currentPairDetails.pricePrecision === undefined) {
+            // console.warn("[calculateTotal] Required elements or currentPairDetails not fully initialized.");
+            return;
+        }
+
+        const buyPrice = parseFloat(buyPriceInput.value);
+        const buyAmount = parseFloat(buyAmountInput.value);
+        const sellPrice = parseFloat(sellPriceInput.value);
+        const sellAmount = parseFloat(sellAmountInput.value);
+
+        // Розрахунок для форми купівлі (Buy)
+        if (buyOrderForm && buyOrderForm.dataset.orderExecutionType === 'limit') {
+            if (!isNaN(buyPrice) && !isNaN(buyAmount) && buyPrice > 0 && buyAmount > 0) {
+                const total = buyPrice * buyAmount;
+                buyTotalInput.value = formatNumberByPrecision(total, currentPairDetails.pricePrecision);
+            } else {
+                buyTotalInput.value = ''; // Очищаємо, якщо дані невалідні
+            }
+        } else if (buyOrderForm && buyOrderForm.dataset.orderExecutionType !== 'market') {
+            // Для інших типів (якщо будуть), або якщо не ліміт і не маркет (не має бути)
+             buyTotalInput.value = '';
+        }
+        // Для market buy, поле "Total" або приховане, або "Amount" є полем Total, тому тут не чіпаємо
+
+        // Розрахунок для форми продажу (Sell)
+        if (sellOrderForm && sellOrderForm.dataset.orderExecutionType === 'limit') {
+            if (!isNaN(sellPrice) && !isNaN(sellAmount) && sellPrice > 0 && sellAmount > 0) {
+                const total = sellPrice * sellAmount;
+                sellTotalInput.value = formatNumberByPrecision(total, currentPairDetails.pricePrecision);
+            } else {
+                sellTotalInput.value = ''; // Очищаємо, якщо дані невалідні
+            }
+        } else if (sellOrderForm && sellOrderForm.dataset.orderExecutionType !== 'market') {
+            sellTotalInput.value = '';
+        }
+        // Для market sell, поле "Total" зазвичай приховане, сума розраховується на основі ринкової ціни
+    }
+
+    // Навішуємо обробники подій 'input' на поля ціни та суми
+    // для автоматичного перерахунку "Всього"
+    [buyPriceInput, buyAmountInput, sellPriceInput, sellAmountInput].forEach(inputElement => {
+        if (inputElement) {
+            inputElement.addEventListener('input', calculateTotal);
+        }
+    });
+
+
+    /**
+     * Налаштовує логіку роботи слайдерів балансу для форм купівлі та продажу.
+     */
+    function setupSliders() {
+        // Перевіряємо, чи визначені елементи та кеші
+        if (!buySlider || !sellSlider || !userBalancesCache || !currentPairDetails) {
+            console.warn("[setupSliders] Required elements or caches not fully initialized.");
+            return;
+        }
+
+        // --- Слайдер для форми купівлі (Buy) ---
+        buySlider.addEventListener('input', (e) => {
+            const percentage = parseInt(e.target.value); // Відсоток від 0 до 100
+            const quoteAsset = currentPairDetails.quoteAsset;
+            const quoteAssetInfo = userBalancesCache[quoteAsset];
+            
+            if (!quoteAssetInfo || quoteAssetInfo.available === undefined) {
+                buyAmountInput.value = '';
+                if (buyTotalInput) buyTotalInput.value = '';
+                return;
+            }
+
+            const availableQuote = parseFloat(quoteAssetInfo.available);
+            const quotePrecision = parseInt(quoteAssetInfo.precision) || currentPairDetails.pricePrecision || 2;
+
+            const executionType = buyOrderForm.dataset.orderExecutionType || 'limit';
+
+            if (executionType === 'limit') {
+                const price = parseFloat(buyPriceInput.value);
+                if (availableQuote > 0 && price > 0) {
+                    const totalToSpend = (availableQuote * percentage) / 100;
+                    const amountToBuyBase = totalToSpend / price;
+                    
+                    buyAmountInput.value = formatNumberByPrecision(amountToBuyBase, currentPairDetails.quantityPrecision);
+                    buyTotalInput.value = formatNumberByPrecision(totalToSpend, quotePrecision);
+                } else {
+                    buyAmountInput.value = '';
+                    buyTotalInput.value = '';
+                }
+            } else if (executionType === 'market') {
+                // Для Market Buy, користувач вказує 'amount_quote' (скільки USDT витратити)
+                // Поле 'buyAmountInput' вже використовується для введення цієї суми (amount_quote)
+                const totalToSpend = (availableQuote * percentage) / 100;
+                buyAmountInput.value = formatNumberByPrecision(totalToSpend, quotePrecision);
+                // Поле Total для Market Buy зазвичай приховане або не використовується для введення
+            }
+        });
+
+        // --- Слайдер для форми продажу (Sell) ---
+        sellSlider.addEventListener('input', (e) => {
+            const percentage = parseInt(e.target.value);
+            const baseAsset = currentPairDetails.baseAsset;
+            const baseAssetInfo = userBalancesCache[baseAsset];
+
+            if (!baseAssetInfo || baseAssetInfo.available === undefined) {
+                sellAmountInput.value = '';
+                if (sellTotalInput) sellTotalInput.value = '';
+                return;
+            }
+            
+            const availableBase = parseFloat(baseAssetInfo.available);
+            const basePrecision = parseInt(baseAssetInfo.precision) || currentPairDetails.quantityPrecision || 6;
+            const quotePrecision = currentPairDetails.pricePrecision || 2;
+
+            const executionType = sellOrderForm.dataset.orderExecutionType || 'limit';
+
+            if (availableBase > 0) {
+                const amountToSellBase = (availableBase * percentage) / 100;
+                sellAmountInput.value = formatNumberByPrecision(amountToSellBase, basePrecision);
+
+                if (executionType === 'limit') {
+                    const price = parseFloat(sellPriceInput.value);
+                    if (price > 0) {
+                        const totalReceived = price * amountToSellBase;
+                        sellTotalInput.value = formatNumberByPrecision(totalReceived, quotePrecision);
+                    } else {
+                        sellTotalInput.value = '';
+                    }
+                }
+                // Для Market Sell, поле Total зазвичай приховане, сума розраховується на основі ринкової ціни
+            } else {
+                sellAmountInput.value = '';
+                sellTotalInput.value = '';
+            }
+        });
+    }
 
     if (buyOrderForm) buyOrderForm.addEventListener('submit', (e) => handleCreateOrder(e, 'buy'));
     if (sellOrderForm) sellOrderForm.addEventListener('submit', (e) => handleCreateOrder(e, 'sell'));
