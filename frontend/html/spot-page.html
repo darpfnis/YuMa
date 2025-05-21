@@ -483,12 +483,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Symbol and Pair Management ---
+
+    function splitSymbol(symbolPairStr) {
+    if (!symbolPairStr || typeof symbolPairStr !== 'string') return ["ERR", "ERR"];
+    
+    const cachedPair = allMarketPairsCache.find(p => p.symbol === symbolPairStr);
+    if (cachedPair && cachedPair.baseAsset && cachedPair.quoteAsset) {
+        return [cachedPair.baseAsset, cachedPair.quoteAsset];
+    }
+
+    const commonQuotes = ["USDT", "FDUSD", "BUSD", "USDC", "DAI", "TUSD", "TRY", "EUR", "GBP", "UAH", "PLN", "BTC", "ETH", "BNB"];
+    for (const quote of commonQuotes) { /* ... (решта логіки з попередньої відповіді) ... */ }
+    // ... (і так далі, повне тіло функції з попередньої відповіді) ...
+    if (symbolPairStr.length > 3) return [symbolPairStr.substring(0, symbolPairStr.length - 3), symbolPairStr.substring(symbolPairStr.length - 3)];
+    return [symbolPairStr, ""];
+}
+    
     function updateSymbolDisplay(symbolPair) {
         const pairInfoFromCache = allMarketPairsCache.find(p => p.symbol === symbolPair);
         if (pairInfoFromCache) {
             currentPairDetails = {...pairInfoFromCache};
         } else { // Fallback if not in cache (should ideally not happen after fetchAllMarketPairs)
-            const [baseFallback, quoteFallback] = splitSymbolFallback(symbolPair);
+            const [baseFallback, quoteFallback] = splitSymbol(symbolPair);
             currentPairDetails = { 
                 baseAsset: baseFallback, quoteAsset: quoteFallback, 
                 pricePrecision: (quoteFallback === 'USDT' || quoteFallback === 'BUSD') ? 2 : 8, 
@@ -506,14 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // ... (оновлення заголовків колонок, як було)
     }
 
-    function splitSymbolFallback(symbolPairStr) { // Renamed to avoid conflict, used as fallback
-        if (!symbolPairStr || typeof symbolPairStr !== 'string') return ["ERR", "ERR"];
-        const commonQuotes = ["USDT", "FDUSD", "BUSD", "USDC", "DAI", "TUSD", "TRY", "EUR", "GBP", "UAH", "PLN", "BTC", "ETH", "BNB"];
-        for (const quote of commonQuotes) { if (symbolPairStr.endsWith(quote) && symbolPairStr.length > quote.length) return [symbolPairStr.substring(0, symbolPairStr.length - quote.length), quote]; }
-        if (symbolPairStr.length > 4) return [symbolPairStr.substring(0,symbolPairStr.length-4), symbolPairStr.substring(symbolPairStr.length-4)];
-        if (symbolPairStr.length > 3) return [symbolPairStr.substring(0,symbolPairStr.length-3), symbolPairStr.substring(symbolPairStr.length-3)];
-        return [symbolPairStr, ""];
-    }
+    
     
     async function changeTradingPair(newSymbol) { /* ... (код без змін, але тепер викликає fetchUserBalances ЯКЩО залогінений) ... */
         if (currentSymbol === newSymbol && tradingWidgetInstance) return;
@@ -816,7 +825,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>`;
         
         let ordersHtml = openOrdersCache.map(order => {
-            const [base, quote] = order.pair.includes('/') ? order.pair.split('/') : splitSymbolFallback(order.pair); // Використовуємо fallback для розділення
+            const [base, quote] = order.pair.includes('/') ? order.pair.split('/') : splitSymbol(order.pair);
             const priceDisplay = order.type === 'market' ? 'Market' : formatPrice(order.price, { pricePrecision: currentPairDetails.pricePrecision, quoteAsset: quote });
             // Відображаємо amount (base) або amount_quote для market buy
             const amountDisplayValue = order.type === 'market' && order.side === 'buy' && order.amount_quote
