@@ -17,19 +17,88 @@ header .logo a {
   color: inherit; /* Успадковує колір від батьківського елемента (header -> white) */
   text-decoration: none; /* Забирає підкреслення посилання */
 }
-/* Навігація не потрібна на сторінках входу/реєстрації в такому вигляді,
-     але якщо б була, стилі були б такі:
-  nav a {
-    color: white;
-    text-decoration: none;
-    margin-left: 20px;
-    font-size: 1em;
-  }
-  
-  nav a:hover {
-    text-decoration: underline;
-  }
-  */
+/* У signup_login.css або global.css */
+.auth-form-section {
+  background-color: #ffffff; /* Чистий білий фон */
+  padding: 2rem 2.5rem;       /* Паддінги, підбери за виглядом */
+  border-radius: 1rem;      /* Радіус кутів, як на скріншоті (16px) */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Тінь, як на скріншоті */
+  width: 100%;
+  max-width: 400px;         /* Максимальна ширина форми, підбери */
+  margin: 2rem auto;        /* Центрування та відступи зверху/знизу */
+  display: flex;
+  flex-direction: column;
+  align-items: center;      /* Центрування вмісту, якщо потрібно */
+}
+
+/* Стилі для заголовка всередині форми */
+.auth-form-section h1 {
+  color: #000000; /* Чорний колір для "Log in" */
+  font-size: 2.5rem; /* Розмір заголовка, підбери */
+  margin-bottom: 1.5rem; /* Відступ під заголовком */
+  font-weight: 600; /* Напівжирний, як на скріншоті */
+}
+
+/* Стилі для полів вводу та міток (якщо вони потребують зміни кольору) */
+.auth-form-section label {
+  color: #333; /* Темно-сірий для міток */
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500; /* Зробити трохи жирнішим */
+}
+
+.auth-form-section input[type="text"],
+.auth-form-section input[type="password"],
+.auth-form-section input[type="email"] { /* Додав email для signup */
+  background-color: #f0f3f7; /* Світло-сірий фон для полів, як на скріншоті */
+  border: 1px solid #d1d9e6;  /* Рамка для полів */
+  border-radius: 0.5rem;     /* Радіус для полів */
+  padding: 0.75rem 1rem;      /* Паддінги всередині полів */
+  width: 100%;
+  box-sizing: border-box;    /* Щоб padding не збільшував загальну ширину */
+  margin-bottom: 1rem;
+  color: #333; /* Колір тексту в полях */
+}
+
+.auth-form-section input[type="text"]::placeholder,
+.auth-form-section input[type="password"]::placeholder,
+.auth-form-section input[type="email"]::placeholder {
+  color: #999; /* Колір плейсхолдера */
+}
+
+
+.auth-form-section button[type="submit"] {
+  background-color: #2d3748; /* Темний фон кнопки, як на скріншоті */
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  width: 100%;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem; /* Відступ над кнопкою */
+}
+
+.auth-form-section button[type="submit"]:hover {
+  background-color: #1a202c;
+}
+
+.auth-form-section .separator {
+  color: #777; /* Колір для "or" */
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.auth-form-section .alternative-action a {
+  color: #000000; /* Чорний колір для посилання "Sign up" */
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-form-section .alternative-action a:hover {
+  text-decoration: underline;
+}
 
 main {
   max-width: 1000px; /* З main-page.css */
