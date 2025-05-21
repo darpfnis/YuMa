@@ -13,7 +13,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: #000000;
-  color: #333; /* Загальний колір тексту */
+  color: white; /* Загальний колір тексту */
   line-height: 1.5; /* Рекомендована базова висота рядка для читабельності */
   position: relative;
   overflow-x: hidden;
