@@ -332,6 +332,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("Futures Page DOM loaded. Initializing script...");
     console.log("--------------------------------------------------");
 
+    // --- START: Ініціалізація ключових змінних (включаючи currentFuturesSymbol) ---
+    let currentFuturesSymbol = 'BTCUSDTPERP'; // <--- ПЕРЕМІЩЕНО НАГОРУ
+    let tradingWidgetInstance = null;
+    let futuresOrderBookSocket = null;
+    let futuresMarkPriceSocket = null;
+    let futuresTickerSocket = null;
+    let futuresTradesSocket = null;
+
+    const MAX_OB_LEVELS_FUTURES = 12;
+    const MAX_FUTURES_TRADES_HISTORY = 25;
+    let obUpdateCounter = 0;
+    let mtUpdateCounter = 0;
+    // --- END: Ініціалізація ключових змінних ---
+
+
     // --- START: Element Declarations (ОГОЛОШУЄМО ОДИН РАЗ) ---
     const authPromptTradingPanel = document.querySelector('.trading-panel-card .auth-prompt');
     const buyLongButton = document.querySelector('.buy-long-button');
@@ -344,7 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const futuresCurrentMarketPriceEl = document.getElementById('futuresCurrentMarketPrice');
     const futuresOrderBookSymbolEl = document.getElementById('futuresOrderBookSymbol');
     
-    const tradingViewWidgetContainerId = 'tradingview_widget_futures'; // ID контейнера для TradingView
+    const tradingViewWidgetContainerId = 'tradingview_widget_futures';
 
     const futuresPairDisplayEl = document.getElementById('futuresPairDisplay');
     const futuresMarkPriceEl = document.getElementById('futuresMarkPrice');
@@ -367,7 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const buyLongAmountInput = document.getElementById('buyLongAmount');
     const buyLongAmountLabel = document.getElementById('buyLongAmountLabel');
     const buyLongAmountDisplayCurrency = document.getElementById('buyLongAmountDisplayCurrency');
-    const buyLongPriceQuoteCurrency = document.getElementById('buyLongPriceQuoteCurrency');
+    const buyLongPriceQuoteCurrency = document.getElementById('buyLongPriceQuoteCurrency'); // Було відсутнє, додав для повноти, якщо використовується
     const buyLongCost = document.getElementById('buyLongCost');
     const buyLongMaxAmount = document.getElementById('buyLongMaxAmount');
     const buyLongAvailableQuote = document.getElementById('buyLongAvailableQuote');
@@ -378,10 +393,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sellShortAmountInput = document.getElementById('sellShortAmount');
     const sellShortAmountLabel = document.getElementById('sellShortAmountLabel');
     const sellShortAmountDisplayCurrency = document.getElementById('sellShortAmountDisplayCurrency');
-    const sellShortPriceQuoteCurrency = document.getElementById('sellShortPriceQuoteCurrency');
+    const sellShortPriceQuoteCurrency = document.getElementById('sellShortPriceQuoteCurrency'); // Було відсутнє, додав для повноти
     const sellShortCost = document.getElementById('sellShortCost');
     const sellShortMaxAmount = document.getElementById('sellShortMaxAmount');
     const sellShortAvailableQuote = document.getElementById('sellShortAvailableQuote');
+
 
     // Елементи для вкладок на панелі торгівлі
     const marginTypeTabs = document.querySelectorAll('.margin-type-tabs .type-tab');
@@ -390,24 +406,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // Ініціалізація стану хедера та підказок при завантаженні сторінки
+    // Тепер currentFuturesSymbol буде доступний для цих функцій
     updateHeaderAuthStateFutures();
     setupLogoutButtonFutures();
     updateTradingPanelAuthPrompt(); 
     updatePositionsHistoryAuthPrompt(); 
-
-
-    let currentFuturesSymbol = 'BTCUSDTPERP';
-    let tradingWidgetInstance = null;
-
-    let futuresOrderBookSocket = null;
-    let futuresMarkPriceSocket = null; 
-    let futuresTickerSocket = null;  
-    let futuresTradesSocket = null;
-
-    const MAX_OB_LEVELS_FUTURES = 12; 
-    const MAX_FUTURES_TRADES_HISTORY = 25;
-    let obUpdateCounter = 0; 
-    let mtUpdateCounter = 0; 
 
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
