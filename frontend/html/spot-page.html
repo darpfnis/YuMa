@@ -796,6 +796,101 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(pairListEl) pairListEl.innerHTML = `<li style="text-align:center; padding:10px; color:red;">Error: ${error.message}</li>`;
         }
     }
+    async function processFilledBuyOrder(userId, filledOrderDetails) {
+    // filledOrderDetails - об'єкт з даними виконаного ордера, наприклад:
+    // {
+    //   orderId: 123,
+    //   pair: 'BTCUSDT', // Наприклад, з ордера
+    //   baseAsset: 'BTC',  // Потрібно визначити з пари
+    //   quoteAsset: 'USDT', // Потрібно визначити з пари
+    //   filledAmountBase: 0.5, // Скільки BTC куплено
+    //   filledAmountQuote: 25000.00, // Скільки USDT витрачено
+    //   avgFillPrice: 50000.00 // Середня ціна виконання
+    // }
+
+    const { baseAsset, quoteAsset, filledAmountBase, filledAmountQuote } = filledOrderDetails;
+
+    // Важливо: всі операції з балансами мають бути в транзакції,
+    // щоб гарантувати атомарність (або все виконалося, або нічого).
+    const client = await pool.connect(); // Беремо клієнта з пулу для транзакції
+
+    try {
+        await client.query('BEGIN'); // Початок транзакції
+
+        // 1. Оновлення балансу валюти котирування (наприклад, USDT) - зменшення
+        // Потрібно переконатися, що available_balance не стане від'ємним (хоча це мало б перевірятися перед створенням ордера)
+        const updateQuoteAssetQuery = `
+            UPDATE assets
+            SET
+                available_balance = available_balance - $1,
+                total_balance = total_balance - $1, -- Або total_balance залишається тим самим, якщо in_order_balance правильно оновлюється
+                in_order_balance = in_order_balance - $1 -- Зменшуємо заблокований баланс, якщо він був збільшений при створенні ордера
+            WHERE user_id = $2 AND coin_symbol = $3
+            RETURNING *;
+        `;
+        const quoteAssetResult = await client.query(updateQuoteAssetQuery, [filledAmountQuote, userId, quoteAsset]);
+
+        if (quoteAssetResult.rowCount === 0) {
+            // Це не повинно статися, якщо логіка блокування коштів правильна
+            throw new Error(`Asset ${quoteAsset} not found or insufficient balance for user ${userId}.`);
+        }
+        console.log(`User ${userId}: ${quoteAsset} balance decreased by ${filledAmountQuote}`);
+
+
+        // 2. Оновлення/створення балансу базової валюти (наприклад, BTC) - збільшення
+        const upsertBaseAssetQuery = `
+            INSERT INTO assets (user_id, coin_symbol, total_balance, available_balance, in_order_balance)
+            VALUES ($1, $2, $3, $3, 0.0)
+            ON CONFLICT (user_id, coin_symbol)
+            DO UPDATE SET
+                total_balance = assets.total_balance + $3,
+                available_balance = assets.available_balance + $3
+            RETURNING *;
+        `;
+        // $3 (filledAmountBase) додається і до total_balance, і до available_balance
+        const baseAssetResult = await client.query(upsertBaseAssetQuery, [userId, baseAsset, filledAmountBase]);
+
+        if (baseAssetResult.rowCount === 0) {
+            // Малоймовірно з UPSERT, але для повноти
+            throw new Error(`Failed to update/insert ${baseAsset} for user ${userId}.`);
+        }
+        console.log(`User ${userId}: ${baseAsset} balance increased by ${filledAmountBase}`);
+
+        // 3. Оновлення статусу ордера (це приклад, у вас може бути своя логіка)
+        // Припустимо, ви також оновлюєте ордер як 'filled'
+        const updateOrderStatusQuery = `
+            UPDATE orders
+            SET
+                status = 'filled',
+                filled_amount_base = orders.filled_amount_base + $1, -- Додаємо до вже виконаного, якщо часткове виконання
+                filled_amount_quote = orders.filled_amount_quote + $2,
+                -- avg_fill_price потрібно розраховувати більш складно для часткових виконань
+                avg_fill_price = $3, -- Для повного виконання можна просто встановити
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $4 AND user_id = $5;
+        `;
+        await client.query(updateOrderStatusQuery, [
+            filledAmountBase,
+            filledAmountQuote,
+            filledOrderDetails.avgFillPrice,
+            filledOrderDetails.orderId,
+            userId
+        ]);
+        console.log(`Order ${filledOrderDetails.orderId} status updated for user ${userId}`);
+
+
+        await client.query('COMMIT'); // Фіксація транзакції
+        console.log(`Transaction committed for user ${userId}, order ${filledOrderDetails.orderId}`);
+        return { success: true, message: 'Balances and order updated successfully.' };
+
+    } catch (error) {
+        await client.query('ROLLBACK'); // Відкат транзакції у випадку помилки
+        console.error('[Process Filled Buy Order Error] Transaction rolled back:', error);
+        return { success: false, message: `Error processing filled order: ${error.message}` };
+    } finally {
+        client.release(); // Повернення клієнта в пул
+    }
+}
     
     async function fetchInitialDataForSymbol(symbol) { 
         console.log(`Fetching initial data for ${symbol} via REST API...`);
