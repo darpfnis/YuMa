@@ -87,15 +87,15 @@
                   <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
                   {
                   "autosize": true,
-                  "symbol": "BINANCE:BTCUSDTPERP", // Початковий символ для ф'ючерсів
+                  "symbol": "BINANCE:BTCUSDTPERP",
                   "interval": "D",
                   "timezone": "Etc/UTC",
-                  "theme": "dark", // Змінено на темну тему
+                  "theme": "dark",
                   "style": "1",
                   "locale": "en",
                   "allow_symbol_change": true,
                   "support_host": "https://www.tradingview.com",
-                  "container_id": "tradingview_widget_futures" // Додано ID контейнера
+                  "container_id": "tradingview_widget_futures"
                 }
                   </script>
                 </div>
@@ -332,29 +332,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("Futures Page DOM loaded. Initializing script...");
     console.log("--------------------------------------------------");
 
+    // --- START: Element Declarations (ОГОЛОШУЄМО ОДИН РАЗ) ---
     const authPromptTradingPanel = document.querySelector('.trading-panel-card .auth-prompt');
-    const buyLongButton = document.querySelector('.buy-long-button'); // Якщо використовується в updateTradingPanelAuthPrompt або setupLogoutButtonFutures
-    const sellShortButton = document.querySelector('.sell-short-button'); // Аналогічно
+    const buyLongButton = document.querySelector('.buy-long-button');
+    const sellShortButton = document.querySelector('.sell-short-button');
     const tabPanes = document.querySelectorAll('.positions-history-card .tab-pane');
-
-    // Ініціалізація стану хедера при завантаженні сторінки
-    updateHeaderAuthStateFutures();
-    setupLogoutButtonFutures();
-    updateTradingPanelAuthPrompt(); // Початкове оновлення підказки на панелі торгівлі
-    updatePositionsHistoryAuthPrompt(); // Початкове оновлення підказок в позиціях/історії
-
-
-    let currentFuturesSymbol = 'BTCUSDTPERP';
+    const tabButtons = document.querySelectorAll('.positions-history-card .tab-button');
 
     const futuresAsksListEl = document.getElementById('futures-asks-list');
     const futuresBidsListEl = document.getElementById('futures-bids-list');
     const futuresCurrentMarketPriceEl = document.getElementById('futuresCurrentMarketPrice');
     const futuresOrderBookSymbolEl = document.getElementById('futuresOrderBookSymbol');
     
-    // Змінено: тепер беремо ID контейнера з HTML
-    const tradingViewWidgetContainerId = 'tradingview_widget_futures';
-    let tradingWidgetInstance = null;
-
+    const tradingViewWidgetContainerId = 'tradingview_widget_futures'; // ID контейнера для TradingView
 
     const futuresPairDisplayEl = document.getElementById('futuresPairDisplay');
     const futuresMarkPriceEl = document.getElementById('futuresMarkPrice');
@@ -371,22 +361,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Елементи форм торгівлі
     const buyLongForm = document.querySelector('.buy-long-form');
     const sellShortForm = document.querySelector('.sell-short-form');
+
     const buyLongPriceInput = document.getElementById('buyLongPrice');
     const buyLongMarketPriceLabel = buyLongForm.querySelector('.market-price-label');
     const buyLongAmountInput = document.getElementById('buyLongAmount');
     const buyLongAmountLabel = document.getElementById('buyLongAmountLabel');
     const buyLongAmountDisplayCurrency = document.getElementById('buyLongAmountDisplayCurrency');
-    const buyLongButton = document.querySelector('.buy-long-button');
+    const buyLongPriceQuoteCurrency = document.getElementById('buyLongPriceQuoteCurrency');
+    const buyLongCost = document.getElementById('buyLongCost');
+    const buyLongMaxAmount = document.getElementById('buyLongMaxAmount');
+    const buyLongAvailableQuote = document.getElementById('buyLongAvailableQuote');
+
 
     const sellShortPriceInput = document.getElementById('sellShortPrice');
     const sellShortMarketPriceLabel = sellShortForm.querySelector('.market-price-label');
     const sellShortAmountInput = document.getElementById('sellShortAmount');
     const sellShortAmountLabel = document.getElementById('sellShortAmountLabel');
     const sellShortAmountDisplayCurrency = document.getElementById('sellShortAmountDisplayCurrency');
-    const sellShortButton = document.querySelector('.sell-short-button');
+    const sellShortPriceQuoteCurrency = document.getElementById('sellShortPriceQuoteCurrency');
+    const sellShortCost = document.getElementById('sellShortCost');
+    const sellShortMaxAmount = document.getElementById('sellShortMaxAmount');
+    const sellShortAvailableQuote = document.getElementById('sellShortAvailableQuote');
 
-    const authPromptTradingPanel = document.querySelector('.trading-panel-card .auth-prompt');
+    // Елементи для вкладок на панелі торгівлі
+    const marginTypeTabs = document.querySelectorAll('.margin-type-tabs .type-tab');
+    const executionTypeTabsFutures = document.querySelectorAll('.trading-panel-card .execution-type-tabs .exec-tab');
+    // --- END: Element Declarations ---
 
+
+    // Ініціалізація стану хедера та підказок при завантаженні сторінки
+    updateHeaderAuthStateFutures();
+    setupLogoutButtonFutures();
+    updateTradingPanelAuthPrompt(); 
+    updatePositionsHistoryAuthPrompt(); 
+
+
+    let currentFuturesSymbol = 'BTCUSDTPERP';
+    let tradingWidgetInstance = null;
 
     let futuresOrderBookSocket = null;
     let futuresMarkPriceSocket = null; 
@@ -397,9 +408,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const MAX_FUTURES_TRADES_HISTORY = 25;
     let obUpdateCounter = 0; 
     let mtUpdateCounter = 0; 
-
-    const tabButtons = document.querySelectorAll('.positions-history-card .tab-button');
-    const tabPanes = document.querySelectorAll('.positions-history-card .tab-pane');
 
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -422,8 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (authPromptTradingPanel) {
             authPromptTradingPanel.style.display = isLoggedIn() ? 'none' : 'block';
         }
-        // Оновлення тексту кнопок Buy/Long та Sell/Short
-        const [baseAsset, ] = splitSymbolFutures(currentFuturesSymbol);
+        const [baseAsset, ] = splitSymbolFutures(currentFuturesSymbol); // Не використовується `quoteAsset` тут
         if (isLoggedIn()) {
             if(buyLongButton) buyLongButton.textContent = `Buy/Long`;
             if(sellShortButton) sellShortButton.textContent = `Sell/Short`;
@@ -458,20 +465,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updatePositionsHistoryAuthPrompt() {
         const loginPromptLinks = document.querySelectorAll('.positions-history-card .login-prompt-link');
         loginPromptLinks.forEach(link => {
-            link.style.display = isLoggedIn() ? 'none' : 'inline'; // Показуємо, якщо не залогінений
+            link.style.display = isLoggedIn() ? 'none' : 'inline'; 
         });
 
-        // Також можна приховати вміст вкладок, якщо користувач не залогінений,
-        // або показати повідомлення "Please log in to see your data"
         tabPanes.forEach(pane => {
             const noDataMessage = pane.querySelector('.no-data-message');
             if (noDataMessage) {
                 if (!isLoggedIn()) {
-                    // Можна змінити текст повідомлення або просто залишити як є
-                    // noDataMessage.innerHTML = `Please <a href="login-page.html">Log In</a> or <a href="sign_up-page.html">Register</a> to view this information.`;
+                    // Можна залишити як є, або оновити текст
                 } else {
-                    // Якщо залогінений, тут має бути логіка завантаження даних для вкладок
-                    // Наприклад: if (pane.id === 'positions-content-futures') loadPositions();
+                    // Тут буде логіка завантаження даних для вкладок
                 }
             }
         });
@@ -610,7 +613,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         socket.onopen = () => console.log(`[WS Open] ${onOpenMsg}`);
         
         socket.onmessage = (event) => {
-            // console.log(`%c[WS Message RAW] from ${socketUrl.substring(socketUrl.lastIndexOf('/') + 1)}:`, "color: gray;", event.data.substring(0,300) + (event.data.length > 300 ? "..." : "")); 
             try {
                 const data = JSON.parse(event.data);
                 onMessageCallback(data);
@@ -641,25 +643,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             futuresOrderBookSocket.close(1000, "Reconnecting Futures OB");
         }
         const wsSym = symbolPair.toLowerCase(); 
-        const url = `wss://fstream.binance.com/ws/${wsSym}@depth20@500ms`; // Можна 100ms або 250ms для більшої плавності
+        const url = `wss://fstream.binance.com/ws/${wsSym}@depth20@500ms`;
         
         futuresOrderBookSocket = setupWebSocket(url, `Futures Order Book WS opened for ${symbolPair}.`,
             (data) => { 
                 obUpdateCounter++;
-                // console.log(`[OB WS Data Parsed #${obUpdateCounter}]:`, data); 
                 if (data && typeof data === 'object' && Array.isArray(data.b) && Array.isArray(data.a)) { 
-                    // console.log(`%c[OB WS #${obUpdateCounter}] Rendering snapshot using 'b' and 'a'. Bids count: ${data.b.length}, Asks count: ${data.a.length}`, "color: green; font-weight: bold;");
                     renderFuturesOrderBook(data.b, data.a);
                 } 
                 else if (data && typeof data === 'object' && Array.isArray(data.bids) && Array.isArray(data.asks)) {
-                     // console.log(`%c[OB WS #${obUpdateCounter}] Rendering snapshot using 'bids' and 'asks'. Bids: ${data.bids.length}, Asks: ${data.asks.length}`, "color: orange; font-weight: bold;");
                      renderFuturesOrderBook(data.bids, data.asks);
                 }
                 else if (data && data.e === 'depthUpdate' && Array.isArray(data.b) && Array.isArray(data.a)) { 
-                     // console.warn(`[OB WS #${obUpdateCounter}] Received differential 'depthUpdate'. Attempting to render with b/a. (Note: This requires initial snapshot logic for full accuracy)`);
                      renderFuturesOrderBook(data.b, data.a); 
-                } else {
-                    // console.warn(`[OB WS #${obUpdateCounter}] ❌ Unexpected data format (expected 'b'/'a' or 'bids'/'asks' arrays, or 'depthUpdate' event):`, data);
                 }
             },
             `Futures OB WS Error for ${symbolPair}`, 
@@ -678,12 +674,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         futuresTradesSocket = setupWebSocket(url, `Futures Market Trades WS for ${symbolPair} opened.`,
             (data) => { 
                 mtUpdateCounter++;
-                // console.log(`[MT WS Data Parsed #${mtUpdateCounter}]:`, data); 
                 if (data && data.e === 'aggTrade' && data.p !== undefined && data.q !== undefined && data.T !== undefined && data.m !== undefined) {
-                    // console.log(`%c[MT WS #${mtUpdateCounter}] Rendering aggTrade. Price: ${data.p}, Qty: ${data.q}`, "color: green; font-weight: bold;");
                     renderFuturesMarketTrade({ p: data.p, q: data.q, T: data.T, m: data.m });
-                } else {
-                    // console.warn(`[MT WS #${mtUpdateCounter}] ❌ Unexpected aggTrade data format or event type:`, data);
                 }
             },
             `Futures Market Trades WS Error for ${symbolPair}`,
@@ -691,7 +683,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    function splitSymbol(spotSymbol) { // Допоміжна для splitSymbolFutures
+    function splitSymbol(spotSymbol) {
         if (!spotSymbol || typeof spotSymbol !== 'string') return ["", ""];
         const commonQuotes = ["USDT", "FDUSD", "BUSD", "USDC", "DAI", "TUSD", "BTC", "ETH", "BNB", "TRY", "EUR", "GBP", "UAH", "PLN"];
         for (const quote of commonQuotes) {
@@ -700,59 +692,51 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return [base, quote];
             }
         }
-        // Фоллбек, якщо стандартні котирувальні валюти не знайдені
         if (spotSymbol.length > 4 && spotSymbol.length <= 8) return [spotSymbol.substring(0,spotSymbol.length-4), spotSymbol.substring(spotSymbol.length-4)];
         if (spotSymbol.length > 3 && spotSymbol.length <=7) return [spotSymbol.substring(0,spotSymbol.length-3), spotSymbol.substring(spotSymbol.length-3)];
-        return [spotSymbol, ""]; // Малоймовірно для валідних пар
+        return [spotSymbol, ""];
     }
 
-    function splitSymbolFutures(futuresSymbol) { // Основна функція для ф'ючерсів
-        if (!futuresSymbol || typeof futuresSymbol !== 'string') return ["", ""]; // Повертає [baseAsset, quoteAsset]
+    function splitSymbolFutures(futuresSymbol) {
+        if (!futuresSymbol || typeof futuresSymbol !== 'string') return ["", ""];
         
-        // Для безстрокових контрактів (наприклад, BTCUSDTPERP)
         if (futuresSymbol.endsWith("PERP")) {
-            const underlyingSpotSymbol = futuresSymbol.slice(0, -4); // Видаляємо "PERP" -> BTCUSDT
-            return splitSymbol(underlyingSpotSymbol); // Використовуємо функцію для спот-символів
-        }
-        // Для квартальних/строкових контрактів (наприклад, BTCUSDT_240628)
-        else if (/\d{6}$/.test(futuresSymbol) && futuresSymbol.includes('_')) { // Перевіряємо формат _YYMMDD
-            const underlyingSpotSymbol = futuresSymbol.split('_')[0]; // Беремо частину до "_" -> BTCUSDT
+            const underlyingSpotSymbol = futuresSymbol.slice(0, -4);
             return splitSymbol(underlyingSpotSymbol);
         }
-        // Якщо формат невідомий, пробуємо як спот
+        else if (/\d{6}$/.test(futuresSymbol) && futuresSymbol.includes('_')) {
+            const underlyingSpotSymbol = futuresSymbol.split('_')[0];
+            return splitSymbol(underlyingSpotSymbol);
+        }
         return splitSymbol(futuresSymbol);
     }
 
     function getPrecisionForBaseAsset(baseAsset) {
-        // Тут можна додати логіку для визначення точності на основі базового активу
-        // Наприклад, для BTC - 3 знаки, для SHIB - 0 знаків і т.д.
-        // Поки що повертаємо стандартне значення
         if (baseAsset === 'BTC' || baseAsset === 'ETH') return 3;
         if (baseAsset === 'XRP' || baseAsset === 'ADA' || baseAsset === 'DOGE') return 1;
         if (baseAsset === 'SHIB' || baseAsset === 'PEPE') return 0;
-        return 2; // За замовчуванням
+        return 2;
     }
 
 
     function updateFuturesSymbolDisplay(symbolPair) {
-        let displayBaseShow = symbolPair; // Базовий актив для відображення (наприклад, BTC)
-        let displayQuoteShow = "";    // Котирувальна валюта + тип контракту (наприклад, USDT PERP)
+        let displayBaseShow = symbolPair; 
+        let displayQuoteShow = "";   
 
-        const [baseAsset, quoteAsset] = splitSymbolFutures(symbolPair); // Отримуємо чисті активи
+        const [baseAsset, quoteAsset] = splitSymbolFutures(symbolPair);
         displayBaseShow = baseAsset;
 
         if (symbolPair.endsWith("PERP")) {
             displayQuoteShow = `${quoteAsset} PERP`;
         } else if (/\d{6}$/.test(symbolPair) && symbolPair.includes('_')) {
-            const datePart = symbolPair.split('_')[1]; // 240628
-            displayQuoteShow = `${quoteAsset} ${datePart.substring(4,6)}${datePart.substring(2,4)}${datePart.substring(0,2)}`; // DDMMYY
+            const datePart = symbolPair.split('_')[1]; 
+            displayQuoteShow = `${quoteAsset} ${datePart.substring(4,6)}${datePart.substring(2,4)}${datePart.substring(0,2)}`;
         } else {
-             displayQuoteShow = quoteAsset; // Якщо невідомий формат, просто котирувальна
+             displayQuoteShow = quoteAsset;
         }
         
         if (futuresPairDisplayEl) futuresPairDisplayEl.innerHTML = `${displayBaseShow}<span class="quote-asset"> ${displayQuoteShow}</span>`;
-        if (futuresOrderBookSymbolEl) futuresOrderBookSymbolEl.textContent = `(${baseAsset}/${quoteAsset})`; // Завжди чисті активи тут
-        // if (futuresChartTitleSymbolEl) futuresChartTitleSymbolEl.textContent = `(${symbolPair})`; // Повний символ для графіка
+        if (futuresOrderBookSymbolEl) futuresOrderBookSymbolEl.textContent = `(${baseAsset}/${quoteAsset})`;
         if (futuresMarketTradesSymbolEl) futuresMarketTradesSymbolEl.textContent = `(${baseAsset}/${quoteAsset})`;
         
         const obPriceCol = document.querySelector('#futures-order-book .order-book-columns span:first-child');
@@ -768,7 +752,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(mtPriceCol) mtPriceCol.textContent = `Price (${quoteAsset})`;
         if(mtSizeCol) mtSizeCol.textContent = `Size (${baseAsset})`;
 
-        // Оновлення валют у формах торгівлі
         if(buyLongPriceQuoteCurrency) buyLongPriceQuoteCurrency.textContent = quoteAsset;
         if(buyLongAmountDisplayCurrency) buyLongAmountDisplayCurrency.textContent = baseAsset;
         if(buyLongCost) buyLongCost.textContent = `-- ${quoteAsset}`;
@@ -782,15 +765,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(sellShortMaxAmount) sellShortMaxAmount.textContent = `-- ${baseAsset}`;
         if(sellShortAvailableQuote) sellShortAvailableQuote.textContent = `-- ${quoteAsset}`;
 
-        // Оновлення плейсхолдерів для кількості на основі точності
         const basePrecision = getPrecisionForBaseAsset(baseAsset);
         const amountPlaceholder = "0." + "0".repeat(basePrecision);
         if(buyLongAmountInput) buyLongAmountInput.placeholder = amountPlaceholder;
         if(sellShortAmountInput) sellShortAmountInput.placeholder = amountPlaceholder;
 
-        // Оновлення TradingView віджету
         if (tradingWidgetInstance && typeof tradingWidgetInstance.setSymbol === 'function') {
-            const tvSymbol = `BINANCE:${symbolPair}`; // Для ф'ючерсів зазвичай просто символ
+            const tvSymbol = `BINANCE:${symbolPair}`;
             console.log(`Attempting to set TradingView symbol to: ${tvSymbol}`);
             tradingWidgetInstance.setSymbol(tvSymbol, tradingWidgetInstance.options.interval || "D", () => {
                 console.log(`%cTradingView symbol successfully changed to ${tvSymbol}`, "color: green; font-weight: bold;");
@@ -802,7 +783,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function updateTopInfoBar(data) {
         if (!data || !data.s) {
-            // console.warn("[TopInfoBar] Received invalid data for update:", data);
             return;
         }
         const [, quoteAsset] = splitSymbolFutures(data.s); 
@@ -834,7 +814,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (futures24hHighEl) futures24hHighEl.textContent = formatPriceFutures(ticker.h, quoteAsset); 
             if (futures24hLowEl) futures24hLowEl.textContent = formatPriceFutures(ticker.l, quoteAsset);   
-            // Об'єм в USDT (quoteVolume)
             if (futures24hVolumeEl) futures24hVolumeEl.textContent = parseFloat(ticker.q).toLocaleString(undefined, {maximumFractionDigits: 0}); 
         }
     }
@@ -844,7 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             futuresMarkPriceSocket.close(1000, "Reconnecting Mark Price");
         }
         const wsSym = symbolPair.toLowerCase();
-        const url = `wss://fstream.binance.com/ws/${wsSym}@markPrice@1s`; // Оновлення кожну секунду
+        const url = `wss://fstream.binance.com/ws/${wsSym}@markPrice@1s`;
         futuresMarkPriceSocket = setupWebSocket(url, `Mark Price WS for ${symbolPair} opened.`, 
             updateTopInfoBar, 
             `Mark Price WS Error for ${symbolPair}`,
@@ -852,7 +831,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    function connectTickerWebSocket(symbolPairOrAll) { // Може приймати конкретний символ або '!ticker@arr' для всіх
+    function connectTickerWebSocket(symbolPairOrAll) {
         if (futuresTickerSocket && futuresTickerSocket.readyState < WebSocket.CLOSING) {
             futuresTickerSocket.close(1000, "Reconnecting Ticker");
         }
@@ -863,11 +842,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const streamName = (symbolPairOrAll === '!ticker@arr') ? "All Tickers Stream" : `24hr Ticker WS for ${symbolPairOrAll}`;
 
         futuresTickerSocket = setupWebSocket(url, `${streamName} opened.`,
-            (data) => { // data може бути масивом або об'єктом
-                if (Array.isArray(data)) { // Для !ticker@arr
+            (data) => { 
+                if (Array.isArray(data)) { 
                     const relevantTicker = data.find(t => t.s === currentFuturesSymbol);
                     if (relevantTicker) updateTopInfoBar(relevantTicker);
-                } else if (data.s === currentFuturesSymbol) { // Для окремого символу
+                } else if (data.s === currentFuturesSymbol) { 
                      updateTopInfoBar(data);
                 }
             },
@@ -877,7 +856,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function fetchInitialFuturesData(symbolForWebSocket) {
-        const symbolForREST = symbolForWebSocket; // Для fapi Binance використовує повний символ контракту
+        const symbolForREST = symbolForWebSocket; 
 
         console.log(`[Fetch Initial] For ${symbolForREST} (REST & WS)`);
         
@@ -908,7 +887,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const markPriceData = await markPriceResponse.json();
                 updateTopInfoBar({ 
                     e: 'markPriceUpdate', 
-                    s: symbolForWebSocket, // Використовуємо символ для WS
+                    s: symbolForWebSocket, 
                     p: markPriceData.markPrice, 
                     i: markPriceData.indexPrice, 
                     r: markPriceData.lastFundingRate, 
@@ -924,12 +903,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tickerData = await tickerResponse.json();
                  updateTopInfoBar({ 
                     e: '24hrTicker',
-                    s: symbolForWebSocket, // Використовуємо символ для WS
-                    p: tickerData.priceChange, // Не використовується в updateTopInfoBar для 24hrTicker
+                    s: symbolForWebSocket, 
                     P: tickerData.priceChangePercent, 
                     h: tickerData.highPrice,
                     l: tickerData.lowPrice,
-                    q: tickerData.quoteVolume // Об'єм в котирувальній валюті (USDT)
+                    q: tickerData.quoteVolume 
                 });
             } else {
                 console.warn(`[Fetch Initial] Failed to fetch 24hr ticker for ${symbolForREST}: ${tickerResponse.status} ${tickerResponse.statusText}`);
@@ -957,16 +935,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- ЛОГІКА ДЛЯ ВКЛАДОК НА ПАНЕЛІ ТОРГІВЛІ ---
-    const marginTypeTabs = document.querySelectorAll('.margin-type-tabs .type-tab');
-    const executionTypeTabsFutures = document.querySelectorAll('.trading-panel-card .execution-type-tabs .exec-tab');
-
     function setActiveTradingTab(tabsNodeList, clickedTab) {
         tabsNodeList.forEach(tab => tab.classList.remove('active'));
         clickedTab.classList.add('active');
     }
 
     function updateFuturesTradingFormsUI(executionType) {
-        const [baseAsset, quoteAsset] = splitSymbolFutures(currentFuturesSymbol);
+        const [baseAsset, ] = splitSymbolFutures(currentFuturesSymbol); // quoteAsset не використовується тут прямо
         [buyLongForm, sellShortForm].forEach(formEl => {
             if (!formEl) return;
             const isBuySide = formEl.classList.contains('buy-long-form');
@@ -982,11 +957,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(priceInput) { priceInput.style.display = 'none'; priceInput.disabled = true; priceInput.value = ''; }
                 if(marketPriceLabel) marketPriceLabel.style.display = 'block';
                 
-                if(amountLabel) amountLabel.textContent = 'Quantity'; // Для ринкового ордеру це може бути кількість або вартість
-                if(amountInput) amountInput.placeholder = "0.000"; // Наприклад, в USDT або BTC
-                // Валюта для amountInput може змінюватися. Наприклад, 'Quantity in USDT' або 'Quantity in BTC'
-                // Це потребує додаткової логіки вибору (наприклад, перемикач Base/Quote для кількості)
-                // Поки що залишимо як є, валюта не змінюється
+                if(amountLabel) amountLabel.textContent = 'Quantity'; 
+                if(amountInput) amountInput.placeholder = "0.000";
                 
             } else if (executionType === 'limit') {
                 if (priceInput) { priceInput.style.display = 'block'; priceInput.disabled = false; priceInput.placeholder = "0.00"; }
@@ -1001,7 +973,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     marginTypeTabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
             setActiveTradingTab(marginTypeTabs, e.currentTarget);
-            // Додати логіку зміни типу маржі, якщо потрібно
         });
     });
 
@@ -1024,25 +995,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("--------------------------------------------------");
         
         getTradingViewWidgetInstanceWhenReady((widget) => {
-            // Ця функція викличеться, коли віджет буде готовий
-            // Можна ініціалізувати/оновити символ тут, якщо потрібно
-            updateFuturesSymbolDisplay(currentFuturesSymbol); // Оновлюємо віджет символом
+            updateFuturesSymbolDisplay(currentFuturesSymbol); 
         });
-
-        // updateFuturesSymbolDisplay(currentFuturesSymbol); // Початкове оновлення UI (включаючи TradingView)
 
         await fetchInitialFuturesData(currentFuturesSymbol);
         connectFuturesOrderBookWebSocket(currentFuturesSymbol);
         connectMarkPriceWebSocket(currentFuturesSymbol);
-        connectTickerWebSocket(currentFuturesSymbol); // Підключаємось до конкретного символу
+        connectTickerWebSocket(currentFuturesSymbol); 
         connectFuturesTradesWebSocket(currentFuturesSymbol);
 
-        // Встановлюємо початковий стан для форм торгівлі (наприклад, Ліміт)
         const initialExecType = document.querySelector('.trading-panel-card .execution-type-tabs .exec-tab.active:not(.dropdown-toggle)');
         if (initialExecType && initialExecType.dataset.exec) {
             updateFuturesTradingFormsUI(initialExecType.dataset.exec);
         } else {
-            updateFuturesTradingFormsUI('limit'); // За замовчуванням
+            updateFuturesTradingFormsUI('limit'); 
         }
         
         console.log("--------------------------------------------------");
