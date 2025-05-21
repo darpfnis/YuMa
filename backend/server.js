@@ -1,12 +1,14 @@
+// server.js
 const express = require('express');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const axios = require('axios'); 
+const axios = require('axios');
 const cron = require('node-cron');
 const { Decimal } = require('decimal.js'); // Для точних розрахунків
+const WebSocket = require('ws'); // *** НОВИЙ КОД (якщо ще не було) ***
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -18,14 +20,11 @@ if (JWT_SECRET === 'your-very-strong-and-secret-key-for-jwt-yuma-v3-final-final-
 }
 
 const connectionString = process.env.DATABASE_URL;
-if (!connectionString && process.env.NODE_ENV === 'production') { // Лише критично для продакшена
+if (!connectionString && process.env.NODE_ENV === 'production') {
     console.error('\x1b[31m%s\x1b[0m', 'FATAL ERROR: DATABASE_URL environment variable is not set in production.');
     process.exit(1);
 } else if (!connectionString) {
-    // Для локальної розробки, якщо DATABASE_URL не встановлено, можна тут тимчасово задати:
-    // connectionString = "postgres://your_local_user:your_local_password@localhost:5432/your_local_database_name";
     console.warn('\x1b[33m%s\x1b[0m', "DATABASE_URL not set. Ensure it's configured for production or local development if needed.");
-    // Можливо, не варто виходити, якщо це локальна розробка без потреби в БД на старті
 }
 
 const pool = new Pool({
@@ -48,14 +47,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
-const projectRootPath = path.join(__dirname, '..'); // Для index.html в корені
+const projectRootPath = path.join(__dirname, '..');
 app.use('/frontend', express.static(frontendPath));
 
-
-// --- Режим розробки (вимкнення автентифікації) ---
-const DEV_MODE_SKIP_AUTH = process.env.NODE_ENV !== 'production' && false; // Встановіть в true для вимкнення, false для увімкнення
-const DEV_MODE_TEST_USER = { // Тестовий користувач, якщо автентифікація вимкнена
-    userId: 1, // ID існуючого тестового користувача у вашій БД (важливо!)
+// --- Режим розробки ---
+const DEV_MODE_SKIP_AUTH = process.env.NODE_ENV !== 'production' && false;
+const DEV_MODE_TEST_USER = {
+    id: 1, // *** МОДИФІКОВАНО: змінив userId на id для сумісності з вашим JWT payload ***
     email: 'devtest@example.com',
     username: 'dev_tester',
     uid: 'DEVUID123'
@@ -122,12 +120,8 @@ const tryAuthenticateToken = (req, res, next) => {
     });
 };
 
-// --- Дані ринків та WebSocket (Заглушка, реалізуйте підключення) ---
 const INITIAL_ASSETS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE']; // YMC - ваша монета
 let currentMarketData = {}; // Оновлюється з WebSocket Binance
-
-// TODO: Реалізувати підключення до Binance WebSocket
-const WebSocket = require('ws');
 function connectToBinanceMarketStreams() {
 console.log("Attempting to connect to Binance WebSocket streams...");
 const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker/ethusdt@ticker');
@@ -146,11 +140,153 @@ if (process.env.NODE_ENV !== 'test') { // Не запускати WS під ча
 connectToBinanceMarketStreams();
  console.warn("\x1b[33m%s\x1b[0m", "Binance WebSocket connection is currently commented out. `currentMarketData` will be empty.");
 }
+async function processFilledBuyOrder(dbPool, userId, filledOrderDetails) {
+    const { orderId, baseAsset, quoteAsset, filledAmountBase, filledAmountQuote, avgFillPrice } = filledOrderDetails;
+    const client = await dbPool.connect(); // Беремо клієнта з переданого пулу
+    try {
+        await client.query('BEGIN'); // Початок транзакції для оновлення балансів/статусу
+
+        // 1. Оновлення балансу валюти котирування (зменшення)
+        const updateQuoteAssetQuery = `
+            UPDATE assets
+            SET
+                available_balance = available_balance - $1,
+                in_order_balance = CASE
+                                    WHEN in_order_balance >= $1 THEN in_order_balance - $1
+                                    ELSE 0
+                                   END,
+                total_balance = total_balance - $1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = $2 AND coin_symbol = $3 AND (available_balance + in_order_balance) >= $1
+            RETURNING *;
+        `;
+        const quoteAssetResult = await client.query(updateQuoteAssetQuery, [filledAmountQuote, userId, quoteAsset]);
+        if (quoteAssetResult.rowCount === 0) {
+            throw new Error(`Asset ${quoteAsset} not found or insufficient total balance to cover debit for user ${userId}. Order ID: ${orderId}`);
+        }
+        console.log(`[ProcessBuy] User ${userId}: ${quoteAsset} balance updated after debiting ${filledAmountQuote}`);
+
+        // 2. Оновлення/створення балансу базової валюти (збільшення)
+        const upsertBaseAssetQuery = `
+            INSERT INTO assets (user_id, coin_symbol, total_balance, available_balance, in_order_balance, updated_at)
+            VALUES ($1, $2, $3, $3, 0.0, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id, coin_symbol)
+            DO UPDATE SET
+                total_balance = assets.total_balance + $3,
+                available_balance = assets.available_balance + $3,
+                updated_at = CURRENT_TIMESTAMP
+            RETURNING *;
+        `;
+        await client.query(upsertBaseAssetQuery, [userId, baseAsset, filledAmountBase]);
+        console.log(`[ProcessBuy] User ${userId}: ${baseAsset} balance credited by ${filledAmountBase}`);
+
+        // 3. Оновлення статусу ордера
+        const updateOrderStatusQuery = `
+            UPDATE orders
+            SET
+                status = 'filled',
+                filled_amount_base = orders.filled_amount_base + $1,
+                filled_amount_quote = orders.filled_amount_quote + $2,
+                avg_fill_price = $3,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $4 AND user_id = $5 AND status IN ('open', 'partially_filled');
+        `;
+        const orderUpdateResult = await client.query(updateOrderStatusQuery, [filledAmountBase, filledAmountQuote, avgFillPrice, orderId, userId]);
+        if (orderUpdateResult.rowCount === 0) {
+            console.warn(`[ProcessBuy] Order ${orderId} for user ${userId} not updated during fill, possibly already closed or not found.`);
+        } else {
+            console.log(`[ProcessBuy] Order ${orderId} status updated to filled for user ${userId}`);
+        }
+
+        await client.query('COMMIT');
+        return { success: true, message: 'Buy order processed and balances updated successfully.' };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`[Process Filled Buy Order Internal Error] User ${userId}, Order ${orderId}:`, error);
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Обробляє виконаний ордер на продаж та оновлює баланси користувача.
+ * @param {pg.Pool} dbPool - Пул підключень до БД.
+ * @param {number} userId - ID користувача.
+ * @param {object} filledOrderDetails - Деталі виконаного ордера.
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+async function processFilledSellOrder(dbPool, userId, filledOrderDetails) {
+    const { orderId, baseAsset, quoteAsset, filledAmountBase, filledAmountQuote, avgFillPrice } = filledOrderDetails;
+    const client = await dbPool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Оновлення балансу базової валюти (зменшення)
+        const updateBaseAssetQuery = `
+            UPDATE assets
+            SET
+                available_balance = available_balance - $1,
+                in_order_balance = CASE
+                                    WHEN in_order_balance >= $1 THEN in_order_balance - $1
+                                    ELSE 0
+                                   END,
+                total_balance = total_balance - $1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = $2 AND coin_symbol = $3 AND (available_balance + in_order_balance) >= $1
+            RETURNING *;
+        `;
+        const baseAssetResult = await client.query(updateBaseAssetQuery, [filledAmountBase, userId, baseAsset]);
+        if (baseAssetResult.rowCount === 0) {
+            throw new Error(`Asset ${baseAsset} not found or insufficient total balance to cover debit for user ${userId}. Order ID: ${orderId}`);
+        }
+        console.log(`[ProcessSell] User ${userId}: ${baseAsset} balance updated after debiting ${filledAmountBase}`);
+
+        // 2. Оновлення/створення балансу валюти котирування (збільшення)
+        const upsertQuoteAssetQuery = `
+            INSERT INTO assets (user_id, coin_symbol, total_balance, available_balance, in_order_balance, updated_at)
+            VALUES ($1, $2, $3, $3, 0.0, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id, coin_symbol)
+            DO UPDATE SET
+                total_balance = assets.total_balance + $3,
+                available_balance = assets.available_balance + $3,
+                updated_at = CURRENT_TIMESTAMP
+            RETURNING *;
+        `;
+        await client.query(upsertQuoteAssetQuery, [userId, quoteAsset, filledAmountQuote]);
+        console.log(`[ProcessSell] User ${userId}: ${quoteAsset} balance credited by ${filledAmountQuote}`);
+
+        // 3. Оновлення статусу ордера
+        const updateOrderStatusQuery = `
+            UPDATE orders
+            SET
+                status = 'filled',
+                filled_amount_base = orders.filled_amount_base + $1,
+                filled_amount_quote = orders.filled_amount_quote + $2,
+                avg_fill_price = $3,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $4 AND user_id = $5 AND status IN ('open', 'partially_filled');
+        `;
+       const orderUpdateResult = await client.query(updateOrderStatusQuery, [filledAmountBase, filledAmountQuote, avgFillPrice, orderId, userId]);
+        if (orderUpdateResult.rowCount === 0) {
+           console.warn(`[ProcessSell] Order ${orderId} for user ${userId} not updated during fill, possibly already closed or not found.`);
+        } else {
+           console.log(`[ProcessSell] Order ${orderId} status updated to filled for user ${userId}`);
+        }
+
+        await client.query('COMMIT');
+        return { success: true, message: 'Sell order processed and balances updated successfully.' };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`[Process Filled Sell Order Internal Error] User ${userId}, Order ${orderId}:`, error);
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+// *** КІНЕЦЬ НОВОГО КОДУ: Сервісні функції ***
 
 
-// --- API Ендпоінти ---
-
-// АУТЕНТИФІКАЦІЯ
 app.post('/auth/register', async (req, res) => {
     const { name, email, password } = req.body;
     if (!email || !password || password.length < 6) {
@@ -666,94 +802,84 @@ app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
     }
 });
 
-// --- Ендпоінти для Ордерів ---
+// --- Ендпоінти для Ордерів --
 
-// В server.js (або orderRoutes.js)
-
+// *** МОДИФІКОВАНО: Маршрут /api/orders/create ***
 app.post('/api/orders/create', authenticateToken, async (req, res) => {
-    const userId = req.user.id; // З middleware authenticateToken
+    const userId = req.user.userId; // *** МОДИФІКОВАНО: використовуємо userId з JWT payload ***
     const { pair, type, side, price, amount: amountFromClient, amount_quote: amountQuoteFromClient } = req.body;
 
-    // --- Валідація ---
-    if (!pair || !type || !side) {
-        return res.status(400).json({ success: false, message: 'Pair, type, and side are required.' });
-    }
-    if (!['limit', 'market'].includes(type)) {
-        return res.status(400).json({ success: false, message: 'Invalid order type.' });
-    }
-    if (!['buy', 'sell'].includes(side)) {
-        return res.status(400).json({ success: false, message: 'Invalid order side.' });
-    }
+    // Валідація ... (як у вашому коді)
+    if (!pair || !type || !side) return res.status(400).json({ success: false, message: 'Pair, type, and side are required.' });
+    if (!['limit', 'market'].includes(type)) return res.status(400).json({ success: false, message: 'Invalid order type.' });
+    if (!['buy', 'sell'].includes(side)) return res.status(400).json({ success: false, message: 'Invalid order side.' });
 
-    const client = await pool.connect(); // Беремо клієнта з пулу для всієї операції
+    const orderProcessingClient = await pool.connect(); // Клієнт для всієї операції створення+виконання
     try {
-        await client.query('BEGIN'); // Початок основної транзакції
+        // --- Початок основної транзакції: Блокування + Створення Ордера ---
+        await orderProcessingClient.query('BEGIN');
 
-        const pairRes = await client.query('SELECT * FROM market_pairs WHERE symbol = $1 AND is_active = TRUE', [pair]);
+        const pairRes = await orderProcessingClient.query('SELECT * FROM market_pairs WHERE symbol = $1 AND is_active = TRUE', [pair]);
         if (pairRes.rows.length === 0) {
-            await client.query('ROLLBACK'); client.release();
+            await orderProcessingClient.query('ROLLBACK');
             return res.status(400).json({ success: false, message: 'Invalid or inactive trading pair.' });
         }
         const marketPairDetails = pairRes.rows[0];
         const baseAsset = marketPairDetails.base_asset;
         const quoteAsset = marketPairDetails.quote_asset;
-        // const pricePrecision = marketPairDetails.price_precision;
-        // const quantityPrecision = marketPairDetails.quantity_precision;
-        // const minTradeAmount = parseFloat(marketPairDetails.min_trade_amount);
+        const minTradeAmountValue = marketPairDetails.min_trade_amount ? parseFloat(marketPairDetails.min_trade_amount) : 0; // Приклад
 
         let amountForDb;
         let amountQuoteForDb;
-        let priceForDb = (type === 'limit' ? parseFloat(price) : null);
+        let priceForDb = (type === 'limit' ? new Decimal(price || 0).toNumber() : null); // Використовуємо Decimal для точності
 
         if (type === 'market' && side === 'buy') {
-            amountQuoteForDb = parseFloat(amountQuoteFromClient);
-            if (isNaN(amountQuoteForDb) || amountQuoteForDb <= 0 /* || amountQuoteForDb < MIN_TRADE_VALUE_FOR_PAIR */) {
-                await client.query('ROLLBACK'); client.release();
+            amountQuoteForDb = new Decimal(amountQuoteFromClient || 0).toNumber();
+            if (amountQuoteForDb <= 0 /* || amountQuoteForDb < MIN_TRADE_VALUE_FOR_PAIR */) {
+                await orderProcessingClient.query('ROLLBACK');
                 return res.status(400).json({ success: false, message: 'Invalid amount_quote for market buy order.' });
             }
-            amountForDb = 0; // Буде 0, бо NOT NULL. Фактична кількість буде відома після виконання.
+            amountForDb = 0; // Залишаємо 0, як обговорювали
         } else if (type === 'market' && side === 'sell') {
-            amountForDb = parseFloat(amountFromClient);
-            if (isNaN(amountForDb) || amountForDb <= 0 /* || amountForDb < minTradeAmount */) {
-                await client.query('ROLLBACK'); client.release();
-                return res.status(400).json({ success: false, message: 'Invalid amount for market sell order.' });
+            amountForDb = new Decimal(amountFromClient || 0).toNumber();
+            if (amountForDb <= 0 || amountForDb < minTradeAmountValue) {
+                await orderProcessingClient.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: `Invalid amount for market sell order. Min: ${minTradeAmountValue}` });
             }
-            amountQuoteForDb = null; // Буде визначено при виконанні
+            amountQuoteForDb = null;
         } else if (type === 'limit') {
-            amountForDb = parseFloat(amountFromClient);
-            priceForDb = parseFloat(price);
-            if (isNaN(amountForDb) || amountForDb <= 0 || isNaN(priceForDb) || priceForDb <= 0 /* || amountForDb < minTradeAmount */) {
-                await client.query('ROLLBACK'); client.release();
-                return res.status(400).json({ success: false, message: 'Invalid amount or price for limit order.' });
+            amountForDb = new Decimal(amountFromClient || 0).toNumber();
+            priceForDb = new Decimal(price || 0).toNumber(); // вже визначено
+            if (amountForDb <= 0 || priceForDb <= 0 || amountForDb < minTradeAmountValue) {
+                await orderProcessingClient.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: `Invalid amount or price for limit order. Min amount: ${minTradeAmountValue}` });
             }
-            amountQuoteForDb = amountForDb * priceForDb;
-        } else {
-            // Цей випадок вже оброблений валідацією вище
+            amountQuoteForDb = new Decimal(amountForDb).mul(priceForDb).toNumber();
         }
 
         // --- Логіка блокування коштів ---
         if (side === 'buy') {
-            const amountToLock = amountQuoteForDb; // Для market та limit buy блокуємо quote_asset
+            const amountToLock = new Decimal(amountQuoteForDb).toNumber();
             const lockQuery = `
                 UPDATE assets SET available_balance = available_balance - $1, in_order_balance = in_order_balance + $1, updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = $2 AND coin_symbol = $3 AND available_balance >= $1 RETURNING id;`;
-            const lockResult = await client.query(lockQuery, [amountToLock, userId, quoteAsset]);
+            const lockResult = await orderProcessingClient.query(lockQuery, [amountToLock, userId, quoteAsset]);
             if (lockResult.rowCount === 0) {
-                await client.query('ROLLBACK'); client.release();
-                return res.status(400).json({ success: false, message: `Insufficient ${quoteAsset} balance or asset not found.` });
+                await orderProcessingClient.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: `Insufficient ${quoteAsset} balance or asset not found for locking.` });
             }
         } else { // side === 'sell'
-            const amountToLock = amountForDb; // Для sell блокуємо base_asset
+            const amountToLock = new Decimal(amountForDb).toNumber();
             const lockQuery = `
                 UPDATE assets SET available_balance = available_balance - $1, in_order_balance = in_order_balance + $1, updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = $2 AND coin_symbol = $3 AND available_balance >= $1 RETURNING id;`;
-            const lockResult = await client.query(lockQuery, [amountToLock, userId, baseAsset]);
+            const lockResult = await orderProcessingClient.query(lockQuery, [amountToLock, userId, baseAsset]);
             if (lockResult.rowCount === 0) {
-                await client.query('ROLLBACK'); client.release();
-                return res.status(400).json({ success: false, message: `Insufficient ${baseAsset} balance or asset not found.` });
+                await orderProcessingClient.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: `Insufficient ${baseAsset} balance or asset not found for locking.` });
             }
         }
-        console.log(`User ${userId}: Funds locked for order type ${type}, side ${side}.`);
+        console.log(`[OrderCreate] User ${userId}: Funds locked for order type ${type}, side ${side}.`);
 
         // --- Створення запису ордера ---
         const createOrderQuery = `
@@ -762,57 +888,51 @@ app.post('/api/orders/create', authenticateToken, async (req, res) => {
             RETURNING *;
         `;
         const orderValues = [userId, pair, type, side, priceForDb, amountForDb, (type === 'market' && side === 'sell' ? null : amountQuoteForDb)];
-        const orderResult = await client.query(createOrderQuery, orderValues);
+        const orderResult = await orderProcessingClient.query(createOrderQuery, orderValues);
         const createdOrder = orderResult.rows[0];
 
-        await client.query('COMMIT'); // Фіксуємо транзакцію створення ордера та блокування коштів
-        console.log('Order created and funds locked successfully:', createdOrder);
-        let executionOutcome = { success: null, message: null };
+        await orderProcessingClient.query('COMMIT'); // Фіксуємо транзакцію створення ордера та блокування коштів
+        console.log('[OrderCreate] Order created and funds locked successfully:', createdOrder.id);
+        let executionOutcome = { success: null, message: 'Order created, not a market order or execution skipped.' };
 
-        // --- Імітація/запуск виконання ринкового ордера (ПОТРЕБУЄ ОКРЕМОЇ ТРАНЗАКЦІЇ ДЛЯ ВИКОНАННЯ) ---
+        // --- Імітація/запуск виконання ринкового ордера ---
         if (createdOrder.type === 'market') {
-            console.log(`Market order ${createdOrder.id} created. Simulating immediate execution...`);
-            // Для виконання ордера та оновлення балансів потрібна окрема транзакція,
-            // оскільки вона може не вдатися, а ордер вже створено.
-            // Використовуємо той самий клієнт, але processFilled... самі керують своєю транзакцією.
-            // АБО краще передавати client в processFilled... і керувати транзакцією тут.
-            // Для простоти, припустимо, processFilled... керують своєю.
-
-            // Для імітації потрібна ціна. В реальності це буде з matching engine або книги ордерів.
-            // ВАЖЛИВО: Цю ціну потрібно отримувати динамічно!
+            console.log(`[OrderCreate] Market order ${createdOrder.id} created. Simulating immediate execution...`);
             let simulatedExecutionPrice;
-            // Дуже грубий приклад отримання "ціни" - не використовуйте в продакшені!
-            // Вам потрібен механізм отримання поточної ринкової ціни.
-            const priceRes = await pool.query( // Використовуємо pool, бо попередня транзакція вже COMMIT/ROLLBACK
-                "SELECT last_price FROM ticker_data WHERE symbol = $1 ORDER BY timestamp DESC LIMIT 1", // Приклад таблиці
-                [pair]
-            );
-            if (priceRes.rows.length > 0 && priceRes.rows[0].last_price) {
-                simulatedExecutionPrice = parseFloat(priceRes.rows[0].last_price);
+            // ВАЖЛИВО: Отримання актуальної ціни для ринкового ордера!
+            const binancePairData = currentMarketData[`${baseAsset}${quoteAsset}`]; // Наприклад, BTCUSDT
+            if (binancePairData && binancePairData.price) {
+                simulatedExecutionPrice = parseFloat(binancePairData.price);
             } else {
-                // Fallback, якщо ціну не знайдено (дуже погано для ринкового ордера)
-                console.warn(`Could not fetch live price for ${pair}, using a fallback for simulation.`);
-                simulatedExecutionPrice = (side === 'buy') ? parseFloat(marketPairDetails.min_price_tick || "0.01") * 11000 : parseFloat(marketPairDetails.min_price_tick || "0.01") * 9000;
+                const cgCacheData = marketDataCache.data[createdOrder.pair];
+                if (cgCacheData && cgCacheData.price) {
+                    simulatedExecutionPrice = parseFloat(cgCacheData.price);
+                } else {
+                    console.warn(`[OrderExecuteSim] Could not fetch live price for ${createdOrder.pair}, using a wide fallback for simulation for order ${createdOrder.id}.`);
+                    // Дуже небезпечний fallback, лише для тестування!
+                    simulatedExecutionPrice = (side === 'buy') ? 50000 * 1.05 : 50000 * 0.95;
+                }
             }
+            console.log(`[OrderExecuteSim] Simulated execution price for ${createdOrder.pair}: ${simulatedExecutionPrice}`);
 
 
             if (createdOrder.side === 'buy') {
-                const actualAmountBaseBought = parseFloat(createdOrder.amount_quote) / simulatedExecutionPrice;
+                const actualAmountBaseBought = new Decimal(createdOrder.amount_quote).div(simulatedExecutionPrice).toDecimalPlaces(marketPairDetails.quantity_precision || 8).toNumber();
                 const filledDetails = { orderId: createdOrder.id, baseAsset, quoteAsset, filledAmountBase: actualAmountBaseBought, filledAmountQuote: parseFloat(createdOrder.amount_quote), avgFillPrice: simulatedExecutionPrice };
-
-                // Викликаємо функцію оновлення балансів В НОВІЙ ТРАНЗАКЦІЇ (керованою всередині processFilledBuyOrder)
-                executionOutcome = await processFilledBuyOrder(pool, userId, filledDetails); // Передаємо pool, щоб функція сама взяла клієнта
+                executionOutcome = await processFilledBuyOrder(pool, userId, filledDetails); // Передаємо pool
             } else { // side === 'sell'
-                const actualAmountQuoteReceived = parseFloat(createdOrder.amount) * simulatedExecutionPrice;
+                const actualAmountQuoteReceived = new Decimal(createdOrder.amount).mul(simulatedExecutionPrice).toDecimalPlaces(marketPairDetails.price_precision || 2).toNumber();
                 const filledDetails = { orderId: createdOrder.id, baseAsset, quoteAsset, filledAmountBase: parseFloat(createdOrder.amount), filledAmountQuote: actualAmountQuoteReceived, avgFillPrice: simulatedExecutionPrice };
-                executionOutcome = await processFilledSellOrder(pool, userId, filledDetails);
+                executionOutcome = await processFilledSellOrder(pool, userId, filledDetails); // Передаємо pool
             }
 
             if (!executionOutcome.success) {
-                console.error('Error during simulated market order execution & balance update:', executionOutcome.message);
-                // Ордер створено, але виконання не вдалося. Це потребує обробки (наприклад, ордер залишається 'open', або спробувати ще раз)
+                console.error(`[OrderCreate] Error during simulated market order execution (ID: ${createdOrder.id}) & balance update:`, executionOutcome.message);
+                // ВАЖЛИВО: Ордер створено, кошти заблоковано, але виконання не вдалося.
+                // Потрібна логіка компенсації: або скасувати ордер і розблокувати кошти, або позначити ордер як "помилка виконання".
+                // Для простоти поки що просто логуємо.
             } else {
-                console.log('Simulated market order execution and balance update successful.');
+                console.log(`[OrderCreate] Simulated market order (ID: ${createdOrder.id}) execution and balance update successful.`);
             }
         }
 
@@ -824,16 +944,15 @@ app.post('/api/orders/create', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        // Якщо помилка сталася до client.query('BEGIN') або після client.release()
-        if (client && client.release) { // Якщо клієнт був взятий
-             try { await client.query('ROLLBACK'); } catch (rbError) { console.error('Error rolling back main transaction:', rbError); }
-             client.release();
-        }
+        // Якщо помилка сталася всередині основної транзакції, вона вже має бути відкочена
         console.error('[API /orders/create Error]:', error);
-        res.status(500).json({ success: false, message: `Failed to create order: ${error.message}` });
+        res.status(500).json({ success: false, message: `Failed to create order: ${error.message || 'Internal server error'}` });
+    } finally {
+        if (orderProcessingClient) { // Завжди звільняємо клієнта
+            orderProcessingClient.release();
+        }
     }
 });
-
 app.get('/api/user/balances', authenticateToken, async (req, res) => {
     // req.user тепер містить дані з JWT, включаючи ID користувача
     // У тебе в authenticateToken використовується `userId` (з токена { userId: user.id, ... })
