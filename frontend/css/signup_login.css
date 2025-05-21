@@ -1,22 +1,6 @@
 /* styles.css */
 header {
-  background-color: #222; /* З main-page.css */
-  color: white;
-  display: flex;
-  justify-content: space-between; /* Лого зліва, решта (якщо є) справа */
-  align-items: center;
-  padding: 15px 30px;
-}
-
-.logo {
-  font-size: 1.8em; /* З main-page.css */
-  font-weight: bold;
-}
-
-header .logo a {
-  color: inherit; /* Успадковує колір від батьківського елемента (header -> white) */
-  text-decoration: none; /* Забирає підкреслення посилання */
-}
+  
 /* У signup_login.css або global.css */
 .auth-form-section {
   background-color: #ffffff; /* Чистий білий фон */
