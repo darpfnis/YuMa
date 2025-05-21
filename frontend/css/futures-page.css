@@ -118,23 +118,29 @@
 /* СТИЛІ ДЛЯ .ui-panel та .ui-panel .panel-title УСПАДКОВУЮТЬСЯ АБО ВИЗНАЧЕНІ ГЛОБАЛЬНО/В CARDS.CSS */
 /* Загальні стилі для панелей UI (картки), які могли бути в cards.css або global.css */
 .ui-panel {
-  background-color: #fff;
   border-radius: 0.5rem; /* Стандартне заокруглення */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Стандартна тінь */
   padding: 0.75rem; /* Стандартний padding */
   display: flex;
   flex-direction: column;
+  /* --- ЕФЕКТ СКЛА (GLASSMORPHISM) --- */
+  background-color: rgba(28, 30, 35, 0.75); /* Темний напівпрозорий фон */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(54, 58, 69, 0.6); /* Темна напівпрозора рамка */
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  color: #c7cce1; /* ОСНОВНИЙ СВІТЛИЙ ТЕКСТ для панелі */
 }
 .ui-panel .panel-title {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #474d57;
+  color: #e0e6f1;
   margin: -0.75rem -0.75rem 0.75rem -0.75rem; /* Компенсація padding для фону на всю ширину */
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid #eef0f2;
-  background-color: #f9fafb;
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
+  background-color: rgba(33, 37, 43, 0.85);
+  border-bottom: 1px solid rgba(54, 58, 69, 0.6);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -142,7 +148,7 @@
 .ui-panel .panel-title span {
   /* Для тексту типу (BTCUSDTPERP) */
   font-size: 0.9em;
-  color: #707a8a;
+  color: #848e9c;
   font-weight: normal;
 }
 
@@ -221,9 +227,9 @@
 /* Стилі для вкладок в positions-history-card */
 .positions-history-card .tab-navigation {
   display: flex;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom-color: rgba(54, 58, 69, 0.5);
   padding: 0 0.85rem;
-  background-color: #f9fafb;
+  background-color: rgba(33, 37, 43, 0.7);
   flex-shrink: 0;
 }
 .positions-history-card .tab-button {
@@ -231,7 +237,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #6b7280;
+  color: #8c96a5;
   font-size: 0.8rem;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -239,10 +245,10 @@
   white-space: nowrap;
 }
 .positions-history-card .tab-button:hover {
-  color: #374151;
+  color: #e0e6f1;
 }
 .positions-history-card .tab-button.active {
-  color: #1e2329;
+  color: #f065f7;
   border-bottom-color: #f065f7;
   font-weight: 500;
 }
@@ -254,6 +260,7 @@
 .positions-history-card .tab-pane {
   display: none;
   padding: 0.75rem;
+  color: #c7cce1;
 }
 .positions-history-card .tab-pane.active {
   display: block;
@@ -265,8 +272,8 @@
   justify-content: space-between;
   padding: 0.4rem 0.85rem;
   font-size: 0.7rem;
-  color: #6b7280;
-  border-bottom: 1px solid #f3f4f6;
+  color: #8c96a5;
+  border-bottom-color: rgba(54, 58, 69, 0.5);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -305,7 +312,9 @@
   padding: 2.5px 0.85rem;
   position: relative;
   line-height: 1.3;
+  color: #8c96a5;
 }
+
 .order-book-card #futures-asks-list li span,
 .order-book-card #futures-bids-list li span {
   flex: 1;
@@ -318,11 +327,11 @@
   text-align: left;
 }
 .order-book-card .amount {
-  color: #1f2937;
+  color: #d1d4dc;
   flex-basis: 32%;
 }
 .order-book-card .total {
-  color: #6b7280;
+  color: #8c96a5;
   flex-basis: 32%;
 }
 .order-book-card .ask-price {
@@ -336,9 +345,9 @@
   text-align: center;
   font-size: 1rem;
   font-weight: 600;
-  border-top: 1px solid #f3f4f6;
-  border-bottom: 1px solid #f3f4f6;
-  color: #1f2937;
+  color: #e0e6f1;
+  border-top-color: rgba(54, 58, 69, 0.5);
+  border-bottom-color: rgba(54, 58, 69, 0.5);
   line-height: 1.3;
   flex-shrink: 0;
 }
@@ -361,8 +370,8 @@
   justify-content: space-between;
   padding: 0.4rem 0.85rem;
   font-size: 0.7rem;
-  color: #6b7280;
-  border-bottom: 1px solid #f3f4f6;
+  color: #8c96a5;
+  border-bottom-color: rgba(54, 58, 69, 0.5);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -398,12 +407,12 @@
 .market-trades-card-futures #futures-market-trades-list .amount {
   flex-basis: 35%;
   text-align: right;
-  color: #1f2937;
+  color: #d1d4dc;
 }
 .market-trades-card-futures #futures-market-trades-list .time {
   flex-basis: 30%;
   text-align: right;
-  color: #6b7280;
+  color: #8c96a5;
 }
 .market-trades-card-futures .sell-trade {
   color: #ef4444;
@@ -484,21 +493,21 @@
   font-size: 0.8rem; /* Трохи менше */
   border: none;
   background-color: transparent;
-  color: #707a8a;
+  color: #8c96a5;
   cursor: pointer;
   border-radius: 4px;
   transition: color 0.2s, background-color 0.2s;
   font-weight: 500;
 }
 .execution-type-tabs .exec-tab:hover {
-  color: #1e2329;
+  color: #e0e6f1;
 }
 .execution-type-tabs .exec-tab.active {
-  color: #1e2329;
+  color: #f065f7;
 } /* Можна додати фон або підкреслення */
 .execution-type-tabs .info-icon {
   margin-left: auto;
-  color: #707a8a;
+  color: #8c96a5;
   cursor: help;
 }
 .stop-limit-dropdown .dropdown-toggle::after {
@@ -506,6 +515,7 @@
   font-size: 0.7em;
   margin-left: 0.3em;
   display: inline-block;
+  color: #8c96a5;
 }
 
 /* Контейнер для двох форм (Купівля/Продаж) */
@@ -538,7 +548,7 @@
 }
 .order-form .available-balance.top span:nth-child(2) {
   /* Значення балансу */
-  color: #1e2329;
+  color: #e0e6f1;
   font-weight: 500;
 }
 
@@ -556,8 +566,9 @@
   /* Стилі зі споту */
   display: flex;
   align-items: center;
-  background-color: #f0f2f5;
-  border: 1px solid #dde0e3;
+  background-color: rgba(18, 20, 24, 0.7);
+  border: 1px solid #363a45;
+  color: #d1d4dc;
   border-radius: 4px;
   padding: 0 0.5rem; /* Зменшено padding */
 }
@@ -567,7 +578,7 @@
   border: none;
   background-color: transparent;
   font-size: 0.85rem; /* Менший шрифт в інпуті */
-  color: #1e2329;
+  color: #e0e6f1;
   outline: none;
   text-align: left;
   -moz-appearance: textfield;
@@ -584,7 +595,7 @@
 .order-form .input-with-currency .currency {
   /* Стилі зі споту */
   font-size: 0.75rem;
-  color: #474d57;
+  color: #aeb4bc;
   padding-left: 0.4rem;
   white-space: nowrap;
 }
@@ -599,7 +610,7 @@
   -webkit-appearance: none;
   appearance: none;
   height: 5px;
-  background: #d1d5db;
+  background: #363a45;
   outline: none;
   opacity: 0.7;
   transition: opacity 0.15s ease-in-out;
@@ -613,7 +624,8 @@
   appearance: none;
   width: 12px;
   height: 12px;
-  background: #4b5563;
+  background: #707a8a;
+  border-color: #1e2329;
   cursor: pointer;
   border-radius: 50%;
   border: 2px solid #fff;
@@ -622,7 +634,8 @@
 .balance-slider .slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  background: #4b5563;
+  background: #707a8a;
+  border-color: #1e2329;
   cursor: pointer;
   border-radius: 50%;
   border: 2px solid #fff;
@@ -632,7 +645,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.65rem;
-  color: #707a8a;
+  color: #8c96a5;
   padding: 0 1px;
   margin-top: 1px;
 }
@@ -653,11 +666,11 @@
   margin-right: 0.2rem;
 }
 .advanced-options-futures label {
-  color: #474d57;
+  color: #aeb4bc;
   cursor: pointer;
 }
 .advanced-options-futures .advanced-link {
-  color: #f0b90b; /* Жовтий Binance */
+  color: #f065f7;
   text-decoration: none;
   font-weight: 500;
 }
@@ -668,7 +681,7 @@
 /* Інформація про вартість ордера */
 .order-cost-info {
   font-size: 0.7rem;
-  color: #707a8a;
+  color: #8c96a5;
   margin-top: 0.5rem;
   display: flex;
   flex-direction: column; /* Кожен рядок окремо */
@@ -680,7 +693,7 @@
 }
 .order-cost-info span:last-child {
   /* Значення вартості/макс. кількості */
-  color: #1e2329;
+  color: #d1d4dc;
   font-weight: 500;
 }
 
