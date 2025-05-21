@@ -326,6 +326,8 @@ function setupLogoutButtonFutures() {
 }
 // JavaScript для futures-page.html
 document.addEventListener('DOMContentLoaded', async () => {
+    updateHeaderAuthStateFutures();
+    setupLogoutButtonFutures();
     console.log("--------------------------------------------------");
     console.log("Futures Page DOM loaded. Initializing script...");
     console.log("--------------------------------------------------");
