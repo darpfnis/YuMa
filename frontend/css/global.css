@@ -20,50 +20,16 @@ body {
   min-height: 100vh;
 }
 
-/* spot-page.css або global.css */
-
-.order-status-message {
-    padding: 0.75rem 1rem;
-    margin-top: 1rem;
-    border-radius: 4px;
-    font-weight: bold;
-    text-align: center;
-    display: none; /* Ховаємо за замовчуванням */
-    transition: opacity 0.3s ease-in-out;
-}
-
-.order-status-message.success {
-    background-color: rgba(16, 185, 129, 0.2); /* Прозорий зелений */
-    color: var(--success-color, #10b981); /* Використовуємо змінну, якщо є, або дефолт */
-    border: 1px solid var(--success-color, #10b981);
-}
-
-.order-status-message.error {
-    background-color: rgba(239, 68, 68, 0.2); /* Прозорий червоний */
-    color: var(--danger-color, #ef4444); /* Використовуємо змінну, якщо є, або дефолт */
-    border: 1px solid var(--danger-color, #ef4444);
-}
-
-/* Стилі для тексту купівлі/продажу в списку ордерів */
-.buy-text {
-    color: var(--success-color, #10b981);
-}
-
-.sell-text {
-    color: var(--danger-color, #ef4444);
-}
-
-/* Якщо потрібно стилізувати скролбар для списку відкритих ордерів */
-#openOrdersContainer ul::-webkit-scrollbar {
-    width: 6px;
-}
-#openOrdersContainer ul::-webkit-scrollbar-track {
-    background: #2a2e39; /* Колір треку */
-}
-#openOrdersContainer ul::-webkit-scrollbar-thumb {
-    background-color: #555c6e; /* Колір повзунка */
-    border-radius: 3px;
-}
+/* Можна додати базові стилі для посилань, якщо вони мають бути однаковими скрізь */
+/*
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  */
 
 /* Переконайся, що основний контент знаходиться поверх цих декорацій */
 main header {
