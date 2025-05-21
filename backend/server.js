@@ -806,17 +806,16 @@ app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
 
 // *** МОДИФІКОВАНО: Маршрут /api/orders/create ***
 app.post('/api/orders/create', authenticateToken, async (req, res) => {
-    const userId = req.user.userId; // *** МОДИФІКОВАНО: використовуємо userId з JWT payload ***
+    const userId = req.user.userId;
     const { pair, type, side, price, amount: amountFromClient, amount_quote: amountQuoteFromClient } = req.body;
 
-    // Валідація ... (як у вашому коді)
+    // Валідація ... (залишається як є)
     if (!pair || !type || !side) return res.status(400).json({ success: false, message: 'Pair, type, and side are required.' });
     if (!['limit', 'market'].includes(type)) return res.status(400).json({ success: false, message: 'Invalid order type.' });
     if (!['buy', 'sell'].includes(side)) return res.status(400).json({ success: false, message: 'Invalid order side.' });
 
-    const orderProcessingClient = await pool.connect(); // Клієнт для всієї операції створення+виконання
+    const orderProcessingClient = await pool.connect();
     try {
-        // --- Початок основної транзакції: Блокування + Створення Ордера ---
         await orderProcessingClient.query('BEGIN');
 
         const pairRes = await orderProcessingClient.query('SELECT * FROM market_pairs WHERE symbol = $1 AND is_active = TRUE', [pair]);
@@ -827,128 +826,171 @@ app.post('/api/orders/create', authenticateToken, async (req, res) => {
         const marketPairDetails = pairRes.rows[0];
         const baseAsset = marketPairDetails.base_asset;
         const quoteAsset = marketPairDetails.quote_asset;
-        const minTradeAmountValue = marketPairDetails.min_trade_amount ? parseFloat(marketPairDetails.min_trade_amount) : 0; // Приклад
+        const pricePrecision = marketPairDetails.price_precision || 2;
+        const quantityPrecision = marketPairDetails.quantity_precision || 8;
+        const minTradeAmountValue = marketPairDetails.min_trade_amount ? parseFloat(marketPairDetails.min_trade_amount) : 0;
 
-        let amountForDb;
-        let amountQuoteForDb;
-        let priceForDb = (type === 'limit' ? new Decimal(price || 0).toNumber() : null); // Використовуємо Decimal для точності
+        let amountForDb; // Кількість базового активу для ордера
+        let amountQuoteForDb; // Кількість котирувального активу для ордера
+        let priceForDb = (type === 'limit' ? new Decimal(price || 0).toNumber() : null);
+        let executionPrice; // Ціна, за якою ордер буде "виконано"
 
-        if (type === 'market' && side === 'buy') {
-            amountQuoteForDb = new Decimal(amountQuoteFromClient || 0).toNumber();
-            if (amountQuoteForDb <= 0 /* || amountQuoteForDb < MIN_TRADE_VALUE_FOR_PAIR */) {
-                await orderProcessingClient.query('ROLLBACK');
-                return res.status(400).json({ success: false, message: 'Invalid amount_quote for market buy order.' });
-            }
-            amountForDb = 0; // Залишаємо 0, як обговорювали
-        } else if (type === 'market' && side === 'sell') {
+        if (type === 'limit') {
             amountForDb = new Decimal(amountFromClient || 0).toNumber();
-            if (amountForDb <= 0 || amountForDb < minTradeAmountValue) {
-                await orderProcessingClient.query('ROLLBACK');
-                return res.status(400).json({ success: false, message: `Invalid amount for market sell order. Min: ${minTradeAmountValue}` });
-            }
-            amountQuoteForDb = null;
-        } else if (type === 'limit') {
-            amountForDb = new Decimal(amountFromClient || 0).toNumber();
-            priceForDb = new Decimal(price || 0).toNumber(); // вже визначено
+            priceForDb = new Decimal(price || 0).toNumber(); // Вже визначено
             if (amountForDb <= 0 || priceForDb <= 0 || amountForDb < minTradeAmountValue) {
                 await orderProcessingClient.query('ROLLBACK');
                 return res.status(400).json({ success: false, message: `Invalid amount or price for limit order. Min amount: ${minTradeAmountValue}` });
             }
-            amountQuoteForDb = new Decimal(amountForDb).mul(priceForDb).toNumber();
+            amountQuoteForDb = new Decimal(amountForDb).mul(priceForDb).toDecimalPlaces(pricePrecision).toNumber();
+            executionPrice = priceForDb; // Для лімітного ордера ціна виконання = ціна ордера
+        } else { // type === 'market'
+            // Визначаємо executionPrice для ринкового ордера
+            const binancePairData = currentMarketData[`${baseAsset}${quoteAsset}`];
+            if (binancePairData && binancePairData.price) {
+                executionPrice = parseFloat(binancePairData.price);
+            } else {
+                const cgCacheData = marketDataCache.data[pair];
+                if (cgCacheData && cgCacheData.price) {
+                    executionPrice = parseFloat(cgCacheData.price);
+                } else {
+                    console.warn(`[OrderExecuteSim] Could not fetch live price for ${pair}, using a wide fallback for simulation.`);
+                    executionPrice = (side === 'buy') ? (parseFloat(marketPairDetails.min_price_tick || "0.01") * 11000) : (parseFloat(marketPairDetails.min_price_tick || "0.01") * 9000); // Дуже небезпечний fallback!
+                }
+            }
+            console.log(`[OrderExecuteSim] Simulated execution price for MARKET ${pair}: ${executionPrice}`);
+
+            if (side === 'buy') {
+                amountQuoteForDb = new Decimal(amountQuoteFromClient || 0).toNumber();
+                if (amountQuoteForDb <= 0 /* || amountQuoteForDb < MIN_TRADE_VALUE_FOR_PAIR */) {
+                    await orderProcessingClient.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: 'Invalid amount_quote for market buy order.' });
+                }
+                // Розраховуємо amountForDb (скільки базового активу купимо) на основі executionPrice
+                amountForDb = new Decimal(amountQuoteForDb).div(executionPrice).toDecimalPlaces(quantityPrecision).toNumber();
+                if (amountForDb <= 0 || amountForDb < minTradeAmountValue) {
+                     await orderProcessingClient.query('ROLLBACK');
+                     return res.status(400).json({ success: false, message: `Calculated trade amount for market buy is too small or invalid. Amount: ${amountForDb}, Min: ${minTradeAmountValue}` });
+                }
+            } else { // side === 'sell' for market
+                amountForDb = new Decimal(amountFromClient || 0).toNumber();
+                if (amountForDb <= 0 || amountForDb < minTradeAmountValue) {
+                    await orderProcessingClient.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: `Invalid amount for market sell order. Min: ${minTradeAmountValue}` });
+                }
+                // amountQuoteForDb буде розраховано при "виконанні"
+                amountQuoteForDb = new Decimal(amountForDb).mul(executionPrice).toDecimalPlaces(pricePrecision).toNumber();
+            }
         }
 
         // --- Логіка блокування коштів ---
+        let amountToLock;
+        let assetToLock;
         if (side === 'buy') {
-            const amountToLock = new Decimal(amountQuoteForDb).toNumber();
-            const lockQuery = `
-                UPDATE assets SET available_balance = available_balance - $1, in_order_balance = in_order_balance + $1, updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = $2 AND coin_symbol = $3 AND available_balance >= $1 RETURNING id;`;
-            const lockResult = await orderProcessingClient.query(lockQuery, [amountToLock, userId, quoteAsset]);
-            if (lockResult.rowCount === 0) {
-                await orderProcessingClient.query('ROLLBACK');
-                return res.status(400).json({ success: false, message: `Insufficient ${quoteAsset} balance or asset not found for locking.` });
-            }
+            amountToLock = new Decimal(amountQuoteForDb).toNumber();
+            assetToLock = quoteAsset;
         } else { // side === 'sell'
-            const amountToLock = new Decimal(amountForDb).toNumber();
-            const lockQuery = `
-                UPDATE assets SET available_balance = available_balance - $1, in_order_balance = in_order_balance + $1, updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = $2 AND coin_symbol = $3 AND available_balance >= $1 RETURNING id;`;
-            const lockResult = await orderProcessingClient.query(lockQuery, [amountToLock, userId, baseAsset]);
-            if (lockResult.rowCount === 0) {
-                await orderProcessingClient.query('ROLLBACK');
-                return res.status(400).json({ success: false, message: `Insufficient ${baseAsset} balance or asset not found for locking.` });
-            }
+            amountToLock = new Decimal(amountForDb).toNumber();
+            assetToLock = baseAsset;
         }
-        console.log(`[OrderCreate] User ${userId}: Funds locked for order type ${type}, side ${side}.`);
+
+        const lockQuery = `
+            UPDATE assets SET available_balance = available_balance - $1, in_order_balance = in_order_balance + $1, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = $2 AND coin_symbol = $3 AND available_balance >= $1 RETURNING id;`;
+        const lockResult = await orderProcessingClient.query(lockQuery, [amountToLock, userId, assetToLock]);
+        if (lockResult.rowCount === 0) {
+            await orderProcessingClient.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: `Insufficient ${assetToLock} balance or asset not found for locking.` });
+        }
+        console.log(`[OrderCreate] User ${userId}: Funds locked for order. Asset: ${assetToLock}, Amount: ${amountToLock}`);
 
         // --- Створення запису ордера ---
+        // Для market buy, amountForDb вже розрахований вище
+        // Для market sell, amountQuoteForDb вже розрахований вище
         const createOrderQuery = `
             INSERT INTO orders (user_id, pair, type, side, price, amount, amount_quote, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'open')
-            RETURNING *;
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'open') 
+            RETURNING *; 
         `;
-        const orderValues = [userId, pair, type, side, priceForDb, amountForDb, (type === 'market' && side === 'sell' ? null : amountQuoteForDb)];
+        // priceForDb для market ордерів буде null.
+        // amount для market buy тепер має значення.
+        // amount_quote для market sell тепер має значення.
+        const orderValues = [userId, pair, type, side, priceForDb, amountForDb, amountQuoteForDb];
+
         const orderResult = await orderProcessingClient.query(createOrderQuery, orderValues);
         const createdOrder = orderResult.rows[0];
 
         await orderProcessingClient.query('COMMIT'); // Фіксуємо транзакцію створення ордера та блокування коштів
         console.log('[OrderCreate] Order created and funds locked successfully:', createdOrder.id);
-        let executionOutcome = { success: null, message: 'Order created, not a market order or execution skipped.' };
+        let executionOutcome = { success: null, message: 'Execution outcome pending.' };
 
-        // --- Імітація/запуск виконання ринкового ордера ---
-        if (createdOrder.type === 'market') {
-            console.log(`[OrderCreate] Market order ${createdOrder.id} created. Simulating immediate execution...`);
-            let simulatedExecutionPrice;
-            // ВАЖЛИВО: Отримання актуальної ціни для ринкового ордера!
-            const binancePairData = currentMarketData[`${baseAsset}${quoteAsset}`]; // Наприклад, BTCUSDT
-            if (binancePairData && binancePairData.price) {
-                simulatedExecutionPrice = parseFloat(binancePairData.price);
-            } else {
-                const cgCacheData = marketDataCache.data[createdOrder.pair];
-                if (cgCacheData && cgCacheData.price) {
-                    simulatedExecutionPrice = parseFloat(cgCacheData.price);
-                } else {
-                    console.warn(`[OrderExecuteSim] Could not fetch live price for ${createdOrder.pair}, using a wide fallback for simulation for order ${createdOrder.id}.`);
-                    // Дуже небезпечний fallback, лише для тестування!
-                    simulatedExecutionPrice = (side === 'buy') ? 50000 * 1.05 : 50000 * 0.95;
-                }
-            }
-            console.log(`[OrderExecuteSim] Simulated execution price for ${createdOrder.pair}: ${simulatedExecutionPrice}`);
+        // --- НЕГАЙНЕ ВИКОНАННЯ для ВСІХ ТИПІВ ОРДЕРІВ (СПРОЩЕННЯ) ---
+        console.log(`[OrderExecuteSim] Order ${createdOrder.id} (type: ${createdOrder.type}) created. Simulating immediate FULL execution...`);
+
+        const filledDetails = {
+            orderId: createdOrder.id,
+            baseAsset,
+            quoteAsset,
+            // Для повного виконання, filledAmountBase = amountForDb (кількість базового активу в ордері)
+            // filledAmountQuote = amountQuoteForDb (кількість котирувального активу в ордері)
+            filledAmountBase: new Decimal(createdOrder.amount).toNumber(), // Беремо з створеного ордера
+            filledAmountQuote: new Decimal(createdOrder.amount_quote).toNumber(), // Беремо з створеного ордера
+            avgFillPrice: executionPrice // Ціна, за якою "виконали"
+        };
+
+        // Перевірка, чи є що виконувати (особливо для amount_quote, яке може бути null для market sell в createdOrder до розрахунку)
+        if (side === 'sell' && type === 'market') { // для market sell, amount_quote розраховується на основі executionPrice
+            filledDetails.filledAmountQuote = new Decimal(filledDetails.filledAmountBase).mul(executionPrice).toDecimalPlaces(pricePrecision).toNumber();
+        }
+        // для market buy, amount (base) розраховується на основі executionPrice, amount_quote відомий
+         if (side === 'buy' && type === 'market') {
+            filledDetails.filledAmountBase = new Decimal(filledDetails.filledAmountQuote).div(executionPrice).toDecimalPlaces(quantityPrecision).toNumber();
+        }
 
 
+        console.log(`[OrderExecuteSim] Details for processing fill (Order ID: ${createdOrder.id}):`, JSON.stringify(filledDetails, null, 2));
+
+        if (filledDetails.filledAmountBase <= 0 && side === 'buy') {
+             console.error(`[OrderExecuteSim] Calculated filledAmountBase is zero or negative for BUY order ${createdOrder.id}. Skipping execution.`);
+             executionOutcome = { success: false, message: 'Calculated amount to buy is zero or negative.' };
+        } else if (filledDetails.filledAmountBase <= 0 && side === 'sell') {
+             console.error(`[OrderExecuteSim] filledAmountBase (amount to sell) is zero or negative for SELL order ${createdOrder.id}. Skipping execution.`);
+             executionOutcome = { success: false, message: 'Amount to sell is zero or negative.' };
+        }
+        else {
             if (createdOrder.side === 'buy') {
-                const actualAmountBaseBought = new Decimal(createdOrder.amount_quote).div(simulatedExecutionPrice).toDecimalPlaces(marketPairDetails.quantity_precision || 8).toNumber();
-                const filledDetails = { orderId: createdOrder.id, baseAsset, quoteAsset, filledAmountBase: actualAmountBaseBought, filledAmountQuote: parseFloat(createdOrder.amount_quote), avgFillPrice: simulatedExecutionPrice };
-                executionOutcome = await processFilledBuyOrder(pool, userId, filledDetails); // Передаємо pool
+                executionOutcome = await processFilledBuyOrder(pool, userId, filledDetails);
             } else { // side === 'sell'
-                const actualAmountQuoteReceived = new Decimal(createdOrder.amount).mul(simulatedExecutionPrice).toDecimalPlaces(marketPairDetails.price_precision || 2).toNumber();
-                const filledDetails = { orderId: createdOrder.id, baseAsset, quoteAsset, filledAmountBase: parseFloat(createdOrder.amount), filledAmountQuote: actualAmountQuoteReceived, avgFillPrice: simulatedExecutionPrice };
-                executionOutcome = await processFilledSellOrder(pool, userId, filledDetails); // Передаємо pool
+                executionOutcome = await processFilledSellOrder(pool, userId, filledDetails);
             }
+        }
 
-            if (!executionOutcome.success) {
-                console.error(`[OrderCreate] Error during simulated market order execution (ID: ${createdOrder.id}) & balance update:`, executionOutcome.message);
-                // ВАЖЛИВО: Ордер створено, кошти заблоковано, але виконання не вдалося.
-                // Потрібна логіка компенсації: або скасувати ордер і розблокувати кошти, або позначити ордер як "помилка виконання".
-                // Для простоти поки що просто логуємо.
-            } else {
-                console.log(`[OrderCreate] Simulated market order (ID: ${createdOrder.id}) execution and balance update successful.`);
-            }
+
+        if (!executionOutcome.success) {
+            console.error(`[OrderCreate] Error during simulated FULL order execution (ID: ${createdOrder.id}):`, executionOutcome.message);
+            // Тут потрібна логіка компенсації, якщо ордер створено, а виконання не вдалося
+            // Наприклад, скасувати ордер і розблокувати кошти.
+            // res.status(500).json({ success: false, message: `Order created (ID: ${createdOrder.id}) but execution failed: ${executionOutcome.message}`, order: createdOrder });
+            // return; // Важливо вийти, якщо не хочемо надсилати 201
+        } else {
+            console.log(`[OrderCreate] Simulated FULL order execution (ID: ${createdOrder.id}) and balance update successful.`);
         }
 
         res.status(201).json({
             success: true,
-            message: 'Order created.',
-            order: createdOrder,
-            ...(createdOrder.type === 'market' && { executionResult: executionOutcome })
+            message: 'Order created and processed.', // Змінено повідомлення
+            order: { ...createdOrder, status: 'filled' }, // Одразу повертаємо як filled
+            executionResult: executionOutcome
         });
 
     } catch (error) {
-        // Якщо помилка сталася всередині основної транзакції, вона вже має бути відкочена
+        if (orderProcessingClient) {
+             try { await orderProcessingClient.query('ROLLBACK'); } catch (rbError) { console.error('Error rolling back main transaction:', rbError); }
+        }
         console.error('[API /orders/create Error]:', error);
         res.status(500).json({ success: false, message: `Failed to create order: ${error.message || 'Internal server error'}` });
     } finally {
-        if (orderProcessingClient) { // Завжди звільняємо клієнта
+        if (orderProcessingClient) {
             orderProcessingClient.release();
         }
     }
