@@ -666,6 +666,64 @@ app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
     }
 });
 
+// --- Ендпоінти для Ордерів ---
+
+app.post('/api/orders/create', authenticateToken, async (req, res) => {
+    const userId = req.user.userId; // Або req.user.id, залежно від payload твого JWT
+    const { pair, type, side, price, amount, amount_quote } = req.body;
+
+    console.log(`[Order Create Request] User ID: ${userId}, Payload:`, req.body);
+
+    // 1. ВАЛІДАЦІЯ ВХІДНИХ ДАНИХ (дуже важлива!)
+    //    - Перевір наявність pair, type, side.
+    //    - Перевір, що type = 'limit' або 'market', side = 'buy' або 'sell'.
+    //    - Якщо type = 'limit', перевір наявність і валідність price та amount.
+    //    - Якщо type = 'market' і side = 'buy', перевір amount_quote.
+    //    - Якщо type = 'market' і side = 'sell', перевір amount.
+    //    - Перевір, чи числа є дійсними позитивними числами.
+    //    - Перевір відповідність точності (pricePrecision, quantityPrecision) для пари.
+    //    - Перевір мінімальні/максимальні суми ордера для пари.
+    //    Приклад простої валідації:
+    if (!pair || !type || !side) {
+        return res.status(400).json({ success: false, message: "Missing required fields: pair, type, or side." });
+    }
+    // ... (додай більше валідації)
+
+    // ТИМЧАСОВА ВІДПОВІДЬ-ЗАГЛУШКА для тестування:
+    // Після того, як ти переконаєшся, що цей ендпоінт викликається,
+    // ти заміниш цю заглушку на реальну логіку роботи з БД.
+    const mockOrder = {
+        id: Date.now(), // Імітація ID
+        user_id: userId,
+        pair: pair,
+        type: type,
+        side: side,
+        price: price,
+        amount: amount,
+        amount_quote: amount_quote,
+        status: 'open', // Імітація статусу
+        created_at: new Date().toISOString()
+    };
+    console.log("[Order Create Mock] Successfully received order data. Returning mock order.");
+    return res.status(201).json({ success: true, message: "Order received (mock response).", order: mockOrder });
+
+
+    // 2. РЕАЛЬНА ЛОГІКА (БУДЕ ДОДАНА ПІЗНІШЕ):
+    //    - Підключення до БД (отримання клієнта з пулу).
+    //    - Початок транзакції (client.query('BEGIN')).
+    //    - Отримання деталей торгової пари (base_asset, quote_asset, price_precision, etc.) з таблиці market_pairs.
+    //    - Перевірка балансу користувача (SELECT ... FOR UPDATE).
+    //    - Якщо баланс достатній:
+    //        - Оновлення балансу користувача (UPDATE assets SET available_balance = ..., in_order_balance = ...).
+    //        - Створення запису в таблиці orders (INSERT INTO orders ... RETURNING *).
+    //        - Завершення транзакції (client.query('COMMIT')).
+    //        - Повернення успішної відповіді з даними створеного ордеру (res.status(201).json(...)).
+    //    - Якщо баланс недостатній або інша помилка:
+    //        - Відкат транзакції (client.query('ROLLBACK')).
+    //        - Повернення відповіді про помилку (res.status(400/500).json(...)).
+    //    - Не забудь client.release() в блоці finally.
+});
+
 app.get('/api/user/balances', authenticateToken, async (req, res) => {
     // req.user тепер містить дані з JWT, включаючи ID користувача
     // У тебе в authenticateToken використовується `userId` (з токена { userId: user.id, ... })
