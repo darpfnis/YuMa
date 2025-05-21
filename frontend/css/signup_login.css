@@ -5,9 +5,7 @@ main {
   display: flex; /* Використовуємо flex для центрування форми */
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 60px - 30px); /* Висота екрану мінус висота хедера та можливі відступи */
-                                        /* 60px - приблизна висота хедера (15px+15px padding + висота тексту) */
-                                        /* 30px - додатковий відступ знизу, якщо потрібен */
+  min-height: calc(100vh - 60px - 30px); 
   padding: 20px;
   box-sizing: border-box;
 }
@@ -15,94 +13,102 @@ main {
 /* --- ОСНОВНИЙ СТИЛЬ ДЛЯ ФОРМИ АУТЕНТИФІКАЦІЇ --- */
 .auth-form-section {
   /* --- ЕФЕКТ СКЛА (GLASSMORPHISM) --- */
-  background-color: rgba(255, 255, 255, 0.85); /* Напівпрозорий білий фон. Регулюй прозорість (0.7 - 0.9) */
-  backdrop-filter: blur(10px);
+  /* ВАРІАНТ 1: Середня прозорість */
+  background-color: rgba(255, 255, 255, 0.65); /* <--- ЗМІНЕНО НА 0.65 (65% непрозорості) */
+
+  /* ВАРІАНТ 2: Більш прозорий (якщо хочеш сильніший ефект скла) */
+  /* background-color: rgba(255, 255, 255, 0.5); */ /* <--- 0.5 (50% непрозорості) */
+  
+  backdrop-filter: blur(10px); /* Можеш збільшити blur, якщо фон стає занадто прозорим, наприклад, blur(15px) */
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Ледь помітна біла рамка */
+  border: 1px solid rgba(255, 255, 255, 0.25); /* Рамку можна зробити трохи менш прозорою для чіткості */
   
   /* --- Розміри та позиціонування --- */
-  padding: 2.5rem; /* Внутрішні відступи (наприклад, 40px) */
-  border-radius: 1rem; /* Радіус кутів (16px) */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Тінь */
+  padding: 2.5rem; 
+  border-radius: 1rem; 
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); /* Тінь може потребувати коригування залежно від прозорості */
   width: 100%;
-  max-width: 420px; /* Максимальна ширина форми */
+  max-width: 420px; 
   display: flex;
   flex-direction: column;
-  /* align-items: center; -- Вимкнено, щоб лейбли були зліва */
-  text-align: left; /* Текст всередині форми (лейбли) буде зліва */
+  text-align: left; 
 }
 
 /* Заголовок форми (Log in / Sign up) */
 .auth-form-section h1 {
-  color: #1a202c; /* Темний колір */
-  font-size: 2.2rem; /* Розмір заголовка */
-  margin-bottom: 2rem; /* Відступ під заголовком */
-  font-weight: 600; /* Напівжирний */
-  text-align: center; /* Заголовок по центру */
+  color: #1a202c; 
+  font-size: 2.2rem; 
+  margin-bottom: 2rem; 
+  font-weight: 600; 
+  text-align: center; 
 }
 
 /* Мітки (Labels) */
 .auth-form-section label {
-  color: #374151; /* Темно-сірий */
+  color: #2d3748; /* Зробимо трохи темнішим, якщо фон став прозорішим */
   display: block;
-  margin-bottom: 0.5rem; /* Відступ під міткою */
-  font-weight: 500; /* Середня жирність */
-  font-size: 0.9rem; /* Трохи менший шрифт для лейблів */
+  margin-bottom: 0.5rem; 
+  font-weight: 500; 
+  font-size: 0.9rem; 
 }
 
 /* Поля вводу */
 .auth-form-section input[type="text"],
 .auth-form-section input[type="email"],
 .auth-form-section input[type="password"] {
-  background-color: rgba(243, 244, 246, 0.8); /* Ледь прозорий світло-сірий (якщо фон скляний) */
-                                             /* Або #f0f3f7; для непрозорого варіанту */
-  border: 1px solid rgba(209, 213, 219, 0.7);   /* Світла рамка */
-  border-radius: 0.5rem;     /* Радіус (8px) */
-  padding: 0.8rem 1rem;      /* Внутрішні відступи */
+  /* Якщо основний фон форми став більш прозорим, фон інпутів теж можна зробити більш прозорим,
+     або навпаки, трохи менш прозорим для кращої читабельності тексту в них. */
+  background-color: rgba(243, 244, 246, 0.6); /* Наприклад, 60% непрозорості */
+  border: 1px solid rgba(209, 213, 219, 0.6); 
+  border-radius: 0.5rem;     
+  padding: 0.8rem 1rem;      
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 1.25rem; /* Відступ під полем вводу */
-  color: #1f2937; /* Колір тексту в полях */
+  margin-bottom: 1.25rem; 
+  color: #1a202c; /* Темний колір тексту в полях для контрасту */
   font-size: 1rem;
 }
 
 .auth-form-section input[type="text"]::placeholder,
 .auth-form-section input[type="email"]::placeholder,
 .auth-form-section input[type="password"]::placeholder {
-  color: #9ca3af; /* Колір плейсхолдера */
+  color: #6b7280; /* Трохи темніший плейсхолдер */
 }
 
 .auth-form-section input[type="text"]:focus,
 .auth-form-section input[type="email"]:focus,
 .auth-form-section input[type="password"]:focus {
   outline: none;
-  border-color: rgba(59, 130, 246, 0.7); /* Колір рамки при фокусі (синій) */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); /* Легка тінь при фокусі */
+  border-color: rgba(59, 130, 246, 0.7); 
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); 
 }
 
 /* Кнопка відправки форми */
 .auth-form-section button[type="submit"] {
-  background-color: #1f2937; /* Дуже темний сіро-синій (близько до чорного) */
+  background-color: #1f2937; 
   color: white;
   border: none;
-  padding: 0.8rem 1rem; /* Паддінги */
-  border-radius: 0.5rem; /* Радіус */
+  padding: 0.8rem 1rem; 
+  border-radius: 0.5rem; 
   width: 100%;
-  font-weight: 600; /* Жирний */
+  font-weight: 600; 
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.2s ease-out;
-  margin-top: 1rem; /* Відступ над кнопкою */
-  text-transform: none; /* Звичайний текст, не uppercase */
+  margin-top: 1rem; 
+  text-transform: none; 
 }
 
 .auth-form-section button[type="submit"]:hover {
-  background-color: #374151; /* Трохи світліший при наведенні */
+  background-color: #374151; 
 }
 
 /* Повідомлення про помилку */
-#loginError, #signupError { /* Універсальний стиль для повідомлень про помилки */
-  color: #ef4444; /* Червоний колір */
+#loginError, #signupError { 
+  color: #ef4444; 
+  background-color: rgba(253, 232, 232, 0.8); /* Легкий червонуватий фон для кращої видимості на склі */
+  padding: 0.5rem;
+  border-radius: 0.25rem;
   margin-top: 1rem;
   text-align: center;
   font-size: 0.9rem;
@@ -111,8 +117,8 @@ main {
 
 /* Розділювач "or" */
 .auth-form-section .separator {
-  color: #6b7280; /* Сірий колір */
-  margin: 1.75rem 0; /* Відступи */
+  color: #374151; /* Темніший сірий */
+  margin: 1.75rem 0; 
   text-align: center;
   font-size: 0.9rem;
   font-weight: 500;
@@ -125,7 +131,7 @@ main {
 }
 
 .auth-form-section .alternative-action a {
-  color: #1f2937; /* Темний колір, як кнопка */
+  color: #1f2937; 
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
@@ -135,6 +141,3 @@ main {
   text-decoration: underline;
   color: #374151;
 }
-
-/* Стилі для хедера (якщо вони специфічні для цих сторінок, інакше в header.css) */
-/* Твої стилі для header, logo вже є, я їх не дублюю тут, якщо вони в окремому файлі */
