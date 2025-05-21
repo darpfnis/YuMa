@@ -332,6 +332,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("Futures Page DOM loaded. Initializing script...");
     console.log("--------------------------------------------------");
 
+    const authPromptTradingPanel = document.querySelector('.trading-panel-card .auth-prompt');
+    const buyLongButton = document.querySelector('.buy-long-button'); // Якщо використовується в updateTradingPanelAuthPrompt або setupLogoutButtonFutures
+    const sellShortButton = document.querySelector('.sell-short-button'); // Аналогічно
+    const tabPanes = document.querySelectorAll('.positions-history-card .tab-pane');
+
     // Ініціалізація стану хедера при завантаженні сторінки
     updateHeaderAuthStateFutures();
     setupLogoutButtonFutures();
