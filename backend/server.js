@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const axios = require('axios'); 
 const cron = require('node-cron');
-
+const { Decimal } = require('decimal.js'); // Для точних розрахунків
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -668,60 +668,191 @@ app.get('/api/portfolio/history', authenticateToken, async (req, res) => {
 
 // --- Ендпоінти для Ордерів ---
 
+// В server.js (або orderRoutes.js)
+
 app.post('/api/orders/create', authenticateToken, async (req, res) => {
-    const userId = req.user.userId; // Або req.user.id, залежно від payload твого JWT
+    const userId = req.user.userId; // Або req.user.id
     const { pair, type, side, price, amount, amount_quote } = req.body;
 
     console.log(`[Order Create Request] User ID: ${userId}, Payload:`, req.body);
 
-    // 1. ВАЛІДАЦІЯ ВХІДНИХ ДАНИХ (дуже важлива!)
-    //    - Перевір наявність pair, type, side.
-    //    - Перевір, що type = 'limit' або 'market', side = 'buy' або 'sell'.
-    //    - Якщо type = 'limit', перевір наявність і валідність price та amount.
-    //    - Якщо type = 'market' і side = 'buy', перевір amount_quote.
-    //    - Якщо type = 'market' і side = 'sell', перевір amount.
-    //    - Перевір, чи числа є дійсними позитивними числами.
-    //    - Перевір відповідність точності (pricePrecision, quantityPrecision) для пари.
-    //    - Перевір мінімальні/максимальні суми ордера для пари.
-    //    Приклад простої валідації:
+    // 1. Валідація вхідних даних (розширена)
     if (!pair || !type || !side) {
         return res.status(400).json({ success: false, message: "Missing required fields: pair, type, or side." });
     }
-    // ... (додай більше валідації)
+    if (type !== 'limit' && type !== 'market') {
+        return res.status(400).json({ success: false, message: "Invalid order type. Must be 'limit' or 'market'." });
+    }
+    if (side !== 'buy' && side !== 'sell') {
+        return res.status(400).json({ success: false, message: "Invalid order side. Must be 'buy' or 'sell'." });
+    }
 
-    // ТИМЧАСОВА ВІДПОВІДЬ-ЗАГЛУШКА для тестування:
-    // Після того, як ти переконаєшся, що цей ендпоінт викликається,
-    // ти заміниш цю заглушку на реальну логіку роботи з БД.
-    const mockOrder = {
-        id: Date.now(), // Імітація ID
-        user_id: userId,
-        pair: pair,
-        type: type,
-        side: side,
-        price: price,
-        amount: amount,
-        amount_quote: amount_quote,
-        status: 'open', // Імітація статусу
-        created_at: new Date().toISOString()
-    };
-    console.log("[Order Create Mock] Successfully received order data. Returning mock order.");
-    return res.status(201).json({ success: true, message: "Order received (mock response).", order: mockOrder });
+    let orderPriceDecimal = null;
+    let orderAmountBaseDecimal = null; // Кількість базового активу
+    let orderAmountQuoteDecimal = null; // Кількість котирувального активу (для розрахунків або Market Buy)
+
+    const client = await pool.connect(); // Отримуємо клієнта з пулу
+
+    try {
+        await client.query('BEGIN'); // === ПОЧАТОК ТРАНЗАКЦІЇ ===
+
+        // 2. Отримати деталі пари з БД (market_pairs)
+        const pairInfoRes = await client.query(
+            'SELECT base_asset, quote_asset, price_precision, quantity_precision, min_trade_amount, min_trade_value FROM market_pairs WHERE symbol = $1 AND is_active = TRUE',
+            [pair]
+        );
+        if (pairInfoRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: `Trading pair ${pair} not found or inactive.` });
+        }
+        const pairInfo = pairInfoRes.rows[0];
+        const baseAsset = pairInfo.base_asset;
+        const quoteAsset = pairInfo.quote_asset;
+
+        // 3. Валідація та розрахунок сум з використанням Decimal.js
+        if (type === 'limit') {
+            if (!price || !amount) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: "For limit orders, 'price' and 'amount' (base asset quantity) are required." });
+            }
+            orderPriceDecimal = new Decimal(price);
+            orderAmountBaseDecimal = new Decimal(amount);
+
+            if (orderPriceDecimal.lte(0) || orderAmountBaseDecimal.lte(0)) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: "Price and amount must be positive for limit orders." });
+            }
+            // Перевірка точності (приклад, можна зробити строгіше)
+            if (orderPriceDecimal.decimalPlaces() > pairInfo.price_precision) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: `Price precision for ${pair} is ${pairInfo.price_precision}. You provided ${orderPriceDecimal.decimalPlaces()} decimal places.` });
+            }
+            if (orderAmountBaseDecimal.decimalPlaces() > pairInfo.quantity_precision) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: `Amount precision for ${baseAsset} is ${pairInfo.quantity_precision}. You provided ${orderAmountBaseDecimal.decimalPlaces()} decimal places.` });
+            }
+            orderAmountQuoteDecimal = orderPriceDecimal.mul(orderAmountBaseDecimal); // Total = Price * Amount
+        } else { // type === 'market'
+            if (side === 'buy') { // Market Buy: amount_quote - скільки USDT витратити
+                if (!amount_quote) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: "For market buy orders, 'amount_quote' (quote asset quantity to spend) is required." });
+                }
+                orderAmountQuoteDecimal = new Decimal(amount_quote);
+                if (orderAmountQuoteDecimal.lte(0)) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: "Amount_quote must be positive for market buy." });
+                }
+                // orderAmountBaseDecimal буде визначено при матчингу (для простої імітації ми його не розраховуємо тут, або розраховуємо приблизно)
+                // Для простоти, поки що залишимо orderAmountBaseDecimal = null для market buy
+            } else { // Market Sell: amount - скільки BTC продати
+                if (!amount) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: "For market sell orders, 'amount' (base asset quantity to sell) is required." });
+                }
+                orderAmountBaseDecimal = new Decimal(amount);
+                if (orderAmountBaseDecimal.lte(0)) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: "Amount must be positive for market sell." });
+                }
+                if (orderAmountBaseDecimal.decimalPlaces() > pairInfo.quantity_precision) {
+                     await client.query('ROLLBACK');
+                    return res.status(400).json({ success: false, message: `Amount precision for ${baseAsset} is ${pairInfo.quantity_precision}. You provided ${orderAmountBaseDecimal.decimalPlaces()} decimal places.` });
+                }
+                // orderAmountQuoteDecimal буде визначено при матчингу
+            }
+        }
+        
+        // Додаткова валідація: min_trade_amount (в базовому активі)
+        if (pairInfo.min_trade_amount && orderAmountBaseDecimal && orderAmountBaseDecimal.lt(new Decimal(pairInfo.min_trade_amount))) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: `Minimum trade amount for ${baseAsset} is ${pairInfo.min_trade_amount}.`});
+        }
+        // Додаткова валідація: min_trade_value (в котирувальному активі)
+        if (pairInfo.min_trade_value && orderAmountQuoteDecimal && orderAmountQuoteDecimal.lt(new Decimal(pairInfo.min_trade_value))) {
+             await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: `Minimum trade value for ${pair} is ${pairInfo.min_trade_value} ${quoteAsset}.`});
+        }
 
 
-    // 2. РЕАЛЬНА ЛОГІКА (БУДЕ ДОДАНА ПІЗНІШЕ):
-    //    - Підключення до БД (отримання клієнта з пулу).
-    //    - Початок транзакції (client.query('BEGIN')).
-    //    - Отримання деталей торгової пари (base_asset, quote_asset, price_precision, etc.) з таблиці market_pairs.
-    //    - Перевірка балансу користувача (SELECT ... FOR UPDATE).
-    //    - Якщо баланс достатній:
-    //        - Оновлення балансу користувача (UPDATE assets SET available_balance = ..., in_order_balance = ...).
-    //        - Створення запису в таблиці orders (INSERT INTO orders ... RETURNING *).
-    //        - Завершення транзакції (client.query('COMMIT')).
-    //        - Повернення успішної відповіді з даними створеного ордеру (res.status(201).json(...)).
-    //    - Якщо баланс недостатній або інша помилка:
-    //        - Відкат транзакції (client.query('ROLLBACK')).
-    //        - Повернення відповіді про помилку (res.status(400/500).json(...)).
-    //    - Не забудь client.release() в блоці finally.
+        // 4. Перевірка та блокування балансу
+        let requiredAssetSymbol, amountToLockDecimal;
+        if (side === 'buy') {
+            requiredAssetSymbol = quoteAsset;
+            amountToLockDecimal = orderAmountQuoteDecimal; // Для buy блокуємо quote asset
+        } else { // side === 'sell'
+            requiredAssetSymbol = baseAsset;
+            amountToLockDecimal = orderAmountBaseDecimal; // Для sell блокуємо base asset
+        }
+
+        const assetRes = await client.query(
+            'SELECT available_balance FROM assets WHERE user_id = $1 AND coin_symbol = $2 FOR UPDATE',
+            [userId, requiredAssetSymbol]
+        );
+
+        let availableBalanceDecimal = new Decimal(0);
+        if (assetRes.rows.length > 0) {
+            availableBalanceDecimal = new Decimal(assetRes.rows[0].available_balance);
+        } else { // Якщо у користувача немає такого активу, це помилка або потрібно створити запис з 0
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: `Asset ${requiredAssetSymbol} not found for user.` });
+        }
+
+        if (availableBalanceDecimal.lt(amountToLockDecimal)) {
+            await client.query('ROLLBACK');
+            const requiredPrecision = (side === 'buy') ? pairInfo.price_precision : pairInfo.quantity_precision;
+            return res.status(400).json({ 
+                success: false, 
+                message: `Insufficient ${requiredAssetSymbol} balance. Required: ${amountToLockDecimal.toFixed(requiredPrecision)}, Available: ${availableBalanceDecimal.toFixed(requiredPrecision)}` 
+            });
+        }
+
+        // Оновлюємо баланс: зменшуємо доступний, збільшуємо заблокований
+        await client.query(
+            'UPDATE assets SET available_balance = available_balance - $1, in_order_balance = in_order_balance + $1 WHERE user_id = $2 AND coin_symbol = $3',
+            [amountToLockDecimal.toString(), userId, requiredAssetSymbol]
+        );
+
+        // 5. Створення ордеру в таблиці orders
+        const insertOrderQuery = `
+            INSERT INTO orders (user_id, pair, type, side, price, amount, amount_quote, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'open')
+            RETURNING id, user_id, pair, type, side, price::TEXT, amount::TEXT, amount_quote::TEXT, status, created_at; 
+        `;
+        // Передаємо рядки або null в БД
+        const dbPrice = orderPriceDecimal ? orderPriceDecimal.toFixed(pairInfo.price_precision) : null;
+        const dbAmountBase = orderAmountBaseDecimal ? orderAmountBaseDecimal.toFixed(pairInfo.quantity_precision) : null;
+        // Для amount_quote, якщо це limit, ми його розрахували. Якщо market buy, він прийшов з фронту. Якщо market sell, він null.
+        const dbAmountQuote = orderAmountQuoteDecimal ? orderAmountQuoteDecimal.toFixed(pairInfo.price_precision) : null;
+
+
+        const orderRes = await client.query(insertOrderQuery, [
+            userId, 
+            pair, 
+            type, 
+            side, 
+            dbPrice,         // price (може бути NULL для market)
+            dbAmountBase,    // amount (кількість базової валюти, може бути NULL для market buy)
+            dbAmountQuote,   // amount_quote (кількість валюти котирування, може бути NULL для market sell/limit)
+        ]);
+        const createdOrder = orderRes.rows[0];
+
+        await client.query('COMMIT'); // === ЗАВЕРШЕННЯ ТРАНЗАКЦІЇ ===
+        console.log(`[Order Created] Order ID: ${createdOrder.id} for User ID: ${userId} successfully created and balances updated.`);
+        res.status(201).json({ success: true, message: "Order created successfully!", order: createdOrder });
+
+    } catch (error) {
+        await client.query('ROLLBACK'); // Відкат транзакції при будь-якій помилці
+        console.error('[Order Create Error] Error during order creation:', error);
+        // Повертаємо більш детальне повідомлення, якщо це помилка валідації точності
+        if (error.message.includes("precision") || error.message.includes("Minimum trade")) {
+             res.status(400).json({ success: false, message: error.message });
+        } else {
+             res.status(500).json({ success: false, message: 'Failed to create order due to a server error.' });
+        }
+    } finally {
+        client.release(); // Повертаємо клієнта в пул
+    }
 });
 
 app.get('/api/user/balances', authenticateToken, async (req, res) => {
